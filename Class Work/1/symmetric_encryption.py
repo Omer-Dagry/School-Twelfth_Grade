@@ -14,8 +14,16 @@ class OTP:
     def __next__(self):
         """ Calculates A One Time Pad In The Size Of 1 Byte """
         self.seed = random.randint(-999999999999999, 999999999999999)  # random number for the seed
-        self.otp_bytes = bin((self.seed ** 2) & 0xff)[2:].ljust(8, "0")  # create the otp (in bytes)
-        self.seed = int(self.otp_bytes[2:-2], 2)  # convert to int
+        self.otp_bytes = bin((self.seed ** 2))[2:]  # & 0xff)[2:].ljust(8, "0")  # create the otp (in bytes)
+        random_locations = []
+        while len(random_locations) != 8:
+            random_location = random.randint(0, len(self.otp_bytes) - 1)
+            if random_location not in random_locations:
+                random_locations.append(random_location)
+        self.seed = ""
+        for location in random_locations:
+            self.seed += self.otp_bytes[location]
+        self.seed = int(self.seed[2:-2], 2)  # convert to int
         if self.seed != self.old_seed and self.seed != 0:
             self.old_seed = self.seed
             return self.seed
@@ -60,9 +68,9 @@ def main():
     print(", Result: '%s'" % encrypted_msg)
     print("Encryption Keys:", keys)
     #
-    # print("Decrypting '%s'" % encrypted_msg, end="")
-    # msg = decrypt(encrypted_msg, keys)
-    # print(", Result: '%s'" % msg)
+    print("Decrypting '%s'" % encrypted_msg, end="")
+    msg = decrypt(encrypted_msg, keys)
+    print(", Result: '%s'" % msg)
 
 
 if __name__ == '__main__':
