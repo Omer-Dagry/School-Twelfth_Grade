@@ -14,7 +14,7 @@ class OTP:
     def __next__(self):  # , seed):
         """ Calculates A One Time Pad In The Size Of 1 Byte """
         self.seed = random.randint(-999999999999999, 999999999999999)  # random number for the seed
-        self.otp_bytes = bin((self.seed ** 2))[2:]  # & 0xff)[2:].ljust(8, "0")  # create the otp (in bytes)
+        self.otp_bytes = bin((self.seed ** 2))[2:]  # & 0xff)[2:].rjust(8, "0")  # create the otp (in bytes)
         random_locations = []
         while len(random_locations) != 8:
             random_location = random.randint(0, len(self.otp_bytes) - 1)
@@ -24,7 +24,7 @@ class OTP:
         for location in random_locations:
             self.seed += self.otp_bytes[location]
         # self.seed = seed
-        # self.otp_bytes = bin((self.seed ** 2) & 0xff)[2:].ljust(8, "0")
+        # self.otp_bytes = bin((self.seed ** 2) & 0xff)[2:].rjust(8, "0")
         self.seed = int(self.seed[2:-2], 2)  # convert to int
         if self.seed != self.old_seed and self.seed != 0:
             self.old_seed = self.seed
