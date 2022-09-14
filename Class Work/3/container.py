@@ -31,7 +31,7 @@ class Container:
         return self.items_list
 
     def generate(self, number_of_items: int):
-        """ Generate number_of_items Items And Append To The Container items_list"""
+        """ Generate number_of_items Items And Appends To The Container items_list"""
         for i in range(0, number_of_items):
             rand = randint(0, 2)
             if rand == 0:  # rectangle
