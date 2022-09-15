@@ -12,9 +12,9 @@ else:
 
 
 class Circle(Shape):
-    def __init__(self, radios: Union[int, float]):
+    def __init__(self, radios: Union[int, float], color: str = None):
         """ Initialize The Circle """
-        super().__init__()
+        super().__init__(color=color)
         self.radios = radios
         self.set_area(3.141592653589793 * (self.radios ** 2))
         self.set_perimeter(3.141592653589793 * 2 * self.radios)

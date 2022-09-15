@@ -12,9 +12,9 @@ else:
 
 
 class Rectangle(Shape):
-    def __init__(self, width: Union[int, float], length: Union[int, float]):
+    def __init__(self, width: Union[int, float], length: Union[int, float], color: str = None):
         """ Initialize The Rectangle """
-        super().__init__()
+        super().__init__(color=color)
         self.width = width
         self.length = length
         self.set_area(self.width * self.length)

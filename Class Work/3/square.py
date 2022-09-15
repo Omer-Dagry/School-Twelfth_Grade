@@ -15,9 +15,9 @@ else:
 
 
 class Square(Shape):
-    def __init__(self, rib_length: Union[int, float]):
+    def __init__(self, rib_length: Union[int, float], color: str = None):
         """ Initialize The Square """
-        super().__init__()
+        super().__init__(color=color)
         self.rib_length = rib_length
         self.set_area(self.rib_length ** 2)
         self.set_perimeter(self.rib_length * 4)
