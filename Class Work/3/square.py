@@ -22,10 +22,12 @@ class Square(Rectangle):
         self.set_perimeter(self.rib_length * 4)
 
     def set_length(self, length: Union[int, float]):
+        """ Blocks From Changing Only The Square Rib Length """
         raise Exception("Can't Change A Square Length, You Can Change All The Ribs Length To Another Length.\n"
                         "To Change The Square Ribs Length Use set_rib_length")
 
     def set_width(self, width: Union[int, float]):
+        """ Blocks From Changing Only The Square Rib Width """
         raise Exception("Can't Change A Square Width, You Can Change All The Ribs Length To Another Length.\n"
                         "To Change The Square Ribs Length Use set_rib_length")
 
