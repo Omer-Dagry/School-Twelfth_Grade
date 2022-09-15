@@ -34,6 +34,10 @@ class Square(Rectangle):
     def set_rib_length(self, rib_length: Union[int, float]):
         """ Set The Square Rib Length """
         self.rib_length = rib_length
+        # need to use super because I override set_width and set_length,
+        # so it won't be possible to change only the width or only the length
+        super().set_width(rib_length)
+        super().set_length(rib_length)
         self.set_area(self.rib_length ** 2)
         self.set_perimeter(self.rib_length * 4)
 
