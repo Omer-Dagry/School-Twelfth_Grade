@@ -38,7 +38,8 @@ class Shape:
         """ Get The Perimeter Of The Shape """
         return self.perimeter
 
-    def solve_quadratic_equation(self, a: Union[int, float], b: Union[int, float], c: Union[int, float]) -> List[float]:
+    @staticmethod
+    def solve_quadratic_equation(a: Union[int, float], b: Union[int, float], c: Union[int, float]) -> List[float]:
         """ Solves A Quadratic Equation And Returns A List With The Solution/s """
         options = []
         d = b ** 2 - 4 * a * c  # discriminant
