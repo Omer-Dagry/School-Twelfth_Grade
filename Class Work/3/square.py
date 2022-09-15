@@ -5,12 +5,10 @@ Date: 14/09/2022 (day/month/year)
 """
 import os
 from typing import *
-if "rectangle.py" and "shape.py" in os.listdir():
+if "rectangle.py" in os.listdir():
     from rectangle import Rectangle
 else:
-    raise AssertionError("Missing Files: " + ", ".join([missing_file for missing_file in
-                                                        ["rectangle.py", "shape.py"]
-                                                        if missing_file not in os.listdir()]))
+    raise AssertionError("Missing File: rectangle.py")
 
 
 class Square(Rectangle):
