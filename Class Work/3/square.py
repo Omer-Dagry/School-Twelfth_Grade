@@ -7,20 +7,27 @@ import os
 from typing import *
 if "rectangle.py" and "shape.py" in os.listdir():
     from rectangle import Rectangle
-    from shape import Shape
 else:
     raise AssertionError("Missing Files: " + ", ".join([missing_file for missing_file in
                                                         ["rectangle.py", "shape.py"]
                                                         if missing_file not in os.listdir()]))
 
 
-class Square(Shape):
+class Square(Rectangle):
     def __init__(self, rib_length: Union[int, float], color: str = None):
         """ Initialize The Square """
-        super().__init__(color=color)
+        super().__init__(color=color, width=rib_length, length=rib_length)
         self.rib_length = rib_length
         self.set_area(self.rib_length ** 2)
         self.set_perimeter(self.rib_length * 4)
+
+    def set_length(self, length: Union[int, float]):
+        raise Exception("Can't Change A Square Length, You Can Change All The Ribs Length To Another Length.\n"
+                        "To Change The Square Ribs Length Use set_rib_length")
+
+    def set_width(self, width: Union[int, float]):
+        raise Exception("Can't Change A Square Width, You Can Change All The Ribs Length To Another Length.\n"
+                        "To Change The Square Ribs Length Use set_rib_length")
 
     def set_rib_length(self, rib_length: Union[int, float]):
         """ Set The Square Rib Length """
