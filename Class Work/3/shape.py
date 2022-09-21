@@ -14,15 +14,15 @@ class Shape:
         self.area = area
         self.perimeter = perimeter
 
-    def set_color(self, color):
+    def set_color(self, color: str):
         """ Set The Color Of The Shape """
         self.color = color
 
-    def set_area(self, area):
+    def set_area(self, area: Union[int, float]):
         """ Set The Area Of The Shape """
         self.area = area
 
-    def set_perimeter(self, perimeter):
+    def set_perimeter(self, perimeter: Union[int, float]):
         """ Set The Perimeter Of The Shape """
         self.perimeter = perimeter
 
