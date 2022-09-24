@@ -22,6 +22,7 @@ while answer != expected:
 #         try:
 #             if base64.b64encode(chr(value).encode()).decode().strip('\n') == key:
 #                 l_dict[key] = chr(value)
+#                 break
 #         except UnicodeError:
 #             pass
 #
