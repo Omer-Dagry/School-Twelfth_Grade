@@ -3,20 +3,22 @@ import itertools
 import socket
 import multiprocessing
 import queue
+import string
 
 
 IP = "127.0.0.1"
 PORT = 8820
 PACKET_LEN = 32
-ABC_LOW = "abcdefghigklmnopqrstuvwxyz"
+ABC_LOW = "abcdefghijklmnopqrstuvwxyz"
 ABC_HIGH = ABC_LOW.upper()
-NUMBERS = "1234567890"
-SIGNS = "!?:|\\/.,<>;'@#$%^&*(){}[]~`" + '"'
+NUMBERS = "0123456789"
+SIGNS = "!#$%&'()*+,-./:;<=>?@[\\]^_`{|}~ " + '"'
+ALL = string.printable
 
 
 def brute_force_decrypt_md5(md5_hash, repeat, multiprocessing_queue):
     message = None
-    for option in itertools.product(ABC_LOW + ABC_HIGH + NUMBERS + SIGNS, repeat=repeat):
+    for option in itertools.product(ALL, repeat=repeat):
         if hashlib.md5("".join(option).encode('utf-8')).hexdigest() == md5_hash:
             message = "".join(option)
             break
