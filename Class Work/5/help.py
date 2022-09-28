@@ -3,48 +3,37 @@ import itertools
 import socket
 import multiprocessing
 import queue
-
+import time
 
 IP = "127.0.0.1"
 PORT = 8820
 PACKET_LEN = 32
-ABC_LOW = "abcdefghigklmnopqrstuvwxyz"
-ABC_HIGH = ABC_LOW.upper()
+ABC = "abcdefghigklmnopqrstuvwxyz"
 NUMBERS = "1234567890"
 SIGNS = "!?:|\\/.,<>;'@#$%^&*(){}[]~`" + '"'
 
 
-def brute_force_decrypt_md5(md5_hash, repeat, multiprocessing_queue):
-    message = None
-    for option in itertools.product(ABC_LOW + ABC_HIGH + NUMBERS + SIGNS, repeat=repeat):
-        if hashlib.md5("".join(option).encode('utf-8')).hexdigest() == md5_hash:
-            message = "".join(option)
-            break
-    if message is not None:
-        multiprocessing_queue.put(message)
+def brute_force_decrypt_md5(md5_hash, repeat, queue_):
+    if repeat == 0:
+        time.sleep(10)
+        queue_.put("sadfasdf")
 
 
 def main():
-    # open socket to server
-    sock = socket.socket()
-    sock.connect((IP, PORT))
-    # get my range
-    my_range = sock.recv(PACKET_LEN).decode()
-    # get md5 hash to brute force
-    md5_hash = sock.recv(PACKET_LEN).decode().lower()
+    # sock = socket.socket()
+    # sock.connect((IP, PORT))
+    # my_range = sock.recv(PACKET_LEN).decode()
+    # md5_hash = sock.recv(PACKET_LEN).decode().lower()
     processes = []
-    # communication
     multiprocessing_queue = multiprocessing.Queue()
-    # open number of cores in the PC processes
     for i in range(multiprocessing.cpu_count()):
         repeat = None
         p = multiprocessing.Process(target=brute_force_decrypt_md5,
-                                    args=(md5_hash, repeat, multiprocessing_queue,),
+                                    args=("", i, multiprocessing_queue,),
                                     daemon=True)
         p.start()
         processes.append(p)
-    # wait for processes to return the md5 message
-    # or until all processes finish
+    print(len(processes))
     decrypted_md5_hash = None
     while processes and decrypted_md5_hash is None:
         for p in processes:
