@@ -1,5 +1,4 @@
 import hashlib
-import itertools
 import socket
 import multiprocessing
 import queue
@@ -10,18 +9,8 @@ IP = "127.0.0.1"
 PORT = 8820
 PACKET_LEN = 32
 NUMBERS = "0123456789"
-CPU_COUNT = multiprocessing.cpu_count() - 1
+CPU_COUNT = multiprocessing.cpu_count()
 LEN_OF_MD5_HASHED_DATA = 10
-
-
-# def brute_force_decrypt_md5(md5_hash, repeat, multiprocessing_queue):
-#     message = None
-#     for option in itertools.product(NUMBERS, repeat=repeat):
-#         if hashlib.md5("".join(option).encode('utf-8')).hexdigest() == md5_hash:
-#             message = "".join(option)
-#             break
-#     if message is not None:
-#         multiprocessing_queue.put(message)
 
 
 def brute_force_decrypt_md5(md5_hash: str, base_string_length: int, multiprocessing_queue: queue.Queue,
@@ -58,24 +47,6 @@ def brute_force_decrypt_md5(md5_hash: str, base_string_length: int, multiprocess
 
 # EC9C0F7EDCC18A98B1F31853B1813301
 # 3735928559
-
-
-# start_from = "0000000000"
-# end_at = "9999999999"
-#
-# total = int(end_at) - int(start_from)
-# print((total / CPU_COUNT) % 1 > 0)
-# range_ = int(start_from)
-# for i in range(CPU_COUNT):
-#     if i == CPU_COUNT - 1:
-#         print(range_, int(end_at) + 1)
-#     else:
-#         print(range_, range_ + (total // CPU_COUNT))
-#         range_ += (total // CPU_COUNT)
-# exit()
-# # brute_force_decrypt_md5("EC9C0F7EDCC18A98B1F31853B1813301".lower(), 10, queue.Queue(), "3000015235", "3001015235")
-
-
 def main():
     # # open socket to server
     # sock = socket.socket()
