@@ -13,8 +13,24 @@ CPU_COUNT = multiprocessing.cpu_count()
 LEN_OF_MD5_HASHED_DATA = 10
 
 
+def recv_range_and_hash_from_server(sock: socket.socket) -> tuple[int, int, str]:
+    """ Receives The Range And MD5 hash From The Server """
+    # get my range
+    my_range = sock.recv(20).decode()  # start_from (10 digits) & end_at (10 digits)
+    start_from = int(my_range[:10])
+    end_at = int(my_range[10:])
+    md5_hash = sock.recv(32).decode().lower()  # the md5 hash (32 digit)
+    return start_from, end_at, md5_hash
+
+
 def brute_force_decrypt_md5(md5_hash: str, base_string_length: int, multiprocessing_queue: queue.Queue,
                             start_from: str, end_at: str, current_string: str = "") -> Union[str, None]:
+    """
+    The Brute Force Function
+    Recursive Function, Runs From start_from To end_at including both.
+    Sends A Signal If The Result Is Found
+    Sends A Signal If Finished Range And Didn't Found Result
+    """
     global NUMBERS
     # start from
     numbers = NUMBERS[NUMBERS.index(start_from[0]):]
@@ -45,27 +61,37 @@ def brute_force_decrypt_md5(md5_hash: str, base_string_length: int, multiprocess
         return None
 
 
-# EC9C0F7EDCC18A98B1F31853B1813301
-# 3735928559
+def close_all_processes(processes):
+    """ Kills All The Processes That Were Created """
+    for p_ in processes:
+        if p_ is not multiprocessing.current_process():
+            p_.kill()
+    print("killed all processes")
+
+
 def main():
-    # # open socket to server
-    # sock = socket.socket()
-    # sock.connect((IP, PORT))
-    # # get my range
-    # my_range = sock.recv(20).decode()  # start from (10 digits) & end at (10 digits)
-    # start_from = int(my_range[:10])
-    # end_at = int(my_range[10:])
-    # total = end_at - start_from
-    # # get md5 hash to brute force
-    # md5_hash = sock.recv(32).decode().lower()  # the md5 hash (32 digit)
-    start_from = 0
-    end_at = 9999999999
+    # open socket to server
+    sock = socket.socket()
+    try:
+        sock.connect((IP, PORT))
+    except ConnectionRefusedError:
+        print("Can't Reach The Server.")
+        exit()
+    # recv data
+    start_from, end_at, md5_hash = recv_range_and_hash_from_server(sock)
+    print("Server Sent: "
+          "Start From:", str(start_from).rjust(10, "0"),
+          "| End At:", str(end_at).rjust(10, "0"),
+          "| MD5 Hash To Brute Force:", md5_hash)
+    # if not start_from < 3735928559 < end_at:
+    #     sock.send("not found.".encode())
+    #     main()
     total = end_at - start_from
-    md5_hash = "EC9C0F7EDCC18A98B1F31853B1813301".lower()
     processes = []
-    # communication
+    # communication with processes
     multiprocessing_queue = multiprocessing.Queue()
-    # open number of cores in the PC processes
+    # open processes (the number of processes is the number of cores)
+    # each process gets a portion of the range that the server has sent
     for i in range(CPU_COUNT):
         if i == CPU_COUNT - 1:
             p = multiprocessing.Process(target=brute_force_decrypt_md5,
@@ -75,7 +101,7 @@ def main():
                                         daemon=True)
             p.start()
             processes.append(p)
-            print("Thread %d Range:" % (i + 1),
+            print("Process %d Range:" % (i + 1),
                   str(start_from).rjust(10, "0"), "-",
                   str(int(end_at)).rjust(10, "0"))
         else:
@@ -86,32 +112,56 @@ def main():
                                         daemon=True)
             p.start()
             processes.append(p)
-            print("Thread %d Range:" % (i + 1),
+            print("Process %d Range:" % (i + 1),
                   str(start_from).rjust(10, "0"), "-",
                   str(start_from + (total // CPU_COUNT)).rjust(10, "0"))
             start_from += (total // CPU_COUNT)
     # wait for processes to return the md5 message
     # or until all processes finish
+    decrypted_md5_hash: Union[None, str]
     decrypted_md5_hash = None
+    sock.settimeout(2)
+    res = b""
     while processes and decrypted_md5_hash is None:
         for p in processes:
+            # check if server sent to stop
+            try:
+                res = sock.recv(4)
+            except socket.error:
+                pass
+            if res == b"stop":
+                close_all_processes(processes)
+                sock.close()
+                exit()
+            # check if there is a process that finished
             if not p.is_alive() and decrypted_md5_hash is None:
                 try:
+                    # check if the process sent the result or sent not found msg
                     decrypted_md5_hash = multiprocessing_queue.get(timeout=5)
                     if decrypted_md5_hash is not None and "not found" in decrypted_md5_hash:
                         print("Process Finished And Returned: Not Found.")
                         decrypted_md5_hash = None
-                    print("Process Finished And Found The Encrypted Data:", decrypted_md5_hash)
-                    # got result close all other processes
-                    for p_ in processes:
-                        if p_ is not multiprocessing.current_process():
-                            p_.kill()
-                    print("killed all processes")
+                    else:
+                        print("\n\n" + "-" * 64)
+                        print("Process Finished And Found The Encrypted Data:", decrypted_md5_hash)
+                        print("-" * 64 + "\n\n")
+                        # got result close all other processes
+                        close_all_processes(processes)
                 except queue.Empty:
-                    print("empty")
+                    pass
                 processes.remove(p)
+    # sent result to server if found
+    # else tell server that the range doesn't contain the result and
+    # close connection to server and start again (a new range will be given)
     if decrypted_md5_hash is not None:
-        print(decrypted_md5_hash)
+        sock.send(decrypted_md5_hash.encode())
+        sock.close()
+        print("MD5 Hash Result Sent To Server.")
+        exit()
+    else:
+        sock.send("not found.".encode())
+        sock.close()
+        main()
 
 
 if __name__ == '__main__':
