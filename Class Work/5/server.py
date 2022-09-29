@@ -69,6 +69,7 @@ def wait_for_result_from_client(client_socket: socket.socket):
                 pass
             print("Sent Client stop, md5 hash result found.")
             answer = "not found."
+            break
         lock.release()
         try:
             try:
