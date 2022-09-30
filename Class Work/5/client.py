@@ -8,7 +8,6 @@ from typing import *
 
 IP = "127.0.0.1"
 PORT = 8820
-PACKET_LEN = 32
 NUMBERS = "0123456789"
 CPU_COUNT = multiprocessing.cpu_count()
 LEN_OF_MD5_HASHED_DATA: int = 10
