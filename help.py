@@ -10,6 +10,10 @@ SIGNS = "!?:|\\/.,<>;'@#$%^&*(){}[]~`" + '"'
 # 3735928559
 
 
+def check(asdfasdf):
+    pass
+
+
 def hello(repeat):
     pass
 
