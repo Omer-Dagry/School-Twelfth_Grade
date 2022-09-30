@@ -11,15 +11,7 @@ SIGNS = "!?:|\\/.,<>;'@#$%^&*(){}[]~`" + '"'
 
 
 def hello(repeat):
-    md5_hash = "EC9C0F7EDCC18A98B1F31853B1813301".lower()
-    message = ""
-    print(datetime.datetime.now())
-    for option in itertools.product(NUMBERS, repeat=repeat):
-        if hashlib.md5("".join(option).encode('utf-8')).hexdigest() == md5_hash:
-            message = "".join(option)
-            break
-    print(datetime.datetime.now())
-    print(message)
+    pass
 
 
 def main():
