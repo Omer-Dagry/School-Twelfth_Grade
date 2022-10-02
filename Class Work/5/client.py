@@ -12,6 +12,7 @@ from typing import *
 LOCAL_SERVER_IP = "0.0.0.0"
 LOCAL_SERVER_PORT = 8821
 IP = "127.0.0.1"
+# IP = "10.100.102.10"
 PORT = 8820
 NUMBERS = "0123456789"
 CPU_COUNT = multiprocessing.cpu_count()
@@ -38,6 +39,9 @@ def recv_full(sock: socket.socket, msg_len: int) -> str:
                 break
         if res is not None:
             data += res
+        elif res == "no work":
+            print("Server Has No Work")
+            exit()
         count += 1
         time.sleep(1)
     sock.settimeout(None)
@@ -138,7 +142,7 @@ def local_server_count_number_of_options(local_server_sock: socket.socket,
         for client_socket in clients:
             res = None
             try:
-                res = client_socket.recv(1).decode()
+                res = client_socket.recv(1024).decode()
             except (ConnectionAbortedError, ConnectionError, ConnectionResetError, socket.error) as err:
                 if not isinstance(err, socket.error):
                     try:
@@ -146,16 +150,26 @@ def local_server_count_number_of_options(local_server_sock: socket.socket,
                     except socket.error:
                         pass
                     clients.remove(client_socket)
-            if res == "1":
-                threading_lock.acquire()
-                number_of_checked_options += 1
-                threading_lock.release()
-            elif res == "" or res == "2":
+                    continue
+            if res == "":
                 try:
                     client_socket.close()
                 except socket.error:
                     pass
                 clients.remove(client_socket)
+                continue
+            how_many_1 = res.count("1")
+            if how_many_1 > 0:
+                threading_lock.acquire()
+                number_of_checked_options += how_many_1
+                threading_lock.release()
+            if "2" in res:
+                try:
+                    client_socket.close()
+                except socket.error:
+                    pass
+                clients.remove(client_socket)
+                continue
     local_server_sock.close()
 
 
@@ -177,6 +191,9 @@ def main():
           "| End At:", str(end_at).rjust(10, "0"),
           "| MD5 Hash To Brute Force:", md5_hash)
     # ------------------ just for testing, skip until result in range ------------------
+    # time.sleep(5)
+    # sock.send("3735928559".rjust(32, " ").encode())
+    # exit()
     # if not start_from < 3735928559 < end_at:
     #     msg = "not found.".rjust(32, " ").encode()
     #     sent_amount = sock.send(msg)
@@ -265,15 +282,16 @@ def main():
         if not (processes and decrypted_md5_hash is None):
             time.sleep(2)
         # send the server the amount of options that were checked since the last time we sent
-        if (datetime.datetime.now() - last_check_in).seconds >= 5:
+        if (datetime.datetime.now() - last_check_in).seconds >= 8:
             try:
                 threading_lock.acquire()
-                msg = ("checked '%d' more" % number_of_checked_options).rjust(32, " ").encode()
+                num = number_of_checked_options
+                number_of_checked_options = 0
+                threading_lock.release()
+                msg = ("checked '%d' more" % num).rjust(32, " ").encode()
                 sent_amount = sock.send(msg)
                 while sent_amount != 32:
                     sent_amount += sock.send(msg[sent_amount:])
-                number_of_checked_options = 0
-                threading_lock.release()
                 last_check_in = datetime.datetime.now()
             except (ConnectionAbortedError, ConnectionError, ConnectionResetError):
                 print("Lost Connection To Server. Exiting.")
@@ -304,7 +322,7 @@ def main():
                         decrypted_md5_hash = None
                     elif decrypted_md5_hash is not None:
                         print("\n\n" + "-" * 64)
-                        print("Process Finished And Found The Encrypted Data:", decrypted_md5_hash)
+                        print("Process Finished And Found The Hashed Data:", decrypted_md5_hash)
                         print("-" * 64 + "\n")
                         # got result close all other processes
                         close_all_processes_and_sockets(processes, processes_sockets)
@@ -314,6 +332,7 @@ def main():
                 except queue.Empty:
                     pass
                 processes.remove(p)
+        time.sleep(2)
     # sent result to server if found
     # else tell server that the range doesn't contain the result and
     # close connection to server and start again (a new range will be given)
