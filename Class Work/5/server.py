@@ -48,7 +48,7 @@ def start_server() -> socket.socket:
     return server_socket
 
 
-def accept_client(server_socket: socket.socket) -> Union[(socket.socket, (str, str)), (None, None)]:
+def accept_client(server_socket: socket.socket) -> Union[tuple[socket.socket, tuple[str, str]], tuple[None, None]]:
     """ Try To Accept New Client And Add To Clients List """
     global clients_sockets
     server_socket.settimeout(2)
