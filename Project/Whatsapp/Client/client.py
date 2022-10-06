@@ -28,8 +28,12 @@ len_encrypted_data.rjust(120, " ") + aes_encryption(msg_type.rjust(32, " ") + se
 import base64
 import hashlib
 import socket
+import sys
 import threading
 
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QApplication, QMainWindow
 from Crypto import Random
 from Crypto.Cipher import AES
 from typing import *
@@ -39,8 +43,15 @@ from typing import *
 KEY = "w h a t s a p p"
 SERVER_PORT = 8820
 SERVER_IP = "127.0.0.1"
+ALLOWED_IN_USERNAME = "abcdefghijklmnopqrstuvwxyz" + "abcdefghijklmnopqrstuvwxyz".upper() + \
+                      " " + "_-" + "0123456789"
+NOW_ALLOWED_IN_PASSWORD = ["012", "123", "234", "345", "456", "567", "678", "789",
+                           "210", "321", "432", "543", "654", "765", "876", "987",
+                           "password"]
 
 # Globals
+msg_row_height: int = 40
+status_row_height: int = 30
 username: Union[str, None] = None
 password: Union[str, None] = None
 
@@ -93,6 +104,155 @@ class AESCipher:
             return "".join([chr(int(char)) for char in list_data_ascii if char != ""]), None
 
 
+class MainGUI:
+    def __init__(self, sock: socket.socket):
+        # socket to server, for regular communication
+        self.sock = sock
+        # constants
+        self.bg_color: str = "white"
+        self.bg_color_chats: str = "#e9ebf0"
+        self.bg_color_buttons: str = "#e9ebf0"
+        self.bg_color_input_boxes: str = "#d3d7de"
+        # create app and window
+        self.app = QApplication(sys.argv)
+        self.win = QMainWindow()
+        self.window_size: tuple[int, int] = (1000, 600)
+        self.window_location: tuple[int, int] = (
+            (self.app.screens()[0].size().width() // 2) - self.window_size[0] // 2,
+            (self.app.screens()[0].size().height() // 2) - self.window_size[1] // 2
+        )
+        # create worker (sync thread)
+        self.worker: Union[None, WorkerThread] = None
+        # list of chat buttons
+        self.chat_buttons: list[QtWidgets.QPushButton] = []
+        # create grid
+        self.widget = QtWidgets.QWidget(self.win)
+        self.grid = QtWidgets.QGridLayout(self.widget)
+        # basic buttons, chats list, chat, inputs
+        self.search_user_button = QtWidgets.QPushButton("Search", self.widget)
+        self.search_user_box = QtWidgets.QLineEdit("", self.widget)
+        self.new_chat_button = QtWidgets.QPushButton("New", self.widget)
+        self.current_chat_label = QtWidgets.QLabel("Home", self.widget)
+        self.chats_list = QtWidgets.QListWidget(self.widget)
+        self.chat = QtWidgets.QTextEdit(self.widget)
+        self.voice_msg_button = QtWidgets.QPushButton("Voice Msg", self.widget)
+        self.upload_file_button = QtWidgets.QPushButton("Upload File", self.widget)
+        self.emoji_button = QtWidgets.QPushButton("emoji", self.widget)
+        self.input_box = QtWidgets.QTextEdit("Type Something", self.widget)
+        self.send_button = QtWidgets.QPushButton("Send", self.widget)
+        # set GUI structure
+        self.set_gui_structure()
+
+    def set_gui_structure(self):
+        # set some settings for the GUI window
+        self.win.setWindowTitle("Whatsapp")
+        self.win.setMinimumSize(300, 300)
+        # set starting size and location
+        self.win.setGeometry(self.window_location[0], self.window_location[1],
+                             self.window_size[0], self.window_size[1])
+        # --------------- grid layout settings ---------------
+        self.widget.setStyleSheet("background-color:" + self.bg_color)
+        self.win.setCentralWidget(self.widget)
+        self.grid.setSpacing(0)
+        self.grid.setContentsMargins(0, 0, 0, 0)
+        # --------------- add widgets ---------------
+        # search user button
+        self.search_user_button.setStyleSheet("background-color:" + self.bg_color_buttons)
+        self.search_user_button.setMaximumWidth(100)
+        self.search_user_button.setFixedHeight(status_row_height)
+        self.grid.addWidget(self.search_user_button, 0, 0)
+        # search user box
+        self.search_user_box.setStyleSheet("background-color:" + self.bg_color_input_boxes)
+        self.search_user_box.setFixedSize(220, status_row_height)
+        self.grid.addWidget(self.search_user_box, 0, 1)
+        # new chat button
+        self.new_chat_button.setStyleSheet("background-color:" + self.bg_color_buttons)
+        self.new_chat_button.setMaximumWidth(100)
+        self.new_chat_button.setFixedHeight(status_row_height)
+        self.grid.addWidget(self.new_chat_button, 0, 2)
+        # current chat title
+        self.current_chat_label.setStyleSheet("background-color:" + self.bg_color_buttons)
+        self.current_chat_label.setAlignment(QtCore.Qt.AlignCenter)
+        self.current_chat_label.setFixedHeight(status_row_height)
+        self.grid.addWidget(self.current_chat_label, 0, 3, 1, 5)
+        # chats list
+        self.chats_list.setStyleSheet("background-color:" + self.bg_color_chats)
+        self.grid.addWidget(self.chats_list, 1, 0, 2, 3)
+        # chat
+        self.chat.setStyleSheet("background-color:" + self.bg_color_chats)
+        self.grid.addWidget(self.chat, 1, 3, 1, 5)
+        # record voice msg button
+        self.voice_msg_button.setStyleSheet("background-color:" + self.bg_color_buttons)
+        self.voice_msg_button.setFixedHeight(msg_row_height)
+        self.grid.addWidget(self.voice_msg_button, 2, 3)
+        # upload file button
+        self.upload_file_button.setStyleSheet("background-color:" + self.bg_color_buttons)
+        self.upload_file_button.setFixedHeight(msg_row_height)
+        self.grid.addWidget(self.upload_file_button, 2, 4)
+        # emoji button
+        self.emoji_button.setStyleSheet("background-color:" + self.bg_color_buttons)
+        self.emoji_button.setFixedHeight(msg_row_height)
+        self.grid.addWidget(self.emoji_button, 2, 5)
+        # input box
+        self.input_box.setStyleSheet("background-color:" + self.bg_color_input_boxes)
+        self.input_box.setFixedHeight(msg_row_height)
+        self.grid.addWidget(self.input_box, 2, 6)
+        # send button
+        self.send_button.setStyleSheet("background-color:" + self.bg_color_buttons)
+        self.send_button.setFixedHeight(msg_row_height)
+        self.send_button.setMaximumWidth(100)
+        self.grid.addWidget(self.send_button, 2, 7)
+
+    def launch(self, sync_sock: socket.socket):
+        # launch the app
+        self.sync_(sync_sock)
+        self.win.show()
+        sys.exit(self.app.exec_())
+
+    def sync_(self, sync_sock: socket.socket):
+        """ connects the worker thread to the update_gui function """
+        # sync socket, is a different socket from the regular socket,
+        # it will be used **only** to sync
+        self.worker = WorkerThread(sync_sock)
+        self.worker.start()
+        # self.worker.my_signal[()].connect(self.update)
+        self.worker.my_signal.connect(self.update_gui)
+
+    def update_gui(self, new_data: bool):
+        """ updates the GUI if there is new data """
+        # TODO finish the update GUI function
+        if new_data:
+            pass
+
+
+class WorkerThread(QtCore.QThread):
+    """ QThread class for syncing in the background """
+    def __init__(self, sync_sock: socket.socket):
+        super(WorkerThread, self).__init__()
+        self.my_signal = pyqtSignal(bool)
+        self.sync_sock = sync_sock
+
+    def run(self):
+        """ syncs with the server
+        if new data received emits True
+        else emits False
+        """
+        new_data = sync_with_server(self.sync_sock, first_time=True)
+        self.my_signal.emit(new_data)
+        while True:
+            new_data = sync_with_server(self.sync_sock)
+            self.my_signal.emit(new_data)
+
+
+def sync_with_server(sync_sock: socket.socket, first_time: bool = False) -> bool:
+    """
+    Syncs With Server
+    :return: if received new data - True, else - False
+    """
+    # TODO finish the sync function
+    pass
+
+
 def send_all(sock: socket.socket, msg: bytes):
     try:
         sent_amount = 0
@@ -138,13 +298,15 @@ def send_message(msg: str, send_to: str, sock: socket.socket) -> bool:
     return True
 
 
-def send_file(path_to_image: str, send_to: str, sock: socket.socket) -> bool:
+def send_file(path_to_image: str, send_to: str) -> bool:
     global password
     try:
         with open(path_to_image, "rb") as file:
             file_data = file.read()
     except FileNotFoundError:
         return False
+    file_upload_sock = socket.socket()
+    file_upload_sock.connect((SERVER_IP, SERVER_PORT))
     aes_cipher = AESCipher(password)
     """
     encrypt with the password of the user
@@ -153,12 +315,22 @@ def send_file(path_to_image: str, send_to: str, sock: socket.socket) -> bool:
     """
     enc_msg = aes_cipher.encrypt("file".rjust(32, " ") + send_to.rjust(32, " ") +
                                  str(len(file_data)).rjust(100, " "), file_data=file_data)
+    # just for testing testing
     # return enc_msg
-    send_all(sock, str(len(enc_msg)).rjust(120, " ").encode() + enc_msg)
+    #
+    # send_all(file_upload_sock, str(len(enc_msg)).rjust(120, " ").encode() + enc_msg)
+    upload_file_thread = threading.Thread(target=send_all,
+                                          args=(
+                                              file_upload_sock,
+                                              str(len(enc_msg)).rjust(120, " ").encode() + enc_msg
+                                          ),
+                                          daemon=True)
+    upload_file_thread.start()
     return True
 
 
 def login(sock: socket.socket) -> bool:
+    """ login using the global username and password """
     global username, password
     aes_cipher = AESCipher(password)
     enc_msg = aes_cipher.encrypt(password.rjust(32, " "))
@@ -176,11 +348,9 @@ def login(sock: socket.socket) -> bool:
     return False
 
 
-def signup(sock: socket.socket):
+def signup(sock: socket.socket) -> bool:
+    """ Signup using global username and password and then call the login function"""
     global username, password
-    # now_allowed_in_pass = ["012", "123", "234", "345", "456", "567", "678", "789",
-    #                        "210", "321", "432", "543", "654", "765", "876", "987",
-    #                        "password"]
     # TODO get username and password
     # TODO check username and password are ok
     username = "Omer Dagry"
@@ -201,9 +371,85 @@ def signup(sock: socket.socket):
         return login(sock)
     elif msg == "signup".rjust(32, " ") + "username taken".rjust(32, " "):
         print("This User Name Is Taken Please Chose Another One.")
+        ok = False
+        while not ok:
+            username = input("Please Enter Your Desired Username: ")
+            ok = True
+            for char in username:
+                if char not in ALLOWED_IN_USERNAME:
+                    print("Username Can Only Contain The Following Chars: " + ALLOWED_IN_USERNAME)
+                    ok = False
+                    break
         return signup(sock)
     else:
         return False
+
+
+def login_signup(sock: socket.socket) -> bool:
+    """ ask the user what to do, login or signup, after signup logged in automatically """
+    global username, password
+    login_or_signup = input("Login Or Signup [L/S] ? ").lower()
+    while login_or_signup not in ("l", "s"):
+        login_or_signup = input("Login Or Signup [L/S] ? ").lower()
+    if login_or_signup == 'l':
+        ok = False
+        while not ok:
+            username = input("Please Enter Your Username: ")
+            ok = True
+            for char in username:
+                if char not in ALLOWED_IN_USERNAME:
+                    print("Username Can Only Contain The Following Chars: " + ALLOWED_IN_USERNAME)
+                    ok = False
+                    break
+        password = input("Enter Your Password: ")
+        if not login(sock):
+            print("Incorrect Username Or Password")
+        else:
+            return True
+    else:
+        ok = False
+        while not ok:
+            username = input("Please Enter Your Desired Username: ")
+            ok = True
+            for char in username:
+                if char not in ALLOWED_IN_USERNAME:
+                    print("Username Can Only Contain The Following Chars: " + ALLOWED_IN_USERNAME)
+                    ok = False
+                    break
+        ok = False
+        while not ok:
+            upper = False
+            lower = False
+            number = False
+            password = input("Enter Your Desired Password: ")
+            ok = True
+            for not_allowed_sequence in NOW_ALLOWED_IN_PASSWORD:
+                if not_allowed_sequence in password:
+                    print("* Password Can Not Contain The Following Sequences: " +
+                          ",".join(NOW_ALLOWED_IN_PASSWORD))
+                    ok = False
+                    break
+            for char in password:
+                if char.isupper():
+                    upper = True
+                if char.islower():
+                    lower = True
+                if char.isnumeric():
+                    number = True
+            if username in password or username.lower() in password.lower():
+                print("* Password Can't Contain The Username.")
+            if len(password) < 8:
+                print("* Password Must Be 8 Chars Or Longer.")
+            if not upper:
+                print("* Password Must Contain 1 Or More UPPER Cased Letters.")
+            if not lower:
+                print("* Password Must Contain 1 Or More lower Cased Letters.")
+            if not number:
+                print("* Password Must Contain 1 Or More Numbers.")
+            if not upper or not lower or not number or len(password) < 8 or \
+                    username in password or username.lower() in password.lower():
+                ok = False
+        return signup(sock)
 
 
 def main():
@@ -212,7 +458,24 @@ def main():
     # aes = AESCipher("hello")
     # print(aes.decrypt(enc_msg))
     # print(aes.decrypt(aes.encrypt("hi")))
+    sock = socket.socket()
+    sync_sock = socket.socket()
+    try:
+        # sock.connect((SERVER_IP, SERVER_PORT))
+        ok = login_signup(sock)
+        if username is not None and password is not None and ok:
+            gui = MainGUI(sock)
+            sync_sock.connect((SERVER_IP, SERVER_PORT))
+            ok = login(sync_sock)
+            if ok:
+                gui.launch(sync_sock)
+    except (ConnectionError, socket.error):
+        sock.close()
+        sync_sock.close()
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt as err:
+        pass
