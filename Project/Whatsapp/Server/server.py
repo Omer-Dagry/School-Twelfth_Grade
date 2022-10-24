@@ -25,7 +25,6 @@ len_encrypted_data.rjust(120, " ") + aes_encryption(msg_type.rjust(32, " ") + se
                                                     str(len(msg)).rjust(100, " ") + msg)
 ###############################################
 """
-import base64
 import datetime
 import hashlib
 import os.path
@@ -33,9 +32,9 @@ import socket
 import threading
 import time
 
-from Crypto import Random
-from Crypto.Cipher import AES
 from typing import *
+from encryption import AESCipher
+from communication import receive_a_msg_by_the_protocol, send_a_msg_by_the_protocol
 
 
 # Constants
@@ -47,56 +46,6 @@ KEY = "31548#1#efghoi#0#&@!$!@##4$$$n829cl;'[[]sdfg.viu23caxwq52ndfko4-gg0lb"
 clients_sockets = []
 online_users = []
 lock = threading.Lock()
-
-
-class AESCipher:
-    def __init__(self, key):
-        self.bs = AES.block_size
-        self.key = hashlib.sha256(key.encode()).digest()
-
-    def encrypt(self, raw: str, file_data: bytes = None) -> bytes:
-        raw = self.to_ascii_values(raw)
-        if file_data is None:
-            raw = self.pad(raw.encode())
-        else:
-            file_data = b"file:" + file_data
-            raw = self.pad(raw.encode() + file_data)
-        iv = Random.new().read(AES.block_size)
-        cipher = AES.new(self.key, AES.MODE_CBC, iv)
-        return base64.b64encode(iv + cipher.encrypt(raw))
-
-    def decrypt(self, enc: bytes) -> tuple[str, Union[bytes, None]]:
-        if enc == b"":
-            return "", None
-        enc = base64.b64decode(enc)
-        iv = enc[:AES.block_size]
-        cipher = AES.new(self.key, AES.MODE_CBC, iv)
-        return self.to_ascii_chars(self.unpad(cipher.decrypt(enc[AES.block_size:])))
-
-    def pad(self, s: Union[str, bytes]) -> Union[str, bytes]:
-        if s is str:
-            return s + (self.bs - len(s) % self.bs) * chr(self.bs - len(s) % self.bs)
-        else:
-            return s + (self.bs - len(s) % self.bs) * chr(self.bs - len(s) % self.bs).encode()
-
-    @staticmethod
-    def unpad(s: Union[str, bytes]) -> Union[str, bytes]:
-        return s[:-ord(s[len(s)-1:])]
-
-    @staticmethod
-    def to_ascii_values(data: str) -> str:
-        data_ascii = [str(ord(char)) for char in data]
-        return ",".join(data_ascii)
-
-    @staticmethod
-    def to_ascii_chars(data_ascii: bytes) -> tuple[str, Union[bytes, None]]:
-        if b"file:" in data_ascii:
-            file_data = b"file:".join(data_ascii.split(b"file:")[1:])  # get file data
-            list_data_ascii = data_ascii.split(b"file:")[0].decode().split(",")  # get msg metadata
-            return "".join([chr(int(char)) for char in list_data_ascii if char != ""]), file_data[5:]
-        else:
-            list_data_ascii = data_ascii.decode().split(",")
-            return "".join([chr(int(char)) for char in list_data_ascii if char != ""]), None
 
 
 def start_server() -> socket.socket:
@@ -121,40 +70,6 @@ def accept_client(server_socket: socket.socket) -> Union[tuple[socket.socket, tu
     return client_socket, client_socket.getpeername()
 
 
-def send_all(sock: socket.socket, msg: bytes) -> bool:
-    try:
-        sent_amount = 0
-        while sent_amount != len(msg):
-            sent_amount += sock.send(msg[sent_amount:])
-        return True
-    except (ConnectionError, socket.error):
-        return False
-
-
-def receive_all(sock: socket.socket, data_len: int) -> bytes:
-    try:
-        data = b""
-        while len(data) != data_len:
-            res = sock.recv(data_len - len(data))
-            if res == b"":
-                raise ConnectionError
-            data += res
-        return data
-    except (ConnectionError, socket.error, ValueError):
-        return b""
-
-
-def receive_a_msg_by_the_protocol(sock: socket.socket) -> bytes:
-    len_of_msg = receive_all(sock, 120).decode()
-    while len_of_msg.startswith(" "):
-        len_of_msg = len_of_msg[1:]
-    return receive_all(sock, int(len_of_msg))
-
-
-def send_a_msg_by_the_protocol(sock: socket.socket, msg: bytes) -> bool:
-    return send_all(sock, str(len(msg)).rjust(120, " ").encode() + msg)
-
-
 def strip_msg(msg: str) -> str:
     while msg.startswith(" "):
         msg = msg[1:]
@@ -164,19 +79,76 @@ def strip_msg(msg: str) -> str:
 def send_msg(from_user: str, to_user: str, msg: str) -> bool:
     """
     encrypt with the password of the user
-    len_encrypted_data.rjust(120, " ") + aes_encryption(msg_type.rjust(32, " ") + send_to.rjust(32, " ") +
-                                                        str(len(msg)).rjust(100, " ") + msg)
+    len_encrypted_data.rjust(120, " ") + aes_encryption(msg_type.rjust(32, " ") + send_to.rjust(32, " ") + msg)
     """
-    today_date = datetime.datetime.now().strftime("%m/%d/%Y")
+    try:
+        today_date = datetime.datetime.now().strftime("%m.%d.%Y")
+        # chat files will be separated for each day
+        user_1_location = "Users_Data\\" + from_user + "\\" + "Chats\\" + to_user + "Messages\\" + today_date
+        if not os.path.isdir(user_1_location):
+            os.makedirs(user_1_location, exist_ok=True)
+        # TODO decide what are the separations characters
+        with open(user_1_location, "a") as user_1_file:
+            user_1_file.write(from_user + SENDER_SEPARATION + msg + SEEN_SEPARATION + MSG_SEPARATION)
+        user_2_location = "Users_Data\\" + to_user + "\\" + "Chats\\" + from_user + "Messages\\" + today_date
+        if not os.path.isdir(user_2_location):
+            os.makedirs(user_2_location, exist_ok=True)
+        # TODO decide what are the separations characters
+        with open(user_2_location, "a") as user_2_file:
+            user_2_file.write(from_user + SENDER_SEPARATION + msg + SEEN_SEPARATION + MSG_SEPARATION)
+        return True
+    except (Exception, OSError, BaseException, FileNotFoundError):
+        return False
 
 
-def send_file(from_user: str, to_user: str, file_data: bytes) -> bool:
+def send_file(from_user: str, to_user: str, file_data: bytes, file_name: str) -> bool:
     """
     encrypt with the password of the user
-    len_encrypted_data.rjust(120, " ") + aes_encryption(msg_type.rjust(32, " ") + send_to.rjust(32, " ") +
-                                                        str(len(msg)).rjust(100, " ") + msg)
+    len_encrypted_data.rjust(120, " ") +
+    aes_encryption("file.rjust(32, " ") + send_to.rjust(32, " ") + file_name, file_data=file_data)
     """
-    today_date = datetime.datetime.now().strftime("%m/%d/%Y")
+    try:
+        # user 1 chats files location
+        user_1_location = "Users_Data\\" + from_user + "\\" + "Chats\\" + to_user + "Files\\"
+        # check that user_1_location path exists
+        if not os.path.isdir(user_1_location):
+            os.makedirs(user_1_location, exist_ok=True)
+        # if there is already a file with this name, create new name
+        if os.path.isfile(user_1_location + file_name):
+            new_file_name = ".".join(file_name.split(".")[:-1]) + "_1" + file_name.split(".")[-1]
+            i = 2
+            while os.path.isfile(user_1_location + new_file_name):
+                new_file_name = ".".join(file_name.split(".")[:-1]) + f"_{i}" + file_name.split(".")[-1]
+                i += 1
+        else:
+            new_file_name = file_name
+        # save the file
+        with open(user_1_location + new_file_name, "wb") as file:
+            file.write(file_data)
+        #
+        # user 2 chats files location
+        user_2_location = "Users_Data\\" + to_user + "\\" + "Chats\\" + from_user + "Files\\"
+        if not os.path.isdir(user_2_location):
+            os.makedirs(user_2_location, exist_ok=True)
+        # if there is already a file with this name, create new name
+        if os.path.isfile(user_2_location + file_name):
+            new_file_name = ".".join(file_name.split(".")[:-1]) + "_1" + file_name.split(".")[-1]
+            i = 2
+            while os.path.isfile(user_2_location + new_file_name):
+                new_file_name = ".".join(file_name.split(".")[:-1]) + f"_{i}" + file_name.split(".")[-1]
+                i += 1
+        else:
+            new_file_name = file_name
+        # save the file
+        with open(user_2_location + new_file_name, "wb") as file:
+            file.write(file_data)
+        # TODO decide what are the separations characters
+        if send_msg(from_user, to_user, FILE_SEPARATION + "File:" + new_file_name):
+            return True
+        else:
+            return False
+    except (Exception, OSError, BaseException, FileNotFoundError):
+        return False
 
 
 def get_user_password(user: str) -> tuple[bool, str]:
@@ -228,7 +200,7 @@ def signup(username: str, password: str) -> bool:
         user_password_data = user_password_file.read().split("\n")
     users = [user_password_data[i] for i in range(0, len(user_password_data)) if i % 2 == 0]
     # if username doesn't exist
-    if username not in users:
+    if username not in users and len(username) <= 25:
         # add username and password to the user_password.txt
         with open("Data\\Server_Data\\user_password.txt", "a") as user_password_file:
             user_password_file.write(username + "\n" + password + "\n")
@@ -236,8 +208,18 @@ def signup(username: str, password: str) -> bool:
     return False
 
 
-def sync(username: str, first_sync: bool = False) -> bool:
+def sync(username: str, sync_all: bool = False) -> bool:
+    """
+    send sync request (len_of_entire_msg (120 digits) + aes_cipher("sync new" (32 digits)))
+
+
+    receive answer:
+    the entire msg is encrypted by user password (aes_cipher = AESCipher(password), aes_cipher.encrypt(msg))
+    len of entire msg (120 digits) +
+    len of file name (32 digits) + file_name + len of file data (32 digits) + file_data + ...  + more files
+    """
     pass
+    # TODO finish this func
 
 
 def handle_client(client_socket: socket.socket, client_ip_port: tuple[str, str]):
@@ -309,10 +291,24 @@ def handle_client(client_socket: socket.socket, client_ip_port: tuple[str, str])
         enc_msg = receive_a_msg_by_the_protocol(client_socket)
         while enc_msg != b"":
             enc_msg = receive_a_msg_by_the_protocol(client_socket)
-            msg = aes_cipher.decrypt(enc_msg)
+            msg, file = aes_cipher.decrypt(enc_msg)
             # TODO call the right func to handle the client's request
+            cmd = msg[:32]
+            if cmd == "sync new".rjust(32, " "):
+                sync(username)
+            elif cmd == "sync all".rjust(32, " "):
+                sync(username, sync_all=True)
+            # TODO add new sync type to send to the client 30 days worth of chats data
+            # the sync function by default will sync 30 days worth of chats data (not necessarily the lst 30 days)
+            # each request to get older chats data will send another 30 days worth of chats data
+            elif cmd == "msg".rjust(32, " "):
+                #        from      to          msg
+                send_msg(username, msg[32:64], msg[164:])
+            elif cmd == "file".rjust(32, " "):
+                #         from      to     file_data  file_name
+                send_file(username, msg[32:64], file, msg[64:])
     except (socket.error, TypeError, OSError, ConnectionError, Exception) as err:
-        if str(err) != "invalid literal for int() with base 10: ''":
+        if str(err) != "invalid literal for int() with base 10: ''":  # when client disconnects
             lock.acquire()
             print(f"[Server]: Error While Handling '%s:%s' ('{username}'):" % client_ip_port, str(err))
             lock.release()
