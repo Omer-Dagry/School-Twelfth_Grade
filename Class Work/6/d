@@ -1,0 +1,64 @@
+import multiprocessing
+import threading
+import time
+from typing import *
+
+
+# p = threading.Semaphore(10)
+# print(p._value)
+# edit_and_read_lock._semlock._get_value()  # 1 not acquired, 0 acquired
+# semaphore.get_value()  # number of left places
+class BaseDatabase:
+    def __init__(self, mode: int = 1, max_reads_together: int = 10):
+        if mode not in [0, 1]:
+            raise ValueError("the arg 'mode' can be 0 or 1, 0 for threads, 1 for processes.")
+        self.dic = {}
+        self.max_reads_together = max_reads_together
+        self.mode = mode
+        if mode == 1:
+            self.edit_and_read_lock = multiprocessing.Semaphore(1)
+            self.semaphore = multiprocessing.Semaphore(self.max_reads_together)
+        else:
+            self.edit_and_read_lock = threading.Semaphore(1)
+            self.semaphore = threading.Semaphore(self.max_reads_together)
+
+    def get_semaphore_value(self):
+        if self.mode == 1:
+            return self.semaphore.get_value()
+        else:
+            return self.semaphore._value
+
+    def get_edit_and_read_lock_value(self):
+        if self.mode == 1:
+            return self.edit_and_read_lock.get_value()
+        else:
+            return self.edit_and_read_lock._value
+
+    def set_value(self, key: Hashable, val: Any) -> bool:
+        try:
+            # pickup edit and read lock
+            self.edit_and_read_lock.acquire()
+            # wait until every one who was already reading is done
+            while self.get_semaphore_value() != self.max_reads_together:
+                time.sleep(0.1)  # prevent high cpu usage
+            # here there is no one reading and or writing, so we can set key: val
+            self.dic[key] = val
+            return True
+        except Exception:
+            return False
+
+    def get_value(self, key: Hashable) -> Any:
+        # wait until no one is editing the dictionary
+        while self.get_edit_and_read_lock_value() != 1:
+            time.sleep(0.1)  # prevent high cpu usage
+        self.semaphore.acquire()
+        if key in self.dic.keys():
+            val = self.dic[key]
+        else:
+            val = None
+        self.semaphore.release()
+        return val
+
+    def delete_value(self, key: Hashable) -> Any:
+        # remove key from dic or turn the value of key to None?
+        pass
