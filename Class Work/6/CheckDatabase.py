@@ -1,4 +1,5 @@
 import time
+import datetime
 import multiprocessing
 
 from SynchronizedDatabase import SynchronizedDatabase
@@ -48,23 +49,25 @@ class CheckDatabase:
 
     def check_multiprocessing_and_threading(self):
         # check threading
+        start = datetime.datetime.now()
         print("Starting Check For Threading")
         result = self._check(0, 30)
         print("-" * 64)
         if not result:
             print(" " * 28 + "FAILED")
         else:
-            print(" " * 28 + "PASSED")
-        print("\n" * 2)
+            print(" " * 28 + "PASSED\n")
+        print(f"Time Passed: {datetime.datetime.now() - start}")
         # check multiprocessing
+        start = datetime.datetime.now()
         print("Starting Check For Multiprocessing")
         result = self._check(1, 300)
         print("-" * 64)
         if not result:
             print(" " * 28 + "FAILED")
         else:
-            print(" " * 28 + "PASSED")
-        print("\n" * 2)
+            print(" " * 28 + "PASSED\n")
+        print(f"Time Passed: {datetime.datetime.now() - start}")
 
 
 def main():
