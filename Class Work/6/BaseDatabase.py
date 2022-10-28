@@ -48,3 +48,16 @@ class BaseDatabase:
             return self.database.pop(key)
         else:
             raise KeyError(f"{key} isn't a key in the database.")
+
+
+if __name__ == '__main__':
+    _ = BaseDatabase()
+    _["hello"] = 5  # check set_value
+    if _["hello"] != 5:  # check get_value
+        raise AssertionError
+    if _.pop("hello") != 5:  # check pop_value
+        raise AssertionError
+    _.set_database({"hi": 6, "bye": 5})  # check set_database
+    if _.get_database() != {"hi": 6, "bye": 5}:  # check get_database
+        raise AssertionError
+    del _

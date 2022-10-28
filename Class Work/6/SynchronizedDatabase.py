@@ -1,8 +1,11 @@
+import os
+import time
 import threading
 import multiprocessing
-import time
 
 from typing import *
+if "Database.py" not in os.listdir():
+    raise AssertionError("Database.py file is missing.")
 from Database import Database
 
 
@@ -10,7 +13,7 @@ class SynchronizedDatabase(Database):
     def __init__(self,
                  mode: int = 1,
                  number_of_processes: int = multiprocessing.cpu_count(),
-                 number_of_threads: int = 20,
+                 number_of_threads: int = multiprocessing.cpu_count(),
                  max_reads_together: int = 10):
         #
         # check that the mode is valid
@@ -97,25 +100,25 @@ class SynchronizedDatabase(Database):
     def work(self, my_name: str, range_end: int):
         """ Work for workers """
         # print(f"setting '{range_end}' values")
-        for i in range(range_end):  # set & get
+        for i in range(range_end):  # sets & gets
             key: str = f"{my_name} {i}"
             val: int = i
-            self[key] = val
-            if not self[key] == val:
+            self[key] = val  # set
+            if not self[key] == val:  # get
                 print(f"Error {key} {val}")
         # print(f"'{range_end}' values are set")
         # print(f"getting {range_end} values")
-        for i in range(range_end):  # get
+        for i in range(range_end):  # gets
             key: str = f"{my_name} {i}"
             val: int = i
-            if not self[key] == val:
+            if not self[key] == val:  # get
                 print(f"Error {key} {val}")
         # print(f"got '{range_end}' values")
         # print(f"popping {range_end} values")
-        for i in range(range_end // 2):  # pop
+        for i in range(range_end // 2):  # pops
             key: str = f"{my_name} {i}"
             val: int = i
-            if self.pop(key) != val:
+            if self.pop(key) != val:  # pop
                 print(f"Error {key} != {val}")
         # print(f"popped '{range_end}' values")
 
