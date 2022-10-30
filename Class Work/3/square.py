@@ -19,6 +19,14 @@ class Square(Rectangle):
         self.set_area(self.rib_length ** 2)
         self.set_perimeter(self.rib_length * 4)
 
+    def set_area(self, area: Union[int, float]):
+        """ Don't Allow To Only Change The Area """
+        return
+
+    def set_perimeter(self, perimeter: Union[int, float]):
+        """ Don't Allow To Only Change The Perimeter """
+        return
+
     def set_length(self, length: Union[int, float]):
         """ Blocks From Changing Only The Square Rib Length """
         raise Exception("Can't Change A Square Length, You Can Change All The Ribs Length To Another Length.\n"

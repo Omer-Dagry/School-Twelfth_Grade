@@ -20,6 +20,14 @@ class Rectangle(Shape):
         self.set_area(self.width * self.length)
         self.set_perimeter(self.width * 2 + self.length * 2)
 
+    def set_area(self, area: Union[int, float]):
+        """ Don't Allow To Only Change The Area """
+        return
+
+    def set_perimeter(self, perimeter: Union[int, float]):
+        """ Don't Allow To Only Change The Perimeter """
+        return
+
     def set_width(self, width: Union[int, float]):
         """ Set Rectangle Width """
         self.width = width

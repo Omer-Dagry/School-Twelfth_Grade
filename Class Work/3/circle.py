@@ -19,6 +19,14 @@ class Circle(Shape):
         self.set_area(3.141592653589793 * (self.radios ** 2))
         self.set_perimeter(3.141592653589793 * 2 * self.radios)
 
+    def set_area(self, area: Union[int, float]):
+        """ Don't Allow To Only Change The Area """
+        return
+
+    def set_perimeter(self, perimeter: Union[int, float]):
+        """ Don't Allow To Only Change The Perimeter """
+        return
+
     def set_radios(self, radios: Union[int, float]):
         """ Set New Radios For The Circle """
         self.radios = radios
