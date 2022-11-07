@@ -16,8 +16,8 @@ class Square(Rectangle):
         """ Initialize The Square """
         super().__init__(color=color, width=rib_length, length=rib_length)
         self.rib_length = rib_length
-        self.set_area(self.rib_length ** 2)
-        self.set_perimeter(self.rib_length * 4)
+        super().set_area(self.rib_length ** 2)
+        super().set_perimeter(self.rib_length * 4)
 
     def set_area(self, area: Union[int, float]):
         """ Don't Allow To Only Change The Area """
@@ -44,8 +44,8 @@ class Square(Rectangle):
         # so it won't be possible to change only the width or only the length
         super().set_width(rib_length)
         super().set_length(rib_length)
-        self.set_area(self.rib_length ** 2)
-        self.set_perimeter(self.rib_length * 4)
+        super().set_area(self.rib_length ** 2)
+        super().set_perimeter(self.rib_length * 4)
 
     def get_rib_length(self) -> Union[int, float]:
         """ Get The Square Rib Length """
@@ -86,3 +86,12 @@ class Square(Rectangle):
                 return Square(width)
         else:
             return None
+
+
+_ = Square(5)
+assert _.get_length() == 5
+assert _.get_width() == 5
+assert _.get_perimeter() == 20
+assert _.get_area() == 25
+assert _.get_rib_length() == 5
+del _
