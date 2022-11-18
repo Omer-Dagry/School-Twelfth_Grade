@@ -128,12 +128,5 @@ int main(int argc, char** argv) {
     if (md5_data != "") cout << "Hashed Data: " << md5_data << endl;
     else cout << "Result Not Found." << endl;
     //
-    try {
-        char msg[] = "2";
-        sock.send_(msg, 1);
-    }
-    catch (...) {
-
-    }
     sock.close();
 }
