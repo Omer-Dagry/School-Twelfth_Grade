@@ -1,0 +1,269 @@
+body {
+    background-color: rgb(10, 13, 15);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.box {
+    padding-top: 3vh;
+    padding-left: 8vh;
+    padding-right: 8vh;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 2px 4fr;
+}
+
+.left {
+    color: white;
+    background-color: #111B21;
+    height: 90vh;
+    /* display: flex;
+    flex-direction: column; */
+    display: grid;
+    grid-template-rows: 65px 1fr 11fr;
+}
+
+.profile-setting_box {
+    background-color: #202C33;
+}
+
+.profile-setting {
+    margin-left: 5px;
+    margin-top: 8px;
+    margin-bottom: 20px;
+}
+
+.profile-picture {
+    border: 0;
+    background-size: cover;
+    width: 50px;
+    height: 50px;
+    float: left;
+    border-radius: 100px;
+    margin-bottom: 6px;
+}
+
+.profile-picture:hover {
+    cursor: pointer;
+}
+
+.profile-picture:active {
+    opacity: 0.5;
+}
+
+.setting-button {
+    background-image: url("imgs/settings.png");
+    background-color: transparent;
+    border: 0;
+    background-blend-mode: multiply;
+    background-size: cover;
+    width: 40px;
+    height: 40px;
+    float: right;
+    translate: 2px 4px;
+}
+
+.setting-button:hover {
+    cursor: pointer;
+}
+
+.setting-button:active {
+    opacity: 0.5;
+}
+
+.search-bar-box {
+    margin-top: 15px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.search-bar {
+    margin-bottom: 10px;
+    width: 90%;
+    font-size: 20;
+    height: 20px;
+    border-radius: 8px;
+    background-color: #202C33;
+    border-color: transparent;
+    color: rgb(200, 200, 200);
+}
+
+.search_bar_chat_list_sep {
+    border-top: 1px solid rgb(33, 170, 33);
+    border-radius: 5px;
+    border-color: rgb(33, 170, 33);
+}
+
+.chats-list {
+    overflow-y: scroll;
+    scrollbar-color: black;
+}
+
+.chat {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.chat:hover {
+    cursor: pointer;
+}
+
+.chat:active {
+    opacity: 0.6;
+}
+
+.chat-picture {
+    border: 0;
+    background-size: cover;
+    width: 40px;
+    height: 40px;
+    float: left;
+    border-radius: 20px;
+    margin-left: 5px;
+    margin-right: 15px;
+}
+
+.chat-name {
+    text-align: left;
+    font: bold;
+    font-size: large;
+    margin-bottom: 5px;
+}
+
+.chat-last-message {
+    text-align: left;
+    display: inline;
+    font-size: medium;
+}
+
+.chat-last-message-time {
+    display: inline;
+    float: right;
+    margin-right: 7px;
+    font-size: small;
+    margin-top: 4px;
+}
+
+.rounded-chat-sep {
+    border-top: 1px solid black;
+    border-radius: 5px;
+    border-color: black;
+}
+
+.left_right_sep {
+    border-left: 2px solid black;
+    height: 90vh;
+}
+
+.right {
+    color: white;
+    background-color: rgb(17, 27, 33);
+    height: 90vh;
+    display: grid;
+    grid-template-rows: 65px 12fr;
+}
+
+.chat_status_box {
+    background-color: #202C33;
+}
+
+.chat_status_bar {
+    margin-top: 12px;
+    margin-left: 30px;
+}
+
+.chat_status_bar_picture {
+    background-image: url("images/profile1.jpg");
+    border: 0;
+    background-size: cover;
+    width: 40px;
+    height: 40px;
+    float: left;
+    border-radius: 20px;
+    margin-left: 5px;
+    margin-right: 15px;
+}
+
+.chat_name_status_bar {
+    font-size: large;
+}
+
+.chat_status_bar_last_seen {
+    font-size: smaller;
+}
+
+.right-messages {
+    margin-top: 10px;
+    overflow-y: scroll;
+}
+
+.my_msg_row {
+    clear: both;
+    margin-left: 50px;
+    max-width: 50vh;
+}
+
+.my_msg_box {
+    background-color: rgb(219, 219, 12);
+    width: fit-content;
+    height: fit-content;
+    margin-left: 12px;
+    border-radius: 300000px;
+}
+
+.msg_row {
+    float: right;
+    margin-right: 50px;
+    max-width: 50vh;
+}
+
+.msg_box {
+    background-color: rgb(202, 128, 141);
+    width: fit-content;
+    height: fit-content;
+    margin-right: 12px;
+    border-radius: 300000px;
+}
+
+.msg_text_and_time {
+    margin: 15px;
+    min-height: fit-content;
+    min-width: fit-content;
+}
+
+.msg_text {
+    color: black;
+    font-size: large;
+}
+
+.msg_time {
+    font-size: small;
+    color: black;
+}
+
+
+                    /* Scrollbar Style */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+    background: rgb(33, 170, 33);
+    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
+}
+
+::-webkit-scrollbar-thumb:window-inactive {
+    background: black;
+}

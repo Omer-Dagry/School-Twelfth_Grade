@@ -5,38 +5,35 @@ Mail: omerdagry@gmail.com
 Date: 06/01/2023 (dd/mm/yyyy)
 ###############################################
 """
-import os
-import ssl
-import time
-import socket
+import datetime
+import shutil
+import threading
+import smtplib
+import string
 import pickle
 import random
-import shutil
-import string
-import logging
-import smtplib
-import datetime
-import threading
+import socket
+import time
+import ssl
+import os
 
-from email.mime.text import MIMEText
-from SyncDB import SyncDatabase, FileDatabase
 from email.mime.multipart import MIMEMultipart
-from protocol_socket import EncryptedProtocolSocket
+from SyncDB import SyncDatabase, FileDatabase
+from protocol_socket import ProtocolSocket
+from email.mime.text import MIMEText
+from typing import *
 
+
+# Create All Needed Directories
+os.makedirs("Data\\Server_Data", exist_ok=True)
+os.makedirs("Data\\Users_Data", exist_ok=True)
 
 # Constants
-# logging
-LOG_DIR = 'log'
-LOG_LEVEL = logging.DEBUG
-LOG_FILE = LOG_DIR + "/ChatEase-Server.log"
-LOG_FORMAT = "%(levelname)s | %(asctime)s | %(processName)s | %(message)s"
-#
 CHAT_ID_CHARS = [letter for letter in string.ascii_uppercase + string.ascii_lowercase + string.digits]
 random.shuffle(CHAT_ID_CHARS)
+DEFAULT_ENCRYPTION_KEY = "31548#1#efghoi#0#&@!$!@##4$$$n829cl;'[[]sdfg.viu23caxwq52ndfko4-gg0lb"
 SERVER_EMAIL = "project.twelfth.grade@gmail.com"
-SERVER_EMAIL_APP_PASSWORD = "hbqbubnlppqxmupy"
-USERS_DATA = "Data\\Users_Data\\"
-SERVER_DATA = "Data\\Server_Data\\"
+SERVER_EMAIL_APP_PASSWORD = "suxrbxggouajnlts"
 IP = "127.0.0.1"
 PORT = 8820
 
@@ -47,40 +44,28 @@ online_users = []
 
 # Databases
 # user_password_database -> {"email - username": password, "another email - another username": password, ...}
-user_password_file_database = FileDatabase(f"{SERVER_DATA}user_password", ignore_existing=True)
+user_password_file_database = FileDatabase("Data\\Server_Data\\user_password", ignore_existing=True)
 # chat_id_users_database -> {chat_id: [email, another_email], another_chat_id: [email, another_email], ...}
-chat_id_users_file_database = FileDatabase(f"{SERVER_DATA}chat_id_users", ignore_existing=True)
-# user_online_status_database -> {email: ["Online", None], email: ["Offline" / last_seen - datetime.datetime]}
-user_online_status_file_database = FileDatabase(f"{SERVER_DATA}user_online_status", ignore_existing=True)
-#
+chat_id_users_file_database = FileDatabase("Data\\Server_Data\\chat_id_users", ignore_existing=True)
 user_password_database = SyncDatabase(user_password_file_database, False, max_reads_together=100)
 chat_id_users_database = SyncDatabase(chat_id_users_file_database, False, max_reads_together=100)
-user_online_status_database = SyncDatabase(user_online_status_file_database, False, max_reads_together=1000)
-
-# Create All Needed Directories
-os.makedirs(f"{SERVER_DATA}", exist_ok=True)
-os.makedirs(f"{USERS_DATA}", exist_ok=True)
-os.makedirs(LOG_DIR, exist_ok=True)
 
 
-def start_server() -> EncryptedProtocolSocket:
-    server_socket = EncryptedProtocolSocket()
+def start_server() -> ProtocolSocket:
+    server_socket = ProtocolSocket()
     try:
         server_socket.bind((IP, PORT))
         printing_lock.acquire()
         print("Server Is Up!!")
-        logging.info("Server Is Up!!")
         printing_lock.release()
         server_socket.listen()
     except OSError:
         print(f"The Port {PORT} Is Taken.")
-        logging.debug(f"The Port {PORT} Is Taken.")
         exit()
     return server_socket
 
 
-def accept_client(server_socket: EncryptedProtocolSocket) \
-        -> tuple[EncryptedProtocolSocket, tuple[str, int]] | tuple[None, None]:
+def accept_client(server_socket: ProtocolSocket) -> Union[tuple[ProtocolSocket, tuple[str, str]], tuple[None, None]]:
     global clients_sockets
     server_socket.settimeout(2)
     try:
@@ -89,7 +74,6 @@ def accept_client(server_socket: EncryptedProtocolSocket) \
         return None, None
     printing_lock.acquire()
     print("[Server]: New Connection From: '%s:%s'" % (client_addr[0], client_addr[1]))
-    logging.info("[Server]: New Connection From: '%s:%s'" % (client_addr[0], client_addr[1]))
     clients_sockets.append(client_socket)
     printing_lock.release()
     return client_socket, client_socket.getpeername()
@@ -115,11 +99,11 @@ def read_from_file(file_path: str, mode: str) -> str | bytes:
     return data
 
 
-def block(path: str) -> bool:
+def block_user_chats_list(email: str) -> bool:
     """ :return: True to signal the "lock" is acquired """
     """
-        create a folder "folder_name" to block 
-        another thread from touching a specific resource file of the user
+        create a folder called "not free" to block 
+        another thread from touching the chats file of the user
         because we are reading the file and then writing back
         and if someone does it the same time with us something will
         be lost, so blocking like this allows to block only for 
@@ -127,18 +111,16 @@ def block(path: str) -> bool:
     """
     while True:
         try:
-            os.makedirs(path, exist_ok=False)
+            os.makedirs(f"Data\\Users_Data\\{email}\\chats not free", exist_ok=False)
             break
         except OSError:
             time.sleep(0.0005)
     return True
 
 
-def unblock(path: str) -> bool:
+def unblock_user_chats_list(email: str) -> bool:
     """ :return: True to signal the "lock" isn't acquired """
-    if not os.path.isdir(path):
-        raise ValueError(f"The 'lock' is already unlocked. (path - '{path}')")
-    shutil.rmtree(path)
+    shutil.rmtree(f"Data\\Users_Data\\{email}\\chats not free")
     return False
 
 
@@ -146,15 +128,15 @@ def add_chat_id_to_user_chats(user_email: str, chat_id: str) -> bool:
     exists, username = get_username(user_email)
     if not exists:
         return False
-    os.makedirs(f"{USERS_DATA}{user_email}\\", exist_ok=True)
-    if not os.path.isfile(f"{USERS_DATA}{user_email}\\chats"):
-        write_to_file(f"{USERS_DATA}{user_email}\\chats", "wb", b"")
+    os.makedirs(f"Data\\Users_Data\\{user_email}\\", exist_ok=True)
+    if not os.path.isfile(f"Data\\Users_Data\\{user_email}\\chats"):
+        write_to_file(f"Data\\Users_Data\\{user_email}\\chats", "wb", b"")
     try:
-        chats_list = pickle.loads(read_from_file(f"{USERS_DATA}{user_email}\\chats", "rb"))
+        chats_list = pickle.loads(read_from_file(f"Data\\Users_Data\\{user_email}\\chats", "rb"))
     except EOFError:
         chats_list = []
     chats_list.extend(chat_id)
-    write_to_file(f"{USERS_DATA}{user_email}\\chats", "wb", pickle.dumps(chats_list))
+    write_to_file(f"Data\\Users_Data\\{user_email}\\chats", "wb", pickle.dumps(chats_list))
     return True
 
 
@@ -167,15 +149,40 @@ def is_user_in_chat(user_email: str, chat_id: str) -> bool:
     exists, username = get_username(user_email)
     if not exists:
         return False
-    if not os.path.isfile(f"{USERS_DATA}{user_email}\\chats"):
+    if not os.path.isfile(f"Data\\Users_Data\\{user_email}\\chats"):
         return False
     try:
-        chats_list = pickle.loads(read_from_file(f"{USERS_DATA}{user_email}\\chats", "rb"))
+        chats_list = pickle.loads(read_from_file(f"Data\\Users_Data\\{user_email}\\chats", "rb"))
     except EOFError:
         chats_list = []
     if chat_id not in chats_list:
         return False
     return True
+
+
+def block_user_new_data(email: str) -> bool:
+    """ :return: True to signal the "lock" is acquired """
+    """
+        create a folder called "not free" to block 
+        another thread from touching the new_data file of the user
+        because we are reading the file and then writing back
+        and if someone does it the same time with us something will
+        be lost, so blocking like this allows to block only for 
+        this specific user, which is what we need
+    """
+    while True:
+        try:
+            os.makedirs(f"Data\\Users_Data\\{email}\\new data not free", exist_ok=False)
+            break
+        except OSError:
+            time.sleep(0.0005)
+    return True
+
+
+def unblock_user_new_data(email: str) -> bool:
+    """ :return: True to signal the "lock" isn't acquired """
+    shutil.rmtree(f"Data\\Users_Data\\{email}\\new data not free")
+    return False
 
 
 def add_new_data_to(emails: list[str] | str, new_data_paths: list[str] | str):
@@ -191,71 +198,39 @@ def add_new_data_to(emails: list[str] | str, new_data_paths: list[str] | str):
         exists, username = get_username(email)
         if not exists:
             continue
-        block(f"{USERS_DATA}{email}\\new data not free")
+        block_user_new_data(email)
         try:
-            os.makedirs(f"{USERS_DATA}{email}\\", exist_ok=True)
-            if not os.path.isfile(f"{USERS_DATA}{email}\\new_data"):
-                write_to_file(f"{USERS_DATA}{email}\\new_data", "wb", b"")
+            os.makedirs(f"Data\\Users_Data\\{email}\\", exist_ok=True)
+            if not os.path.isfile(f"Data\\Users_Data\\{email}\\new_data"):
+                write_to_file(f"Data\\Users_Data\\{email}\\new_data", "wb", b"")
             try:
-                new_data_list = pickle.loads(read_from_file(f"{USERS_DATA}{email}\\new_data", "rb"))
+                new_data_list = pickle.loads(read_from_file(f"Data\\Users_Data\\{email}\\new_data", "rb"))
             except EOFError:
                 new_data_list = []
             new_data_list.extend(new_data_paths)
-            write_to_file(f"{USERS_DATA}{email}\\new_data", "wb", pickle.dumps(new_data_list))
+            write_to_file(f"Data\\Users_Data\\{email}\\new_data", "wb", pickle.dumps(new_data_list))
         finally:
-            unblock(f"{USERS_DATA}{email}\\new data not free")
+            unblock_user_new_data(email)
 
 
 def get_new_data_of(email: str) -> list[str]:
     exists, username = get_username(email)
     if not exists:
         pass
-    block(f"{USERS_DATA}{email}\\new data not free")
+    block_user_new_data(email)
     try:
-        os.makedirs(f"{USERS_DATA}{email}\\", exist_ok=True)
-        if not os.path.isfile(f"{USERS_DATA}{email}\\new_data"):
-            write_to_file(f"{USERS_DATA}{email}\\new_data", "wb", b"")
+        os.makedirs(f"Data\\Users_Data\\{email}\\", exist_ok=True)
+        if not os.path.isfile(f"Data\\Users_Data\\{email}\\new_data"):
+            write_to_file(f"Data\\Users_Data\\{email}\\new_data", "wb", b"")
         try:
-            new_data_list = pickle.loads(read_from_file(f"{USERS_DATA}{email}\\new_data", "rb"))
+            new_data_list = pickle.loads(read_from_file(f"Data\\Users_Data\\{email}\\new_data", "rb"))
         except EOFError:
             new_data_list = []
         # new data collected, now is []
-        write_to_file(f"{USERS_DATA}{email}\\new_data", "wb", b"")
+        write_to_file(f"Data\\Users_Data\\{email}\\new_data", "wb", b"")
         return new_data_list
     finally:
-        unblock(f"{USERS_DATA}{email}\\new data not free")
-
-
-def get_one_on_one_chats_list_of(email: str) -> list[str]:
-    exists, username = get_username(email)
-    if not exists:
-        pass
-    with open(f"{USERS_DATA}{email}\\one_on_one_chats", "r") as f:
-        data = f.read()
-    if data == "":
-        return []
-    return data.split("\n")[:-1]
-
-
-def known_to_each_other(emails: list[str]):
-    """
-    :param emails: the emails of the users that are known to each other
-    """
-    for email in emails:
-        block(f"{USERS_DATA}{email}\\known_users_block")
-        try:
-            try:
-                known_to_user = pickle.loads(read_from_file(f"{USERS_DATA}{email}\\known_users", "rb"))
-            except EOFError:
-                known_to_user = []
-            for email_2 in emails:
-                if email == email_2:
-                    continue
-                known_to_user.append(email_2)
-            known_to_user = list(set(known_to_user))
-            write_to_file(f"{USERS_DATA}{email}\\known_users", "wb", pickle.dumps(known_to_user))
-        finally:
-            unblock(f"{USERS_DATA}{email}\\known_users_block")
+        unblock_user_new_data(email)
 
 
 def create_new_chat(user_created: str, with_user: str) -> tuple[bool, str]:
@@ -267,43 +242,31 @@ def create_new_chat(user_created: str, with_user: str) -> tuple[bool, str]:
     # check that the 2 users exist
     exists, user_created_username = get_username(user_created)
     exists2, with_user_username = get_username(with_user)
-    if not exists:
+    if not exists or not exists2:
         return False, ""
-    if not exists2:
-        return False, "User Doesn't Exist."
-    user_created_one_on_one_chats = get_one_on_one_chats_list_of(user_created)
-    if with_user in user_created_one_on_one_chats:
-        return False, "Chat Already Exists."
     chat_id = "".join(random.choices(CHAT_ID_CHARS, k=20))
     while not chat_id_users_database.safe_set(chat_id, [user_created, with_user]):
         chat_id = "".join(random.choices(CHAT_ID_CHARS, k=20))
     try:
-        os.makedirs(f"{USERS_DATA}{chat_id}\\data\\chat", exist_ok=False)
-        os.makedirs(f"{USERS_DATA}{chat_id}\\data\\files", exist_ok=True)
+        os.makedirs(f"Data\\Users_Data\\{chat_id}\\data\\chat", exist_ok=False)
+        os.makedirs(f"Data\\Users_Data\\{chat_id}\\data\\files", exist_ok=True)
     # if OSError is raised, that means that there is already a chat with this chat id
     # and there shouldn't be according to the chat_id_users_database
     except OSError:
         return False, ""
     # chat metadata
-    write_to_file(f"{USERS_DATA}{chat_id}\\name", "w",
+    write_to_file(f"Data\\Users_Data\\{chat_id}\\name", "w",
                   f"{user_created} - {with_user_username}\n{with_user} - {user_created_username}")
-    write_to_file(f"{USERS_DATA}{chat_id}\\type", "w", "chat")
-    write_to_file(f"{USERS_DATA}{chat_id}\\users", "w", f"{user_created}\n{with_user}")
+    write_to_file(f"Data\\Users_Data\\{chat_id}\\type", "w", "chat")
+    write_to_file(f"Data\\Users_Data\\{chat_id}\\users", "w", f"{user_created}\n{with_user}")
     # add chat id to each user chats
     add_chat_id_to_user_chats(user_created, chat_id)
     add_chat_id_to_user_chats(with_user, chat_id)
-    # add with_user to user_created one_on_one_chats file
-    write_to_file(f"{USERS_DATA}{user_created}\\one_on_one_chats", "a", f"{with_user}\n")
-    # add user_created to with_user one_on_one_chats file
-    write_to_file(f"{USERS_DATA}{with_user}\\one_on_one_chats", "a", f"{user_created}\n")
-    #
-    known_to_each_other([with_user, user_created])
     return True, chat_id
 
 
 def create_new_group(user_created: str, users: list[str], group_name: str) -> tuple[bool, str]:
     users.append(user_created)
-    #
     for email in set(users):
         exists, username = get_username(email)
         if not exists:
@@ -312,19 +275,18 @@ def create_new_group(user_created: str, users: list[str], group_name: str) -> tu
     while not chat_id_users_database.safe_set(chat_id, users):
         chat_id = "".join(random.choices(CHAT_ID_CHARS, k=20))
     try:
-        os.makedirs(f"{USERS_DATA}{chat_id}\\data\\chat", exist_ok=False)
-        os.makedirs(f"{USERS_DATA}{chat_id}\\data\\files", exist_ok=True)
+        os.makedirs(f"Data\\Users_Data\\{chat_id}\\data\\chat", exist_ok=False)
+        os.makedirs(f"Data\\Users_Data\\{chat_id}\\data\\files", exist_ok=True)
     # if OSError is raised, that means that there is already a chat with this chat id
     # and there shouldn't be according to the chat_id_users_database
     except OSError:
         return False, ""
     # chat metadata
-    write_to_file(f"{USERS_DATA}{chat_id}\\name", "w", group_name)
-    write_to_file(f"{USERS_DATA}{chat_id}\\type", "w", "group")
-    write_to_file(f"{USERS_DATA}{chat_id}\\users", "w", "\n".join(set(users)))
+    write_to_file(f"Data\\Users_Data\\{chat_id}\\name", "w", group_name)
+    write_to_file(f"Data\\Users_Data\\{chat_id}\\type", "w", "group")
+    write_to_file(f"Data\\Users_Data\\{chat_id}\\users", "w", "\n".join(set(users)))
     for email in users:
         add_chat_id_to_user_chats(email, chat_id)
-    known_to_each_other(users)
     return True, chat_id
 
 
@@ -336,7 +298,7 @@ def add_user_to_group(from_user: str, add_user: str, group_id: str) -> bool:
     # update database
     chat_id_users_database.add(group_id, [add_user])
     # update file of users
-    write_to_file(f"{USERS_DATA}{group_id}\\users", "a", f"\n{add_user}")
+    write_to_file(f"Data\\Users_Data\\{group_id}\\users", "a", f"\n{add_user}")
     #
     add_chat_id_to_user_chats(add_user, group_id)
     add_new_data_to(from_user, f"all of: {group_id}")
@@ -345,6 +307,31 @@ def add_user_to_group(from_user: str, add_user: str, group_id: str) -> bool:
 
 def remove_user_from_group(from_user: str, remove_user: str, group_id: str):
     pass
+
+
+def block_chat_send(chat_id: str) -> bool:
+    """ :return: True to signal the "lock" is acquired """
+    """
+        create a folder called "not free" to block 
+        another thread from touching the data folder of the chat
+        because we are reading the file and then writing back
+        and if someone does it the same time with us something will
+        be lost, so blocking like this allows to block only for 
+        this specific chat, which is what we need
+    """
+    while True:
+        try:
+            os.makedirs(f"Data\\Users_Data\\{chat_id}\\data\\not free", exist_ok=False)
+            break
+        except OSError:
+            time.sleep(0.0005)
+    return True
+
+
+def unblock_chat_send(chat_id: str) -> bool:
+    """ :return: True to signal the "lock" isn't acquired """
+    shutil.rmtree(f"Data\\Users_Data\\{chat_id}\\data\\not free")
+    return False
 
 
 def send_msg(from_user: str, chat_id: str, msg: str, file_msg: bool = False) -> bool:
@@ -356,18 +343,15 @@ def send_msg(from_user: str, chat_id: str, msg: str, file_msg: bool = False) -> 
                      function will call this function with file_msg=True
                      and the msg will be the file location
     """
-    lock = block(f"{USERS_DATA}{chat_id}\\data\\not free")
+    lock = block_chat_send(chat_id)
     try:
         users_in_chat = chat_id_users_database.get(chat_id)
         if users_in_chat is None or not is_user_in_chat(from_user, chat_id):
             return False
-        list_of_chat_files = os.listdir(f"{USERS_DATA}{chat_id}\\data\\chat\\")
+        list_of_chat_files = os.listdir(f"Data\\Users_Data\\{chat_id}\\data\\chat\\")
         if list_of_chat_files:
             latest = int(max(list_of_chat_files))
-            try:
-                data: dict = pickle.loads(read_from_file(f"{USERS_DATA}{chat_id}\\data\\chat\\{latest}", "rb"))
-            except EOFError:
-                data = {}
+            data: dict = pickle.loads(read_from_file(f"Data\\Users_Data\\{chat_id}\\data\\chat\\{latest}", "rb"))
             first_chat = False
         else:
             latest = -1
@@ -376,22 +360,22 @@ def send_msg(from_user: str, chat_id: str, msg: str, file_msg: bool = False) -> 
         if len(data) >= 800 or first_chat:
             #        index:             [from_user, msg, file_msg, deleted_for, delete_for_all, seen by, time]
             data = {(latest + 1) * 800: [from_user, msg, file_msg, [], False, [], datetime.datetime.now()]}
-            write_to_file(f"{USERS_DATA}{chat_id}\\data\\chat\\{latest + 1}", "wb", pickle.dumps(data))
+            write_to_file(f"Data\\Users_Data\\{chat_id}\\data\\chat\\{latest + 1}", "wb", pickle.dumps(data))
         else:
             #        index:              [from_user, msg, file_msg, deleted_for, delete_for_all, seen by, time]
             data[max(data.keys()) + 1] = [from_user, msg, file_msg, [], False, [], datetime.datetime.now()]
-            write_to_file(f"{USERS_DATA}{chat_id}\\data\\chat\\{latest}", "wb", pickle.dumps(data))
+            write_to_file(f"Data\\Users_Data\\{chat_id}\\data\\chat\\{latest}", "wb", pickle.dumps(data))
         # when finished remove the folder
-        lock = unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
+        lock = unblock_chat_send(chat_id)
         # add the new file / updated file to the new data of all the users in the chat
         latest = latest + 1 if len(data) >= 800 or first_chat else latest
-        add_new_data_to(users_in_chat, f"{USERS_DATA}{chat_id}\\data\\chat\\{latest}")
+        add_new_data_to(users_in_chat, f"Data\\Users_Data\\{chat_id}\\data\\chat\\{latest}")
         return True
     except Exception:
         return False
     finally:
         if lock:
-            unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
+            unblock_chat_send(chat_id)
 
 
 def send_file(from_user: str, chat_id: str, file_data: bytes, file_name: str) -> bool:
@@ -405,7 +389,7 @@ def send_file(from_user: str, chat_id: str, file_data: bytes, file_name: str) ->
         users_in_chat = chat_id_users_database.get(chat_id)
         if users_in_chat is None or not is_user_in_chat(from_user, chat_id):
             return False
-        location = f"{USERS_DATA}{chat_id}\\data\\files\\"
+        location = f"Data\\Users_Data\\{chat_id}\\data\\files\\"
         # if there is already a file with this name, create new name
         if os.path.isfile(location + file_name):
             new_file_name = ".".join(file_name.split(".")[:-1]) + "_1" + file_name.split(".")[-1]
@@ -433,14 +417,11 @@ def delete_msg_for_me(from_user: str, chat_id: str, index_of_msg: int):
     if users_in_chat is None or not is_user_in_chat(from_user, chat_id):
         return False
     file_number = index_of_msg // 800  # there are 800 messages per file
-    if not os.path.isfile(f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}"):
+    if not os.path.isfile(f"Data\\Users_Data\\{chat_id}\\data\\chat\\{file_number}"):
         return False  # index_of_msg is invalid
-    lock = block(f"{USERS_DATA}{chat_id}\\data\\not free")
+    lock = block_chat_send(chat_id)
     try:
-        try:
-            data: dict = pickle.loads(read_from_file(f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}", "rb"))
-        except EOFError:
-            data = {}
+        data: dict = pickle.loads(read_from_file(f"Data\\Users_Data\\{chat_id}\\data\\chat\\{file_number}", "rb"))
         # msg -> [from_user, msg, file_msg, deleted_for, delete_for_all, seen by, time]
         msg = data.get(file_number)
         if msg is not None:
@@ -449,18 +430,18 @@ def delete_msg_for_me(from_user: str, chat_id: str, index_of_msg: int):
                 deleted_for.append(from_user)
             msg[3] = deleted_for
             data[file_number] = msg
-            write_to_file(f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}", "wb", pickle.dumps(data))
+            write_to_file(f"Data\\Users_Data\\{chat_id}\\data\\chat\\{file_number}", "wb", pickle.dumps(data))
         else:
-            unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
+            unblock_chat_send(chat_id)
             return False
-        unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
-        add_new_data_to(from_user, f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}")
+        unblock_chat_send(chat_id)
+        add_new_data_to(from_user, f"Data\\Users_Data\\{chat_id}\\data\\chat\\{file_number}")
         return True
     except Exception:
         return False
     finally:
         if lock:
-            unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
+            unblock_chat_send(chat_id)
 
 
 def delete_msg_for_everyone(from_user: str, chat_id: str, index_of_msg: int):
@@ -468,32 +449,29 @@ def delete_msg_for_everyone(from_user: str, chat_id: str, index_of_msg: int):
     if users_in_chat is None or not is_user_in_chat(from_user, chat_id):
         return False
     file_number = index_of_msg // 800  # there are 800 messages per file
-    if not os.path.isfile(f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}"):
+    if not os.path.isfile(f"Data\\Users_Data\\{chat_id}\\data\\chat\\{file_number}"):
         return False  # index_of_msg is invalid
-    lock = block(f"{USERS_DATA}{chat_id}\\data\\not free")
+    lock = block_chat_send(chat_id)
     try:
-        try:
-            data: dict = pickle.loads(read_from_file(f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}", "rb"))
-        except EOFError:
-            data = {}
+        data: dict = pickle.loads(read_from_file(f"Data\\Users_Data\\{chat_id}\\data\\chat\\{file_number}", "rb"))
         # msg -> [from_user, msg, file_msg, deleted_for, delete_for_all, seen by, time]
         msg = data.get(file_number)
         if msg is not None:
             msg[1] = "This Message Was Deleted."
             msg[4] = True
             data[file_number] = msg
-            write_to_file(f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}", "wb", pickle.dumps(data))
+            write_to_file(f"Data\\Users_Data\\{chat_id}\\data\\chat\\{file_number}", "wb", pickle.dumps(data))
         else:
-            unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
+            unblock_chat_send(chat_id)
             return False
-        unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
-        add_new_data_to(from_user, f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}")
+        unblock_chat_send(chat_id)
+        add_new_data_to(from_user, f"Data\\Users_Data\\{chat_id}\\data\\chat\\{file_number}")
         return True
     except Exception:
         return False
     finally:
         if lock:
-            unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
+            unblock_chat_send(chat_id)
 
 
 def send_mail(to: str, subject: str, body: str, html: str = ""):
@@ -507,10 +485,9 @@ def send_mail(to: str, subject: str, body: str, html: str = ""):
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context()) as smtp:
         smtp.login(SERVER_EMAIL, SERVER_EMAIL_APP_PASSWORD)
         smtp.sendmail(SERVER_EMAIL, to, em.as_string())
-    logging.info(f"sent email to {to}")
 
 
-def signup(username: str, email: str, password: str, client_sock: EncryptedProtocolSocket) -> tuple[bool, str]:
+def signup(username: str, email: str, password: str, client_sock: ProtocolSocket) -> tuple[bool, str]:
     """
     :param username: the username
     :param email: the email of the user
@@ -518,7 +495,7 @@ def signup(username: str, email: str, password: str, client_sock: EncryptedProto
     :param client_sock: the socket of the client
     """
     # check that the email isn't registered
-    exists, _ = get_username(email)
+    exists, username = get_username(email)
     if exists:
         return False, ""
     # create confirmation code
@@ -531,18 +508,18 @@ def signup(username: str, email: str, password: str, client_sock: EncryptedProto
     printing_lock.acquire()
     print(f"A mail was sent to '{email}' with the confirmation code '{confirmation_code}'")
     printing_lock.release()
+    cipher = AESCipher(password)
     # send client a msg that says that we are waiting for a confirmation code
-    client_sock.send_message(f"{'confirmation_code'.ljust(30)}".encode())
+    client_sock.send_message(cipher.encrypt(f"{'confirmation_code'.ljust(30)}"))
     # receive the response from the client and set a timeout of 5 minutes
-    msg = client_sock.receive_message(timeout=60*5)
+    enc_msg = client_sock.receive_message(timeout=60*5)
     # if response timed out
-    if msg == b"":
+    if enc_msg == b"":
         return False, "Request timeout."
-    msg = msg.decode()
+    # decrypt the response
+    msg, _ = cipher.decrypt(enc_msg)
     # check the response
     if msg[:30].strip() != "confirmation_code" or msg[30:] != confirmation_code:
-        logging.info(f"signup attempt (for '{email}') failed - "
-                     f"got wrong confirmation code from user trying to signup as '{username}'")
         return False, "Confirmation code is incorrect."
     # user_password_database -> {"email - username": password, "another email - another username": password, ...}
     email_user = user_password_database.keys()
@@ -550,18 +527,11 @@ def signup(username: str, email: str, password: str, client_sock: EncryptedProto
     if f"{email} - {username}" not in email_user and len(username) <= 40:
         # add username and password to the user_password_database
         user_password_database[f"{email} - {username}"] = password
-        logging.info(f"signup attempt successful - email: '{email}', username: '{username}'")
-        # create user directory and files
-        os.makedirs(f"{USERS_DATA}{email}", exist_ok=True)
-        write_to_file(f"{USERS_DATA}{email}\\chats", "wb", b"")
-        write_to_file(f"{USERS_DATA}{email}\\new_data", "wb", b"")
-        write_to_file(f"{USERS_DATA}{email}\\known_users", "wb", b"")
-        write_to_file(f"{USERS_DATA}{email}\\one_on_one_chats", "wb", b"")
         return True, "Signed up successfully."
     return False, "Email already registered."
 
 
-def reset_password(email: str, client_sock: EncryptedProtocolSocket) -> tuple[bool, str]:
+def reset_password(email: str, client_sock: ProtocolSocket) -> tuple[bool, str]:
     """
     :param email: the email of the user that wants to reset their password
     :param client_sock: the socket of the client
@@ -580,26 +550,28 @@ def reset_password(email: str, client_sock: EncryptedProtocolSocket) -> tuple[bo
     printing_lock.acquire()
     print(f"A mail was sent to '{email}' with the confirmation code '{confirmation_code}'")
     printing_lock.release()
+    cipher = AESCipher(DEFAULT_ENCRYPTION_KEY)
     # send client a msg that says that we are waiting for a confirmation code
-    client_sock.send_message(f"{'confirmation_code'.ljust(30)}".encode())
+    client_sock.send_message(cipher.encrypt(f"{'confirmation_code'.ljust(30)}"))
     # receive the response from the client and set a timeout of 5 minutes
-    msg = client_sock.receive_message(timeout=60 * 5)
+    enc_msg = client_sock.receive_message(timeout=60 * 5)
     # if response timed out
-    if msg == b"":
+    if enc_msg == b"":
         return False, "Request timeout."
-    msg = msg.decode()
+    # decrypt the response
+    msg, _ = cipher.decrypt(enc_msg)
     # check the response
     if msg[:30].strip() != "confirmation_code" or msg[30:] != confirmation_code:
-        logging.info(f"reset password attempt (for '{email}') failed - got wrong confirmation code from user")
         return False, "Confirmation code is incorrect."
     # send client a msg that says that we are waiting for a new password
-    client_sock.send_message(f"{'new_password'.ljust(30)}".encode())
+    client_sock.send_message(cipher.encrypt(f"{'new_password'.ljust(30)}"))
     # receive the response from the client and set a timeout of 5 minutes
-    msg = client_sock.receive_message(timeout=60 * 5)
+    enc_msg = client_sock.receive_message(timeout=60 * 5)
     # if response timed out
-    if msg == b"":
+    if enc_msg == b"":
         return False, "Request timeout."
-    msg = msg.decode()
+    # decrypt the response
+    msg, _ = cipher.decrypt(enc_msg)
     # validate the response
     if msg[:30].strip() != "new_password":
         return False, ""
@@ -607,7 +579,6 @@ def reset_password(email: str, client_sock: EncryptedProtocolSocket) -> tuple[bo
     password = msg[30:]
     # set new password
     user_password_database[f"{email} - {username}"] = password
-    logging.info(f"reset password attempt successful - email: '{email}', username: '{username}'.")
     return True, "Password changed successfully."
 
 
@@ -639,7 +610,6 @@ def login(email: str, password: str) -> bool:
     user_exists, user_password_hash = get_user_password(email)
     if not user_exists or user_password_hash != password:
         return False
-    user_online_status_database[email] = ["Online", None]
     return True
 
 
@@ -649,51 +619,20 @@ def sync(email: str, sync_all: bool = False) -> bool:
 
         pass
     # TODO finish this func
-    with open(f"{USERS_DATA}{email}\\new_data.txt", "w") as f:
+    with open(f"Data\\Users_Data\\{email}\\new_data.txt", "w") as f:
         f.write("")
 
 
-def call_user(from_email: str, to_email: str):
-    """
-        !!! open a thread to call this func !!!
-
-        check if to_email is connected
-        if he is, send a msg that says that from_email
-        is calling him, if to_email answers the call
-        send from_email a msg that says that from_email answered
-        the call, and from_email will start a server sock at
-        port number x, and then this server will send to_email
-        the ip and port of from_email server sock and the call will start
-    """
-    pass
-
-
-def call_group(from_email: str, to_emails: list[str]):
-    """
-        !!! open a thread to call this func !!!
-
-        check if at least one of to_emails is connected
-        if someone is, send a msg that says that from_email
-        is calling them, if someone answers the call
-        send from_email a msg that says that someone answered
-        the call, and from_email will start a server sock at
-        port number x, and then this server will send the ones that
-        answered the call the ip and port of from_email server
-        sock and the call will start
-    """
-    pass
-
-
-def login_or_signup_response(mode: str, status: str, reason: str) -> bytes:
+def login_or_signup_response(mode: str, status: str, reason: str):
     """
     :param mode: login or signup
     :param status: ok or not ok
     :param reason: the reason
     """
-    return f"{mode.ljust(30)}{status.ljust(6)}{reason}".encode()
+    return f"{mode.ljust(30)}{status.ljust(6)}{reason}"
 
 
-def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[str, str]):
+def handle_client(client_socket: ProtocolSocket, client_ip_port: tuple[str, str]):
     global online_users
     logged_in = False
     signed_up = False
@@ -701,54 +640,66 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
     email = ""
     try:
         # let client login / signup and login
+        cipher = AESCipher(DEFAULT_ENCRYPTION_KEY)
         while not logged_in:
             # receive 1 msg
             client_socket.settimeout(5)
             try:
                 msg = client_socket.receive_message()
             except socket.timeout:
-                client_socket.send_message(login_or_signup_response("login", "not ok", "Request Timed Out."))
+                client_socket.send_message(
+                    cipher.encrypt(login_or_signup_response("login", "not ok", "Request Timed Out."))
+                )
+                stop = True
                 break
             client_socket.settimeout(None)
-            msg = msg.decode()
-            cmd = msg[:30].strip()
+            cmd = msg[:30].strip().decode()
             # check if the msg is signup msg or login, else throw the msg
             # because the client hasn't logged in yet
             # if client sent login request
             if cmd == "login":
-                len_email = int(msg[30:40].strip())
-                email = msg[40:40 + len_email]
+                len_email = int(msg[30:40].strip().decode())
+                email = msg[40:40 + len_email].decode()
                 user_exists, password = get_user_password(email)
                 if not user_exists:
                     client_socket.send_message(
-                        login_or_signup_response("login", "not ok", "email or password is incorrect.")
+                        cipher.encrypt(login_or_signup_response("login", "not ok", "email or password is incorrect."))
                     )
                     stop = True
                     break
-                if msg[40 + len_email:] != password:
+                pass_cipher = AESCipher(password)
+                if pass_cipher.decrypt(msg[40 + len_email:])[0] != password:
                     client_socket.send_message(
-                        login_or_signup_response("login", "not ok", "email or password is incorrect.")
+                        cipher.encrypt(login_or_signup_response("login", "not ok", "email or password is incorrect."))
                     )
                     stop = True
                     break
                 logged_in = True
                 user_exists, username = get_username(email)
-                client_socket.send_message(login_or_signup_response("login", "ok", username))
+                client_socket.send_message(
+                    cipher.encrypt(login_or_signup_response("login", "ok", username))
+                )
                 del msg, cmd, len_email, user_exists, password
             elif cmd == "signup" and not signed_up:
+                msg, _ = cipher.decrypt(msg[30:])
                 len_username = int(msg[:2].strip())
                 username = msg[2:2 + len_username]
                 len_email = int(msg[2 + len_username:12 + len_username].strip())
                 email = msg[12 + len_username:12 + len_username + len_email]
                 password = msg[12 + len_username + len_email:]
+                pass_cipher = AESCipher(password)
                 ok, reason = signup(username, email, password, client_socket)
                 if not ok:
-                    client_socket.send_message(login_or_signup_response("signup", "not ok", reason))
+                    client_socket.send_message(
+                        pass_cipher.encrypt(login_or_signup_response("signup", "not ok", reason))
+                    )
                     stop = True
                     break
-                client_socket.send_message(login_or_signup_response("signup", "ok", ""))
+                client_socket.send_message(
+                    pass_cipher.encrypt(login_or_signup_response("signup", "ok", ""))
+                )
                 signed_up = True
-                del msg, len_username, len_email, password, reason, ok
+                del msg, _, len_username, len_email, password, reason, ok, pass_cipher
             elif cmd == "signup" and signed_up:
                 stop = True
                 break
@@ -760,82 +711,49 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
             user_exists, username = get_username(email)
             user_exists2, password = get_user_password(email)
             if not user_exists & user_exists2:
-                raise Exception(f"[Server]: The email '{email}' doesn't exists in the database.")
+                raise Exception("Email Doesn't exists in the database.")
             del user_exists, user_exists2
             printing_lock.acquire()
-            print(f"[Server]: '%s:%s' logged in as '{email}-{username}'." % client_ip_port)
-            logging.info(f"[Server]: '%s:%s' logged in as '{email}-{username}'." % client_ip_port)
+            print(f"[Server]: '%s:%s' Logged In As '{email}-{username}'." % client_ip_port)
             printing_lock.release()
-            #
             # handle client's requests until client disconnects
-            request = client_socket.receive_message()
-            request = request.decode()
-            while request != "":
-                request = client_socket.receive_message()
-                request = request.decode()
+            aes_cipher = AESCipher(password)
+            enc_msg = client_socket.receive_message()
+            while enc_msg != b"":
+                msg, file = aes_cipher.decrypt(enc_msg)
                 # TODO call the right func to handle the client's request
-                cmd = request[:30].strip()
+                cmd = msg[:30].strip()
                 if cmd == "sync new":
                     sync(username)
                 elif cmd == "sync all":
                     sync(username, sync_all=True)
                 elif cmd == "msg":
                     pass
-                elif cmd == "delete for everyone":
-                    pass
                 elif cmd == "file":
                     pass
-                elif cmd == "delete for me":
-                    pass
-                elif cmd == "add user":
-                    pass
-                elif cmd == "remove user":
-                    pass
-                elif cmd == "new chat":
-                    pass
-                elif cmd == "new group":
-                    pass
-                elif cmd == "login":
-                    pass
-                elif cmd == "signup":
-                    pass
-                else:
-                    print(f"[Server]: '%s:%s' Logged In As '{email}-{username}' - "
-                          f"sent unknown cmd {cmd}" % client_ip_port)
-                    logging.warning(f"[Server]: '%s:%s' Logged In As '{email}-{username}' - "
-                                    f"sent unknown cmd {cmd}" % client_ip_port)
-            del request
+                del msg, file
+            del enc_msg
     except (socket.error, TypeError, OSError, ConnectionError, Exception) as err:
         printing_lock.acquire()
         if "username" in locals():
-            print(f"[Server]: error while handling '%s:%s' ('{username}'): {str(err)}" % client_ip_port)
-            logging.warning(f"[Server]: error while handling '%s:%s' ('{username}'): {str(err)}" % client_ip_port)
+            print(f"[Server]: Error While Handling '%s:%s' ('{username}'):" % client_ip_port, str(err))
         else:
-            print(f"[Server]: error while handling '%s:%s': {str(err)}" % client_ip_port)
-            logging.warning(f"[Server]: error while handling '%s:%s': {str(err)}" % client_ip_port)
+            print(f"[Server]: Error While Handling '%s:%s':" % client_ip_port, str(err))
         printing_lock.release()
     finally:
         try:
             client_socket.close()
-        except Exception:
+        except socket.error:
             pass
         printing_lock.acquire()
         if "username" in locals():
-            print(f"[Server]: Client '%s:%s' ('{username}') disconnected." % client_ip_port)
-            logging.info(f"[Server]: Client '%s:%s' ('{username}') disconnected." % client_ip_port)
+            print(f"[Server]: '%s:%s' ('{username}') Disconnected." % client_ip_port)
         else:
-            print(f"[Server]: Client '%s:%s' disconnected." % client_ip_port)
-            logging.info(f"[Server]: Client '%s:%s' disconnected." % client_ip_port)
+            print(f"[Server]: '%s:%s' Disconnected." % client_ip_port)
         printing_lock.release()
-        if get_username(email)[0]:  # if 'email' is registered as a user
-            #                                                     last seen
-            user_online_status_database[email] = ["Offline", datetime.datetime.now()]
 
 
 def main():
-    # logging configuration
-    logging.basicConfig(format=LOG_FORMAT, filename=LOG_FILE, level=LOG_LEVEL)
-    #
     server_socket = start_server()
     clients_threads: list[threading.Thread] = []
     clients_threads_socket: dict[threading.Thread, socket.socket] = {}
