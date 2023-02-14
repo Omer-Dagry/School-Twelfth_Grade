@@ -1,10 +1,8 @@
 import os
 import time
-import wave
-import pyaudio
 import logging
+import threading
 import pyperclip
-import playsound
 import multiprocessing
 
 from tkinter import *
@@ -106,7 +104,11 @@ class ChatEaseGUI(Tk):
 
     def record_audio(self):
         if self.__current_chat_name.text != "Home":
-            audio_gui = RecordingGUI(self.__record_button)
+            audio_gui = RecordingGUI(self.__email, self.__record_button,
+                                     self.winfo_screenwidth(), self.winfo_screenheight(),
+                                     upload_file, self.__current_chat_name)
+            t = threading.Thread(target=audio_gui.record_audio)
+            t.start()
 
 
 def resource_path(relative_path):

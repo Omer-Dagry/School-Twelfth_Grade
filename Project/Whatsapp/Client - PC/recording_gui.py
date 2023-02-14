@@ -1,5 +1,4 @@
 import os
-import threading
 import wave
 import time
 
@@ -35,7 +34,10 @@ class RecordingGUI:
         os.makedirs(self.__email, exist_ok=True)
 
     def record_audio(self):
-        """ Creates a Thread to record """
+        """
+        Call This Function To Record Audio.
+        Create A Thread For This Call.
+        """
         global stop_rec
         stop_rec = False
         self.__record_button.configure(command=self.__stop_recording, text="Stop Recording")
