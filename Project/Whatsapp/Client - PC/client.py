@@ -14,12 +14,9 @@ import logging
 from typing import *
 from threading import Thread
 from gui import mainloop, update
-from communication import login, signup, sync
+from communication import signup  # , login, sync
+from communication import Communication as Com
 from protocol_socket import EncryptedProtocolSocket
-
-
-# Create All Needed Directories
-os.makedirs("log", exist_ok=True)
 
 
 # Constants
@@ -27,25 +24,34 @@ os.makedirs("log", exist_ok=True)
 LOG_DIR = 'log'
 LOG_LEVEL = logging.DEBUG
 LOG_FILE = LOG_DIR + "/ChatEase-Client.log"
-LOG_FORMAT = "%(levelname)s | %(asctime)s | %(processName)s | %(message)s"
+LOG_FORMAT = "%(levelname)s | %(asctime)s | %(processName)s | %(threadName)s | %(message)s"
 #
 SERVER_PORT = 8820
 SERVER_IP = "127.0.0.1"
-ALLOWED_CHARS_IN_USERNAME = "abcdefghijklmnopqrstuvwxyz" + "abcdefghijklmnopqrstuvwxyz".upper() + \
-                      " " + "_" + "0123456789"
+SERVER_IP_PORT = (SERVER_IP, SERVER_PORT)
+ALLOWED_CHARS_IN_USERNAME = "abcdefghijklmnopqrstuvwxyz" + "abcdefghijklmnopqrstuvwxyz".upper() + " " + "_" + \
+                            "0123456789"
 NOW_ALLOWED_IN_PASSWORD = ["012", "123", "234", "345", "456", "567", "678", "789",
                            "210", "321", "432", "543", "654", "765", "876", "987",
                            "password"]
 
 # Globals
+communication: Com | None = None
 email: Union[str, None] = None
 username: Union[str, None] = None
 password: Union[str, None] = None
 
+# Create All Needed Directories & Files & Initialize logging
+os.makedirs(LOG_DIR, exist_ok=True)
+if not os.path.isfile(LOG_FILE):
+    with open(LOG_FILE, "w"):
+        pass
+logging.basicConfig(format=LOG_FORMAT, filename=LOG_FILE, level=LOG_LEVEL)
+
 
 def login_signup(server_ip_port: tuple[str, int]) -> tuple[bool, EncryptedProtocolSocket | None]:
     """ ask the user what to do, login or signup, after signup logged in automatically """
-    global username, password, email
+    global username, password, email, communication
     login_or_signup = input("Login Or Signup [L/S] ? ").lower()
     while login_or_signup not in ("l", "s"):
         login_or_signup = input("Login Or Signup [L/S] ? ").lower()
@@ -56,7 +62,8 @@ def login_signup(server_ip_port: tuple[str, int]) -> tuple[bool, EncryptedProtoc
     if login_or_signup == 'l':
         password = input("Enter Your Password: ")
         password = hashlib.md5(password.encode()).hexdigest().lower()
-        ok, sock, username = login(email, password, server_ip_port, verbose=True)
+        communication = Com(email, password, SERVER_IP_PORT)
+        ok, sock, username = communication.login(verbose=True)
         if not ok:
             username = None
             password = None
@@ -123,9 +130,9 @@ def login_signup(server_ip_port: tuple[str, int]) -> tuple[bool, EncryptedProtoc
 def sync_(sync_sock: EncryptedProtocolSocket, first_time_all: bool = False):
     global password
     if first_time_all:
-        sync(sync_sock, password, "all")
+        communication.sync(sync_sock, "all")
     while True:
-        new_data = sync(sync_sock, password)
+        new_data = communication.sync(sync_sock)
         if new_data:
             update()
         time.sleep(0.5)
@@ -138,9 +145,8 @@ def main():
         ok, sock = login_signup((SERVER_IP, SERVER_PORT))
         if ok:
             # got username and password, login the sync socket as well
-            ok2, sync_sock, username = login(email, password, (SERVER_IP, SERVER_PORT), verbose=False)
+            ok2, sync_sock, username = communication.login(verbose=False)
             ok &= ok2
-            del ok2
             if username is not None and password is not None and ok:
                 sync_thread = Thread(target=sync_, args=(sync_sock, True))
                 mainloop(email)

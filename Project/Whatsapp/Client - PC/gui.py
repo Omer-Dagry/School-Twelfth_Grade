@@ -1,15 +1,8 @@
 import os
-import threading
-import time
-import wave
-import pyaudio
 import logging
-import pyperclip
-import playsound
-import multiprocessing
+import threading
 
 from tkinter import *
-from threading import Thread
 from PIL.ImageOps import contain
 from PIL import Image as ImagePIL
 from PIL import ImageTk as ImageTkPIL
@@ -21,7 +14,7 @@ from communication import upload_file, send_message, new_chat
 LOG_DIR = 'log'
 LOG_LEVEL = logging.DEBUG
 LOG_FILE = LOG_DIR + "/ChatEase-Client.log"
-LOG_FORMAT = "%(levelname)s | %(asctime)s | %(processName)s | %(message)s"
+LOG_FORMAT = "%(levelname)s | %(asctime)s | %(processName)s | %(threadName)s | %(message)s"
 
 # Constants
 APP_NAME = "ChatEase"

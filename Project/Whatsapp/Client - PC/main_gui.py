@@ -1,32 +1,39 @@
 import os
-import time
 import logging
 import threading
-import pyperclip
-import multiprocessing
 
 from tkinter import *
-from threading import Thread
-from PIL.ImageOps import contain
-from PIL import Image as ImagePIL
-from multiprocessing import Process
-from PIL import ImageTk as ImageTkPIL
+# from PIL.ImageOps import contain
+# from PIL import Image as ImagePIL
+# from multiprocessing import Process
 from recording_gui import RecordingGUI
-from communication import upload_file, send_message, new_chat
+# from PIL import ImageTk as ImageTkPIL
+from protocol_socket import EncryptedProtocolSocket
+from communication import Communication as Com  # upload_file, send_message, new_chat
 
 
+# Constants
 # logging
 LOG_DIR = 'log'
 LOG_LEVEL = logging.DEBUG
 LOG_FILE = LOG_DIR + "/ChatEase-Client.log"
-LOG_FORMAT = "%(levelname)s | %(asctime)s | %(processName)s | %(message)s"
+LOG_FORMAT = "%(levelname)s | %(asctime)s | %(processName)s | %(threadName)s | %(message)s"
+
+# Create All Needed Directories & Files & Initialize logging
+os.makedirs(LOG_DIR, exist_ok=True)
+if not os.path.isfile(LOG_FILE):
+    with open(LOG_FILE, "w"):
+        pass
+logging.basicConfig(format=LOG_FORMAT, filename=LOG_FILE, level=LOG_LEVEL)
 
 
 class ChatEaseGUI(Tk):
-    def __init__(self, email: str,
+    def __init__(self, email: str, password: str, server_ip_port: tuple[str, int], sock: EncryptedProtocolSocket,
                  screen_name=None, base_name=None, class_name='Tk', use_tk=True, sync=False, use=None,
                  app_name: str = "ChatEase", window_min_size: tuple[int, int] = (980, 520),
                  app_background_color: str = "#1E1F22"):
+        #
+        logging.info(f"[ChatEaseGUI]: initializing GUI ({email})")
         super().__init__(screen_name, base_name, class_name, use_tk, sync, use)
         #
         self.__app_name = app_name
@@ -34,6 +41,10 @@ class ChatEaseGUI(Tk):
         self.__app_background_color = app_background_color
         #
         self.__email: str = email
+        self.__password: str = password
+        self.__server_ip_port: tuple[str, int] = server_ip_port
+        self.__sock = sock
+        self.__communication = Com(self.__email, self.__password, self.__server_ip_port)
         #
         self.__msg_box: Entry | None = None
         self.__home_chat: Text | None = None
@@ -44,11 +55,47 @@ class ChatEaseGUI(Tk):
         self.__file_upload: Button | None = None
         self.__record_button: Button | None = None
         self.__current_chat_name: Label | None = None
+        #
+        logging.info(f"[ChatEaseGUI]: finished initializing GUI ({email})")
+        self.__setup()
+
+    def mainloop(self, n: int = 0) -> None:
+        """ Call the mainloop of Tk. """
+        logging.info(f"[ChatEaseGUI]: mainloop ({self.__email})")
+        super().mainloop(n)
 
     def change_background(self, bg):
         raise NotImplemented
 
+    def __enter_key(self, event=None):
+        if event is not None and event.type == EventType.KeyPress and self.__current_chat_name.text != "Home":
+            msg = self.__msg_box.get()
+            self.__msg_box.delete(0, END)
+            self.__communication.send_message(self.__current_chat_name.chat_id, msg, self.__sock)
+
+    def __search_user_focus_in(self, event: Event = None):
+        if event is not None and event.type == EventType.FocusIn:
+            text = self.__search_user.get()
+            if text == "Start a new chat":
+                self.__search_user.delete(0, END)
+                self.__search_user.insert(END, self.__search_user.last_search)
+
+    def __search_user_focus_out(self, event: Event = None):
+        if event is not None and event.type == EventType.FocusOut:
+            text = self.__search_user.get()
+            self.__search_user.last_search = text
+            self.__search_user.delete(0, END)
+            self.__search_user.insert(END, "Start a new chat")
+
+    def __search_user_enter(self, event: Event = None):
+        if event is not None and event.type == EventType.KeyPress:
+            user = self.__search_user.get()
+            self.__search_user.delete(0, END)
+            self.__search_user_focus_out()
+            self.__communication.new_chat(user, self.__email, self.__sock)
+
     def __setup(self):
+        logging.info(f"[ChatEaseGUI]: setup ({self.__email})")
         # Configure Window
         self.title(self.__app_name)  # title of window
         self.iconbitmap(resource_path("ChatEase.ico"))  # icon of window
@@ -56,7 +103,8 @@ class ChatEaseGUI(Tk):
         self.minsize(self.__window_min_size[0], self.__window_min_size[1])  # minimum size of window
         self.state("zoomed")  # open window in full-screen windowed
         self.columnconfigure(2, weight=1)
-        self.rowconfigure((1, 2), weight=1)
+        self.rowconfigure(1, weight=1)
+        self.rowconfigure(2, weight=1)
         #
         # Container for all the chat buttons
         self.__chat_buttons = Text(self, background=self.__app_background_color, width=42, cursor="arrow", height=27)
@@ -69,46 +117,63 @@ class ChatEaseGUI(Tk):
         self.__current_chat_name.grid(row=0, column=2, columnspan=2, sticky="news")
         # Entry box for text
         self.__msg_box = Entry(self, width=121, bg=self.__app_background_color, fg="white", font=("helvetica", 16))
-        self.__msg_box.bind('<KeyPress>', enter_key)
+        self.__msg_box.bind('<Return>', self.__enter_key)
         self.__msg_box.grid(row=19, column=2, sticky='news')
         # Button to record audio
-        photo = PhotoImage(file=resource_path("microphone.png"))
-        self.__record_button = Button(self, image=photo, command=record_, bg=self.__app_background_color,
-                                      height=68, width=140, fg="#63C8D8", text="Record")
+        self.photo = PhotoImage(file=resource_path("microphone.png"))
+        self.__record_button = Button(self, image=self.photo, command=self.record_audio, height=68, width=140,
+                                      bg=self.__app_background_color, fg="#63C8D8", text="Record")
         self.__record_button.grid(row=19, column=3, sticky='news')
         # Button to submit the input from the input box
-        photo2 = PhotoImage(file=resource_path("send.png"))
-        self.__send_msg = Button(self, image=photo2, width=40, height=3, bg=self.__app_background_color,
-                                 fg="white", font=None,
-                                 command=lambda: send_message(self.__current_chat_name, self.__msg_box.get()))
+        self.photo2 = PhotoImage(file=resource_path("send.png"))
+        self.__send_msg = Button(
+            self, image=self.photo2, width=40, height=3, bg=self.__app_background_color, fg="white", font=None,
+            command=lambda: (
+                self.__communication.send_message(
+                    self.__current_chat_name.chat_id, self.__msg_box.get(), self.__sock
+                ),
+                self.__msg_box.delete(0, END)
+            )
+        )
         self.__send_msg.grid(row=19, column=0, sticky='news')
         # Button to upload files
-        photo3 = PhotoImage(file=resource_path("doc.png"))
-        self.__file_upload = Button(self, image=photo3, bg=self.__app_background_color, height=1, width=1,
-                                    command=lambda: upload_file(self.__current_chat_name))
+        self.photo3 = PhotoImage(file=resource_path("doc.png"))
+        self.__file_upload = Button(self, image=self.photo3, bg=self.__app_background_color, height=1, width=1,
+                                    command=lambda: self.__communication.upload_file(self.__current_chat_name.chat_id))
         self.__file_upload.grid(row=19, column=1, sticky='news')
         # Create an input box to search a username and start chat with him
         self.__search_user = Entry(self, width=40, font=None)
-        self.__search_user.bind('<Button-1>', search_delete_on_click)
-        self.__search_user.bind('<KeyPress>', enter_key_search_user)
+        self.__search_user.bind("<FocusIn>", self.__search_user_focus_in)
+        self.__search_user.bind("<FocusOut>", self.__search_user_focus_out)
+        self.__search_user.bind('<Return>', self.__search_user_enter)
         self.__search_user.insert(END, "Start a new chat")
+        self.__search_user.last_search = ""
         self.__search_user.grid(row=0, column=0, sticky='news')
         # Create a button to submit the input from the input box
         self.__search_chat = Button(self, text="Search", width=8, height=1, bg=self.__app_background_color, fg="white",
-                                    command=lambda: new_chat(search_user, self.__email), font=None)
+                                    command=self.__search_user_enter, font=None)
         self.__search_chat.grid(row=0, column=1, sticky='news')
         # Home window
         self.__home_chat = Text(self, height=9999999, width=9999999,
                                 bg=self.__app_background_color, state=DISABLED, font=('helvetica', '16'))
         self.__home_chat.grid(row=1, column=2, sticky='news', columnspan=2)
+        logging.info(f"[ChatEaseGUI]: finished setup ({self.__email})")
 
     def record_audio(self):
-        if self.__current_chat_name.text != "Home":
-            audio_gui = RecordingGUI(self.__email, self.__record_button,
-                                     self.winfo_screenwidth(), self.winfo_screenheight(),
-                                     upload_file, self.__current_chat_name)
-            t = threading.Thread(target=audio_gui.record_audio)
-            t.start()
+        """ Opens a thread and calls record_audio of RecordingGUI """
+        # TODO: uncomment the following line
+        # if self.__current_chat_name.text != "Home":
+        logging.info(f"[ChatEaseGUI]: record audio called ({self.__email})")
+        audio_gui = RecordingGUI(
+            self.__email, self.__record_button, self.winfo_screenwidth(), self.winfo_screenheight(),
+            self.__communication.upload_file, str(self.__current_chat_name.chat_id), self.record_audio
+        )
+        t = threading.Thread(target=audio_gui.record_audio, daemon=True, name="RecordingGUI")
+        t.start()
+        logging.info(f"[ChatEaseGUI]: opened a thread and called RecordingGUI ({self.__email})")
+
+    def __del__(self):
+        self.quit()
 
 
 def resource_path(relative_path):
@@ -116,5 +181,13 @@ def resource_path(relative_path):
     return os.path.join(os.path.abspath("."), relative_path)
 
 
-gui = ChatEaseGUI("omerdagry@gmail.com")
-gui.mainloop()
+def main():
+    logging.info("just checking - info")
+    logging.debug("just checking - debug")
+    logging.warning("just checking - warning")
+    gui = ChatEaseGUI("omerdagry@gmail.com", "123", ("127.0.0.1", 8820), None)
+    gui.mainloop()
+
+
+if __name__ == '__main__':
+    main()

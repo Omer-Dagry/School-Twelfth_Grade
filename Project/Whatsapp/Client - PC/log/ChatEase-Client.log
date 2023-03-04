@@ -1,0 +1,181 @@
+INFO | 2023-03-04 00:51:56,491 | MainProcess | MainThread | just checking - info
+DEBUG | 2023-03-04 00:51:56,492 | MainProcess | MainThread | just checking - debug
+WARNING | 2023-03-04 00:51:56,492 | MainProcess | MainThread | just checking - warning
+INFO | 2023-03-04 00:51:56,492 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 00:51:56,643 | MainProcess | MainThread | [ChatEaseGUI]: finished initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 00:51:56,643 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-04 00:51:56,783 | MainProcess | MainThread | [ChatEaseGUI]: finished setup (omerdagry@gmail.com)
+INFO | 2023-03-04 00:51:56,783 | MainProcess | MainThread | [ChatEaseGUI]: mainloop (omerdagry@gmail.com)
+INFO | 2023-03-04 00:51:57,654 | MainProcess | MainThread | [ChatEaseGUI]: record audio called (omerdagry@gmail.com)
+INFO | 2023-03-04 00:51:57,654 | MainProcess | MainThread | [RecordingGUI]: initializing (omerdagry@gmail.com)
+INFO | 2023-03-04 00:51:57,654 | MainProcess | MainThread | [RecordingGUI]: finished initializing (omerdagry@gmail.com)
+INFO | 2023-03-04 00:51:57,655 | MainProcess | MainThread | [ChatEaseGUI]: opened a thread and called RecordingGUI (omerdagry@gmail.com)
+INFO | 2023-03-04 00:51:57,656 | MainProcess | RecordingGUI | [RecordingGUI]: starting to record (omerdagry@gmail.com)
+INFO | 2023-03-04 00:51:59,415 | MainProcess | RecordingGUI | [RecordingGUI]: finished recording (omerdagry@gmail.com)
+INFO | 2023-03-04 00:51:59,415 | MainProcess | RecordingGUI | [RecordingGUI]: initializing recording options GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 00:51:59,529 | MainProcess | RecordingGUI | [RecordingGUI]: finished initializing recording options GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 00:51:59,529 | MainProcess | RecordingGUI | [RecordingGUI]: mainloop (omerdagry@gmail.com)
+INFO | 2023-03-04 00:52:00,424 | MainProcess | RecordingGUI | [RecordingGUI]: playing audio file (omerdagry@gmail.com)
+INFO | 2023-03-04 00:52:04,311 | MainProcess | RecordingGUI | [RecordingGUI]: removed audio file (omerdagry@gmail.com)
+INFO | 2023-03-04 00:53:29,630 | MainProcess | MainThread | just checking - info
+DEBUG | 2023-03-04 00:53:29,630 | MainProcess | MainThread | just checking - debug
+WARNING | 2023-03-04 00:53:29,630 | MainProcess | MainThread | just checking - warning
+INFO | 2023-03-04 00:53:29,630 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 00:53:29,801 | MainProcess | MainThread | [ChatEaseGUI]: finished initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 00:53:29,801 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-04 00:53:29,964 | MainProcess | MainThread | [ChatEaseGUI]: finished setup (omerdagry@gmail.com)
+INFO | 2023-03-04 00:53:29,964 | MainProcess | MainThread | [ChatEaseGUI]: mainloop (omerdagry@gmail.com)
+INFO | 2023-03-04 00:53:30,958 | MainProcess | MainThread | [ChatEaseGUI]: record audio called (omerdagry@gmail.com)
+INFO | 2023-03-04 00:53:30,959 | MainProcess | MainThread | [RecordingGUI]: initializing (omerdagry@gmail.com)
+INFO | 2023-03-04 00:53:30,959 | MainProcess | MainThread | [RecordingGUI]: finished initializing (omerdagry@gmail.com)
+INFO | 2023-03-04 00:53:30,959 | MainProcess | MainThread | [ChatEaseGUI]: opened a thread and called RecordingGUI (omerdagry@gmail.com)
+INFO | 2023-03-04 00:53:30,960 | MainProcess | RecordingGUI | [RecordingGUI]: starting to record (omerdagry@gmail.com)
+INFO | 2023-03-04 00:53:33,528 | MainProcess | RecordingGUI | [RecordingGUI]: finished recording (omerdagry@gmail.com)
+INFO | 2023-03-04 00:53:33,528 | MainProcess | RecordingGUI | [RecordingGUI]: initializing recording options GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 00:53:33,640 | MainProcess | RecordingGUI | [RecordingGUI]: finished initializing recording options GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 00:53:33,640 | MainProcess | RecordingGUI | [RecordingGUI]: mainloop (omerdagry@gmail.com)
+INFO | 2023-03-04 00:53:34,625 | MainProcess | RecordingGUI | [RecordingGUI]: playing audio file (omerdagry@gmail.com)
+DEBUG | 2023-03-04 00:53:34,898 | RecordingGUI - Play | MainThread | Starting
+ERROR | 2023-03-04 00:53:34,898 | RecordingGUI - Play | MainThread | 
+    Error 305 for command:
+        open "omerdagry@gmail.com\temp.wav"
+    Cannot specify extra characters after a string enclosed in quotation marks.
+ERROR | 2023-03-04 00:53:34,898 | RecordingGUI - Play | MainThread | 
+    Error 263 for command:
+        close "omerdagry@gmail.com\temp.wav"
+    The specified device is not open or is not recognized by MCI.
+WARNING | 2023-03-04 00:53:34,899 | RecordingGUI - Play | MainThread | Failed to close the file: "omerdagry@gmail.com\temp.wav"
+WARNING | 2023-03-04 00:53:34,899 | RecordingGUI - Play | MainThread | [RecordingGUI]: exception when playing audio file, ex: 
+    Error 305 for command:
+        open "omerdagry@gmail.com\temp.wav"
+    Cannot specify extra characters after a string enclosed in quotation marks. (omerdagry@gmail.com)
+INFO | 2023-03-04 00:53:34,941 | MainProcess | RecordingGUI | [RecordingGUI]: stopped playing audio file (omerdagry@gmail.com)
+INFO | 2023-03-04 00:53:36,142 | MainProcess | RecordingGUI | [RecordingGUI]: playing audio file (omerdagry@gmail.com)
+DEBUG | 2023-03-04 00:53:36,392 | RecordingGUI - Play | MainThread | Starting
+ERROR | 2023-03-04 00:53:36,392 | RecordingGUI - Play | MainThread | 
+    Error 305 for command:
+        open "omerdagry@gmail.com\temp.wav"
+    Cannot specify extra characters after a string enclosed in quotation marks.
+ERROR | 2023-03-04 00:53:36,392 | RecordingGUI - Play | MainThread | 
+    Error 263 for command:
+        close "omerdagry@gmail.com\temp.wav"
+    The specified device is not open or is not recognized by MCI.
+WARNING | 2023-03-04 00:53:36,392 | RecordingGUI - Play | MainThread | Failed to close the file: "omerdagry@gmail.com\temp.wav"
+WARNING | 2023-03-04 00:53:36,392 | RecordingGUI - Play | MainThread | [RecordingGUI]: exception when playing audio file, ex: 
+    Error 305 for command:
+        open "omerdagry@gmail.com\temp.wav"
+    Cannot specify extra characters after a string enclosed in quotation marks. (omerdagry@gmail.com)
+INFO | 2023-03-04 00:53:36,453 | MainProcess | RecordingGUI | [RecordingGUI]: stopped playing audio file (omerdagry@gmail.com)
+INFO | 2023-03-04 00:53:41,134 | MainProcess | RecordingGUI | [RecordingGUI]: removed audio file (omerdagry@gmail.com)
+INFO | 2023-03-04 01:50:27,395 | MainProcess | MainThread | just checking - info
+DEBUG | 2023-03-04 01:50:27,395 | MainProcess | MainThread | just checking - debug
+WARNING | 2023-03-04 01:50:27,395 | MainProcess | MainThread | just checking - warning
+INFO | 2023-03-04 01:50:27,395 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 01:50:27,533 | MainProcess | MainThread | [ChatEaseGUI]: finished initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 01:50:27,533 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-04 01:50:27,638 | MainProcess | MainThread | [ChatEaseGUI]: finished setup (omerdagry@gmail.com)
+INFO | 2023-03-04 01:50:27,638 | MainProcess | MainThread | [ChatEaseGUI]: mainloop (omerdagry@gmail.com)
+INFO | 2023-03-04 01:51:22,085 | MainProcess | MainThread | just checking - info
+DEBUG | 2023-03-04 01:51:22,085 | MainProcess | MainThread | just checking - debug
+WARNING | 2023-03-04 01:51:22,085 | MainProcess | MainThread | just checking - warning
+INFO | 2023-03-04 01:51:22,085 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 01:51:22,224 | MainProcess | MainThread | [ChatEaseGUI]: finished initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 01:51:22,224 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-04 01:51:22,335 | MainProcess | MainThread | [ChatEaseGUI]: finished setup (omerdagry@gmail.com)
+INFO | 2023-03-04 01:51:22,335 | MainProcess | MainThread | [ChatEaseGUI]: mainloop (omerdagry@gmail.com)
+INFO | 2023-03-04 01:52:07,653 | MainProcess | MainThread | just checking - info
+DEBUG | 2023-03-04 01:52:07,653 | MainProcess | MainThread | just checking - debug
+WARNING | 2023-03-04 01:52:07,653 | MainProcess | MainThread | just checking - warning
+INFO | 2023-03-04 01:52:07,653 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 01:52:07,781 | MainProcess | MainThread | [ChatEaseGUI]: finished initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 01:52:07,782 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-04 01:52:07,901 | MainProcess | MainThread | [ChatEaseGUI]: finished setup (omerdagry@gmail.com)
+INFO | 2023-03-04 01:52:07,902 | MainProcess | MainThread | [ChatEaseGUI]: mainloop (omerdagry@gmail.com)
+INFO | 2023-03-04 01:53:52,698 | MainProcess | MainThread | just checking - info
+DEBUG | 2023-03-04 01:53:52,698 | MainProcess | MainThread | just checking - debug
+WARNING | 2023-03-04 01:53:52,699 | MainProcess | MainThread | just checking - warning
+INFO | 2023-03-04 01:53:52,699 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 01:53:52,836 | MainProcess | MainThread | [ChatEaseGUI]: finished initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 01:53:52,836 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-04 01:53:52,957 | MainProcess | MainThread | [ChatEaseGUI]: finished setup (omerdagry@gmail.com)
+INFO | 2023-03-04 01:53:52,957 | MainProcess | MainThread | [ChatEaseGUI]: mainloop (omerdagry@gmail.com)
+INFO | 2023-03-04 01:56:27,751 | MainProcess | MainThread | just checking - info
+DEBUG | 2023-03-04 01:56:27,751 | MainProcess | MainThread | just checking - debug
+WARNING | 2023-03-04 01:56:27,751 | MainProcess | MainThread | just checking - warning
+INFO | 2023-03-04 01:56:27,751 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 01:56:27,872 | MainProcess | MainThread | [ChatEaseGUI]: finished initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 01:56:27,872 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-04 01:56:28,003 | MainProcess | MainThread | [ChatEaseGUI]: finished setup (omerdagry@gmail.com)
+INFO | 2023-03-04 01:56:28,004 | MainProcess | MainThread | [ChatEaseGUI]: mainloop (omerdagry@gmail.com)
+INFO | 2023-03-04 01:59:40,847 | MainProcess | MainThread | just checking - info
+DEBUG | 2023-03-04 01:59:40,847 | MainProcess | MainThread | just checking - debug
+WARNING | 2023-03-04 01:59:40,847 | MainProcess | MainThread | just checking - warning
+INFO | 2023-03-04 01:59:40,847 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 01:59:40,972 | MainProcess | MainThread | [ChatEaseGUI]: finished initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 01:59:40,972 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-04 01:59:41,083 | MainProcess | MainThread | [ChatEaseGUI]: finished setup (omerdagry@gmail.com)
+INFO | 2023-03-04 01:59:41,083 | MainProcess | MainThread | [ChatEaseGUI]: mainloop (omerdagry@gmail.com)
+INFO | 2023-03-04 01:59:53,702 | MainProcess | MainThread | just checking - info
+DEBUG | 2023-03-04 01:59:53,702 | MainProcess | MainThread | just checking - debug
+WARNING | 2023-03-04 01:59:53,702 | MainProcess | MainThread | just checking - warning
+INFO | 2023-03-04 01:59:53,702 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 01:59:53,824 | MainProcess | MainThread | [ChatEaseGUI]: finished initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 01:59:53,824 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-04 01:59:53,948 | MainProcess | MainThread | [ChatEaseGUI]: finished setup (omerdagry@gmail.com)
+INFO | 2023-03-04 01:59:53,948 | MainProcess | MainThread | [ChatEaseGUI]: mainloop (omerdagry@gmail.com)
+INFO | 2023-03-04 02:00:19,363 | MainProcess | MainThread | just checking - info
+DEBUG | 2023-03-04 02:00:19,363 | MainProcess | MainThread | just checking - debug
+WARNING | 2023-03-04 02:00:19,364 | MainProcess | MainThread | just checking - warning
+INFO | 2023-03-04 02:00:19,364 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 02:00:19,497 | MainProcess | MainThread | [ChatEaseGUI]: finished initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 02:00:19,497 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-04 02:00:19,618 | MainProcess | MainThread | [ChatEaseGUI]: finished setup (omerdagry@gmail.com)
+INFO | 2023-03-04 02:00:19,619 | MainProcess | MainThread | [ChatEaseGUI]: mainloop (omerdagry@gmail.com)
+INFO | 2023-03-04 02:01:01,600 | MainProcess | MainThread | just checking - info
+DEBUG | 2023-03-04 02:01:01,601 | MainProcess | MainThread | just checking - debug
+WARNING | 2023-03-04 02:01:01,601 | MainProcess | MainThread | just checking - warning
+INFO | 2023-03-04 02:01:01,601 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 02:01:01,727 | MainProcess | MainThread | [ChatEaseGUI]: finished initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 02:01:01,727 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-04 02:01:01,856 | MainProcess | MainThread | [ChatEaseGUI]: finished setup (omerdagry@gmail.com)
+INFO | 2023-03-04 02:01:01,856 | MainProcess | MainThread | [ChatEaseGUI]: mainloop (omerdagry@gmail.com)
+INFO | 2023-03-04 02:01:24,545 | MainProcess | MainThread | just checking - info
+DEBUG | 2023-03-04 02:01:24,545 | MainProcess | MainThread | just checking - debug
+WARNING | 2023-03-04 02:01:24,545 | MainProcess | MainThread | just checking - warning
+INFO | 2023-03-04 02:01:24,546 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 02:01:24,676 | MainProcess | MainThread | [ChatEaseGUI]: finished initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 02:01:24,676 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-04 02:01:24,786 | MainProcess | MainThread | [ChatEaseGUI]: finished setup (omerdagry@gmail.com)
+INFO | 2023-03-04 02:01:24,786 | MainProcess | MainThread | [ChatEaseGUI]: mainloop (omerdagry@gmail.com)
+INFO | 2023-03-04 02:08:47,248 | MainProcess | MainThread | just checking - info
+DEBUG | 2023-03-04 02:08:47,248 | MainProcess | MainThread | just checking - debug
+WARNING | 2023-03-04 02:08:47,248 | MainProcess | MainThread | just checking - warning
+INFO | 2023-03-04 02:08:47,249 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 02:08:47,383 | MainProcess | MainThread | [ChatEaseGUI]: finished initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 02:08:47,383 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-04 02:08:47,506 | MainProcess | MainThread | [ChatEaseGUI]: finished setup (omerdagry@gmail.com)
+INFO | 2023-03-04 02:08:47,506 | MainProcess | MainThread | [ChatEaseGUI]: mainloop (omerdagry@gmail.com)
+INFO | 2023-03-04 02:10:46,998 | MainProcess | MainThread | just checking - info
+DEBUG | 2023-03-04 02:10:46,998 | MainProcess | MainThread | just checking - debug
+WARNING | 2023-03-04 02:10:46,998 | MainProcess | MainThread | just checking - warning
+INFO | 2023-03-04 02:10:46,998 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 02:10:47,138 | MainProcess | MainThread | [ChatEaseGUI]: finished initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 02:10:47,138 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-04 02:10:47,240 | MainProcess | MainThread | [ChatEaseGUI]: finished setup (omerdagry@gmail.com)
+INFO | 2023-03-04 02:10:47,240 | MainProcess | MainThread | [ChatEaseGUI]: mainloop (omerdagry@gmail.com)
+INFO | 2023-03-04 02:11:11,630 | MainProcess | MainThread | just checking - info
+DEBUG | 2023-03-04 02:11:11,630 | MainProcess | MainThread | just checking - debug
+WARNING | 2023-03-04 02:11:11,630 | MainProcess | MainThread | just checking - warning
+INFO | 2023-03-04 02:11:11,630 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 02:11:11,758 | MainProcess | MainThread | [ChatEaseGUI]: finished initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 02:11:11,758 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-04 02:11:11,891 | MainProcess | MainThread | [ChatEaseGUI]: finished setup (omerdagry@gmail.com)
+INFO | 2023-03-04 02:11:11,892 | MainProcess | MainThread | [ChatEaseGUI]: mainloop (omerdagry@gmail.com)
+INFO | 2023-03-04 02:44:12,263 | MainProcess | MainThread | just checking - info
+DEBUG | 2023-03-04 02:44:12,263 | MainProcess | MainThread | just checking - debug
+WARNING | 2023-03-04 02:44:12,263 | MainProcess | MainThread | just checking - warning
+INFO | 2023-03-04 02:44:12,263 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 02:44:12,424 | MainProcess | MainThread | [ChatEaseGUI]: finished initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-04 02:44:12,424 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-04 02:44:12,526 | MainProcess | MainThread | [ChatEaseGUI]: finished setup (omerdagry@gmail.com)
+INFO | 2023-03-04 02:44:12,526 | MainProcess | MainThread | [ChatEaseGUI]: mainloop (omerdagry@gmail.com)
