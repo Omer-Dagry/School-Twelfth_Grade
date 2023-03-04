@@ -5,6 +5,7 @@ Mail: omerdagry@gmail.com
 Date: 06/01/2023 (dd/mm/yyyy)
 ###############################################
 """
+import hashlib
 import os
 import ssl
 import time
@@ -150,10 +151,27 @@ def add_chat_id_to_user_chats(user_email: str, chat_id: str) -> bool:
     if not os.path.isfile(f"{USERS_DATA}{user_email}\\chats"):
         write_to_file(f"{USERS_DATA}{user_email}\\chats", "wb", b"")
     try:
-        chats_list = pickle.loads(read_from_file(f"{USERS_DATA}{user_email}\\chats", "rb"))
+        chats_list: set = pickle.loads(read_from_file(f"{USERS_DATA}{user_email}\\chats", "rb"))
     except EOFError:
-        chats_list = []
-    chats_list.extend(chat_id)
+        chats_list = set()
+    chats_list.add(chat_id)
+    write_to_file(f"{USERS_DATA}{user_email}\\chats", "wb", pickle.dumps(chats_list))
+    return True
+
+
+def remove_chat_id_from_user_chats(user_email: str, chat_id: str) -> bool:
+    exists, username = get_username(user_email)
+    if not exists:
+        return False
+    os.makedirs(f"{USERS_DATA}{user_email}\\", exist_ok=True)
+    if not os.path.isfile(f"{USERS_DATA}{user_email}\\chats"):
+        write_to_file(f"{USERS_DATA}{user_email}\\chats", "wb", b"")
+    try:
+        chats_list: set = pickle.loads(read_from_file(f"{USERS_DATA}{user_email}\\chats", "rb"))
+    except EOFError:
+        chats_list = set()
+    if chat_id in chats_list:
+        chats_list.remove(chat_id)
     write_to_file(f"{USERS_DATA}{user_email}\\chats", "wb", pickle.dumps(chats_list))
     return True
 
@@ -170,9 +188,9 @@ def is_user_in_chat(user_email: str, chat_id: str) -> bool:
     if not os.path.isfile(f"{USERS_DATA}{user_email}\\chats"):
         return False
     try:
-        chats_list = pickle.loads(read_from_file(f"{USERS_DATA}{user_email}\\chats", "rb"))
+        chats_list: set = pickle.loads(read_from_file(f"{USERS_DATA}{user_email}\\chats", "rb"))
     except EOFError:
-        chats_list = []
+        chats_list = set()
     if chat_id not in chats_list:
         return False
     return True
@@ -245,14 +263,13 @@ def known_to_each_other(emails: list[str]):
         block(f"{USERS_DATA}{email}\\known_users_block")
         try:
             try:
-                known_to_user = pickle.loads(read_from_file(f"{USERS_DATA}{email}\\known_users", "rb"))
+                known_to_user: set = pickle.loads(read_from_file(f"{USERS_DATA}{email}\\known_users", "rb"))
             except EOFError:
-                known_to_user = []
+                known_to_user = set()
             for email_2 in emails:
                 if email == email_2:
                     continue
-                known_to_user.append(email_2)
-            known_to_user = list(set(known_to_user))
+                known_to_user.add(email_2)
             write_to_file(f"{USERS_DATA}{email}\\known_users", "wb", pickle.dumps(known_to_user))
         finally:
             unblock(f"{USERS_DATA}{email}\\known_users_block")
@@ -336,7 +353,9 @@ def add_user_to_group(from_user: str, add_user: str, group_id: str) -> bool:
     # update database
     chat_id_users_database.add(group_id, [add_user])
     # update file of users
+    block(f"{USERS_DATA}{group_id}\\users_block")
     write_to_file(f"{USERS_DATA}{group_id}\\users", "a", f"\n{add_user}")
+    unblock(f"{USERS_DATA}{group_id}\\users_block")
     #
     add_chat_id_to_user_chats(add_user, group_id)
     add_new_data_to(from_user, f"all of: {group_id}")
@@ -344,10 +363,29 @@ def add_user_to_group(from_user: str, add_user: str, group_id: str) -> bool:
 
 
 def remove_user_from_group(from_user: str, remove_user: str, group_id: str):
-    pass
+    exists, username = get_username(remove_user)
+    exists2, username2 = get_username(from_user)
+    if not exists or not exists2 or not is_user_in_chat(from_user, group_id) or \
+            not is_user_in_chat(remove_user, group_id):
+        return False
+    # update database
+    chat_id_users_database.remove(group_id, remove_user)
+    # update file of users
+    block(f"{USERS_DATA}{group_id}\\users_block")
+    users = read_from_file(f"{USERS_DATA}{group_id}\\users", "r").split("\n")
+    if remove_user in users:
+        users.remove(remove_user)
+    users = "\n".join(users)
+    write_to_file(f"{USERS_DATA}{group_id}\\users", "w", users)
+    unblock(f"{USERS_DATA}{group_id}\\users_block")
+    #
+    remove_chat_id_from_user_chats(remove_user, group_id)
+    add_new_data_to(from_user, f"all of: {group_id}")
+    send_msg(from_user, group_id, f"{from_user} removed {remove_user}", remove_msg=True)
+    return True
 
 
-def send_msg(from_user: str, chat_id: str, msg: str, file_msg: bool = False) -> bool:
+def send_msg(from_user: str, chat_id: str, msg: str, file_msg: bool = False, remove_msg: bool = False) -> bool:
     """
     :param from_user: the email of the user that sent the msg
     :param chat_id: the id of the chat that the msg is being sent to
@@ -355,7 +393,12 @@ def send_msg(from_user: str, chat_id: str, msg: str, file_msg: bool = False) -> 
     :param file_msg: if a file was sent to a chat the send_file
                      function will call this function with file_msg=True
                      and the msg will be the file location
+    :param remove_msg: a message that will say 'x removed y' and will be displayed different
     """
+    # 3 types: regular msg / file msg (if it's a file) / remove msg (if someone removed someone)
+    msg_type = "msg" if not file_msg and not remove_msg else "file" if file_msg else "remove" if remove_msg else None
+    if msg_type is None:
+        return False
     lock = block(f"{USERS_DATA}{chat_id}\\data\\not free")
     try:
         users_in_chat = chat_id_users_database.get(chat_id)
@@ -374,12 +417,12 @@ def send_msg(from_user: str, chat_id: str, msg: str, file_msg: bool = False) -> 
             data = {}
             first_chat = True
         if len(data) >= 800 or first_chat:
-            #        index:             [from_user, msg, file_msg, deleted_for, delete_for_all, seen by, time]
-            data = {(latest + 1) * 800: [from_user, msg, file_msg, [], False, [], datetime.datetime.now()]}
+            #        index:             [from_user, msg, msg_type, deleted_for, delete_for_all, seen by, time]
+            data = {(latest + 1) * 800: [from_user, msg, msg_type, [], False, [], datetime.datetime.now()]}
             write_to_file(f"{USERS_DATA}{chat_id}\\data\\chat\\{latest + 1}", "wb", pickle.dumps(data))
         else:
-            #        index:              [from_user, msg, file_msg, deleted_for, delete_for_all, seen by, time]
-            data[max(data.keys()) + 1] = [from_user, msg, file_msg, [], False, [], datetime.datetime.now()]
+            #        index:              [from_user, msg, msg_type, deleted_for, delete_for_all, seen by, time]
+            data[max(data.keys()) + 1] = [from_user, msg, msg_type, [], False, [], datetime.datetime.now()]
             write_to_file(f"{USERS_DATA}{chat_id}\\data\\chat\\{latest}", "wb", pickle.dumps(data))
         # when finished remove the folder
         lock = unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
@@ -441,14 +484,14 @@ def delete_msg_for_me(from_user: str, chat_id: str, index_of_msg: int):
             data: dict = pickle.loads(read_from_file(f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}", "rb"))
         except EOFError:
             data = {}
-        # msg -> [from_user, msg, file_msg, deleted_for, delete_for_all, seen by, time]
-        msg = data.get(file_number)
+        # msg -> [from_user, msg, msg_type, deleted_for, delete_for_all, seen by, time]
+        msg = data.get(index_of_msg)
         if msg is not None:
             deleted_for = msg[3]
             if from_user not in deleted_for:
                 deleted_for.append(from_user)
             msg[3] = deleted_for
-            data[file_number] = msg
+            data[index_of_msg] = msg
             write_to_file(f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}", "wb", pickle.dumps(data))
         else:
             unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
@@ -476,12 +519,12 @@ def delete_msg_for_everyone(from_user: str, chat_id: str, index_of_msg: int):
             data: dict = pickle.loads(read_from_file(f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}", "rb"))
         except EOFError:
             data = {}
-        # msg -> [from_user, msg, file_msg, deleted_for, delete_for_all, seen by, time]
-        msg = data.get(file_number)
-        if msg is not None:
+        # msg -> [from_user, msg, msg_type, deleted_for, delete_for_all, seen by, time]
+        msg = data.get(index_of_msg)
+        if msg is not None and msg[0] == from_user:
             msg[1] = "This Message Was Deleted."
             msg[4] = True
-            data[file_number] = msg
+            data[index_of_msg] = msg
             write_to_file(f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}", "wb", pickle.dumps(data))
         else:
             unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
@@ -549,7 +592,7 @@ def signup(username: str, email: str, password: str, client_sock: EncryptedProto
     # if username doesn't exist
     if f"{email} - {username}" not in email_user and len(username) <= 40:
         # add username and password to the user_password_database
-        user_password_database[f"{email} - {username}"] = password
+        user_password_database[f"{email} - {username}"] = hashlib.md5(password.encode()).hexdigest().lower()
         logging.info(f"signup attempt successful - email: '{email}', username: '{username}'")
         # create user directory and files
         os.makedirs(f"{USERS_DATA}{email}", exist_ok=True)
@@ -637,20 +680,23 @@ def login(email: str, password: str) -> bool:
     :param password: the md5 hash of the password
     """
     user_exists, user_password_hash = get_user_password(email)
-    if not user_exists or user_password_hash != password:
+    if not user_exists or user_password_hash != hashlib.md5(password.encode()).hexdigest().lower():
         return False
     user_online_status_database[email] = ["Online", None]
     return True
 
 
 def sync(email: str, sync_all: bool = False) -> bool:
+    block(f"{USERS_DATA}{email}\\sync")
     new_data = get_new_data_of(email)
     if sync_all:
-
         pass
     # TODO finish this func
+    # make a dictionary -> {file_path: file_data}
+    # pickle the dictionary & send to client
     with open(f"{USERS_DATA}{email}\\new_data.txt", "w") as f:
         f.write("")
+    unblock(f"{USERS_DATA}{email}\\sync")
 
 
 def call_user(from_email: str, to_email: str):
