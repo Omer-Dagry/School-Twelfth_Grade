@@ -104,7 +104,7 @@ class Communication:
         # sock.send_message(f"sync {mode}".ljust(30).encode())
         # response = sock.receive_message()
         # TODO: finish this function
-        raise NotImplemented
+        raise NotImplementedError
 
     def upload_file(self, chat_id: str | int, filename: str = "", root: tkinter.Tk = None, delete_file: bool = False):
         upload_thread = Thread(target=self.upload_file_, args=(str(chat_id), filename, delete_file,), daemon=True)
@@ -122,12 +122,19 @@ class Communication:
         # TODO: upload file
         # if delete_file:
         #     os.remove(filename)
-        raise NotImplemented
+        raise NotImplementedError
 
     def send_message(self, chat_id: str | int, msg: str, sock: EncryptedProtocolSocket):
         # chat_id = str(chat_id)
         # TODO: send the msg
-        raise NotImplemented
+        raise NotImplementedError
 
-    def new_chat(self, other_email: str, email: str, sock: EncryptedProtocolSocket):
-        raise NotImplemented
+    def new_chat(self, other_email: str, sock: EncryptedProtocolSocket):
+        raise NotImplementedError
+
+    def make_call(self, chat_id: str):
+        # go to 'users' file of this chat and make call to users
+        # OR
+        # change the way a call works and call the chat_id and the server
+        # will handle who to call
+        raise NotImplementedError

@@ -1,13 +1,16 @@
 import os
 import logging
 import threading
+import tkinter
+import traceback
 
 from tkinter import *
 # from PIL.ImageOps import contain
 # from PIL import Image as ImagePIL
 # from multiprocessing import Process
-from recording_gui import RecordingGUI
 # from PIL import ImageTk as ImageTkPIL
+from settings_gui import SettingsGUI
+from recording_gui import RecordingGUI
 from protocol_socket import EncryptedProtocolSocket
 from communication import Communication as Com  # upload_file, send_message, new_chat
 
@@ -56,16 +59,45 @@ class ChatEaseGUI(Tk):
         self.__record_button: Button | None = None
         self.__current_chat_name: Label | None = None
         #
-        logging.info(f"[ChatEaseGUI]: finished initializing GUI ({email})")
+        self.__add_to_update_dict: dict[Tk, str] = {}
+        self.__update_dict: dict[Tk, str] = {self: "ChatEaseGUI"}
+        #
+        self.__setup()
+
+    def __change_background_color(self, bg: str):
+        """ changes __app_background_color and destroys all widgets and calls __setup """
+        logging.info(f"[ChatEaseGUI]: __change_background_color, bg = '{bg}' ({self.__email})")
+        self.__app_background_color = bg
+        for widget in self.winfo_children():
+            widget.destroy()
         self.__setup()
 
     def mainloop(self, n: int = 0) -> None:
         """ Call the mainloop of Tk. """
-        logging.info(f"[ChatEaseGUI]: mainloop ({self.__email})")
-        super().mainloop(n)
+        # logging.info(f"[ChatEaseGUI]: mainloop ({self.__email})")
+        # super().mainloop(n)
+        raise NotImplementedError("Please Call 'fake_mainloop' instead of 'mainloop'")
 
-    def change_background(self, bg):
-        raise NotImplemented
+    def fake_mainloop(self):
+        logging.info(f"[ChatEaseGUI]: fake_mainloop ({self.__email})")
+        while self in self.__update_dict:
+            remove = []
+            # update all the GUIs
+            for gui in self.__update_dict.keys():
+                try:
+                    if gui.winfo_exists():
+                        gui.update()
+                    else:
+                        remove.append(gui)
+                except tkinter.TclError:
+                    remove.append(gui)
+            for gui in remove:  # remove closed GUI's
+                if self.__update_dict[gui] == "SettingsGUI":
+                    self.__settings_button["state"] = NORMAL
+                self.__update_dict.pop(gui)
+            for gui, name in self.__add_to_update_dict.items():  # add new GUI's (can't during iteration)
+                self.__update_dict[gui] = name
+            self.__add_to_update_dict = {}
 
     def __enter_key(self, event=None):
         if event is not None and event.type == EventType.KeyPress and self.__current_chat_name.text != "Home":
@@ -92,7 +124,7 @@ class ChatEaseGUI(Tk):
             user = self.__search_user.get()
             self.__search_user.delete(0, END)
             self.__search_user_focus_out()
-            self.__communication.new_chat(user, self.__email, self.__sock)
+            self.__communication.new_chat(user, self.__sock)
 
     def __setup(self):
         logging.info(f"[ChatEaseGUI]: setup ({self.__email})")
@@ -114,20 +146,35 @@ class ChatEaseGUI(Tk):
                                          bg=self.__app_background_color, fg="white", justify="center")
         self.__current_chat_name.text = "Home"
         self.__current_chat_name.chat_id = None
-        self.__current_chat_name.grid(row=0, column=2, columnspan=2, sticky="news")
+        self.__current_chat_name.grid(row=0, column=2, sticky="news")
+        # Call button
+        self.__call_photo = PhotoImage(file=resource_path("call.png"))
+        self.__call_button = Button(
+            self, text="Call", width=4, height=1, bg=self.__app_background_color,
+            fg="white", font=None, image=self.__call_photo,
+            command=lambda: self.__communication.make_call(self.__current_chat_name.chat_id)
+        )
+        self.__call_button.grid(row=0, column=3, sticky='news')
+        # Settings button
+        self.__settings_photo = PhotoImage(file=resource_path("setting.png"))
+        self.__settings_button = Button(
+            self, text="Settings", width=4, height=1, bg=self.__app_background_color,
+            fg="white", font=None, image=self.__settings_photo, command=self.__settings
+        )
+        self.__settings_button.grid(row=0, column=4, sticky='news')
         # Entry box for text
         self.__msg_box = Entry(self, width=121, bg=self.__app_background_color, fg="white", font=("helvetica", 16))
         self.__msg_box.bind('<Return>', self.__enter_key)
         self.__msg_box.grid(row=19, column=2, sticky='news')
         # Button to record audio
-        self.photo = PhotoImage(file=resource_path("microphone.png"))
-        self.__record_button = Button(self, image=self.photo, command=self.record_audio, height=68, width=140,
-                                      bg=self.__app_background_color, fg="#63C8D8", text="Record")
-        self.__record_button.grid(row=19, column=3, sticky='news')
+        self.__record_photo = PhotoImage(file=resource_path("microphone.png"))
+        self.__record_button = Button(self, image=self.__record_photo, command=self.__record_audio, height=68,
+                                      width=140, bg=self.__app_background_color, fg="#63C8D8", text="Record")
+        self.__record_button.grid(row=19, column=3, columnspan=2, sticky='news')
         # Button to submit the input from the input box
-        self.photo2 = PhotoImage(file=resource_path("send.png"))
+        self.__send_photo = PhotoImage(file=resource_path("send.png"))
         self.__send_msg = Button(
-            self, image=self.photo2, width=40, height=3, bg=self.__app_background_color, fg="white", font=None,
+            self, image=self.__send_photo, width=40, height=3, bg=self.__app_background_color, fg="white", font=None,
             command=lambda: (
                 self.__communication.send_message(
                     self.__current_chat_name.chat_id, self.__msg_box.get(), self.__sock
@@ -137,8 +184,8 @@ class ChatEaseGUI(Tk):
         )
         self.__send_msg.grid(row=19, column=0, sticky='news')
         # Button to upload files
-        self.photo3 = PhotoImage(file=resource_path("doc.png"))
-        self.__file_upload = Button(self, image=self.photo3, bg=self.__app_background_color, height=1, width=1,
+        self.__upload_photo = PhotoImage(file=resource_path("doc.png"))
+        self.__file_upload = Button(self, image=self.__upload_photo, bg=self.__app_background_color, height=1, width=1,
                                     command=lambda: self.__communication.upload_file(self.__current_chat_name.chat_id))
         self.__file_upload.grid(row=19, column=1, sticky='news')
         # Create an input box to search a username and start chat with him
@@ -156,21 +203,28 @@ class ChatEaseGUI(Tk):
         # Home window
         self.__home_chat = Text(self, height=9999999, width=9999999,
                                 bg=self.__app_background_color, state=DISABLED, font=('helvetica', '16'))
-        self.__home_chat.grid(row=1, column=2, sticky='news', columnspan=2)
-        logging.info(f"[ChatEaseGUI]: finished setup ({self.__email})")
+        self.__home_chat.grid(row=1, column=2, sticky='news', columnspan=3)
 
-    def record_audio(self):
+    def __record_audio(self):
         """ Opens a thread and calls record_audio of RecordingGUI """
         # TODO: uncomment the following line
         # if self.__current_chat_name.text != "Home":
-        logging.info(f"[ChatEaseGUI]: record audio called ({self.__email})")
+        logging.info(f"[ChatEaseGUI]: record audio called, creating RecordingGUI instance ({self.__email})")
         audio_gui = RecordingGUI(
             self.__email, self.__record_button, self.winfo_screenwidth(), self.winfo_screenheight(),
-            self.__communication.upload_file, str(self.__current_chat_name.chat_id), self.record_audio
+            self.__communication.upload_file, str(self.__current_chat_name.chat_id), self.__record_audio
         )
         t = threading.Thread(target=audio_gui.record_audio, daemon=True, name="RecordingGUI")
         t.start()
-        logging.info(f"[ChatEaseGUI]: opened a thread and called RecordingGUI ({self.__email})")
+        logging.info(f"[ChatEaseGUI]: opened a thread and called RecordingGUI.record_audio ({self.__email})")
+
+    def __settings(self):
+        if self.__settings_button["state"] == NORMAL:
+            logging.info(f"[ChatEaseGUI]: creating SettingsGUI instance ({self.__email})")
+            settings_gui = SettingsGUI(self.__email, self.__change_background_color)
+            self.__add_to_update_dict[settings_gui] = "SettingsGUI"
+            self.__settings_button["state"] = DISABLED
+            logging.info(f"[ChatEaseGUI]: added SettingsGUI to fake_mainloop ({self.__email})")
 
     def __del__(self):
         self.quit()
@@ -182,12 +236,15 @@ def resource_path(relative_path):
 
 
 def main():
-    logging.info("just checking - info")
-    logging.debug("just checking - debug")
-    logging.warning("just checking - warning")
     gui = ChatEaseGUI("omerdagry@gmail.com", "123", ("127.0.0.1", 8820), None)
-    gui.mainloop()
+    gui.fake_mainloop()
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except (Exception, KeyboardInterrupt):
+        exc = traceback.format_exc()
+        print(exc)
+        logging.debug(f"Received exception: {exc}")
+    logging.info("Program Ended")

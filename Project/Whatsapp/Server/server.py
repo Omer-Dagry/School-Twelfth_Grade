@@ -884,14 +884,16 @@ def main():
     #
     server_socket = start_server()
     clients_threads: list[threading.Thread] = []
-    clients_threads_socket: dict[threading.Thread, socket.socket] = {}
+    clients_threads_socket: dict[threading.Thread, EncryptedProtocolSocket] = {}
     while True:
         time.sleep(0.5)
         client_socket, client_ip_port = accept_client(server_socket)
         if client_socket is not None:
+            client_socket: EncryptedProtocolSocket
+            client_ip_port: tuple[str, int]
             client_thread = threading.Thread(target=handle_client,
                                              args=(client_socket, client_ip_port),
-                                             daemon=True)
+                                             daemon=True, name="%s:%s" % client_ip_port)
             client_thread.start()
             clients_threads.append(client_thread)
             clients_threads_socket[client_thread] = client_socket

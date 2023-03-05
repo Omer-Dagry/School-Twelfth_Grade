@@ -3,7 +3,7 @@ import wave
 import time
 import pyaudio
 import logging
-import playsound
+import simpleaudio
 
 from tkinter import *
 from typing import Callable
@@ -28,10 +28,12 @@ if not os.path.isfile(LOG_FILE):
 logging.basicConfig(format=LOG_FORMAT, filename=LOG_FILE, level=LOG_LEVEL)
 
 
-def playsound_wrapper(email: str, sound: str, block: bool = True):
+def playsound_wrapper(email: str, sound: str):
     try:
-        playsound.playsound(sound, block)
-    except playsound.PlaysoundException as e:
+        wave_obj = simpleaudio.WaveObject.from_wave_file(sound)
+        play_obj = wave_obj.play()
+        play_obj.wait_done()
+    except Exception as e:
         logging.warning(f"[RecordingGUI]: exception when playing audio file, ex: {e} ({email})")
 
 
@@ -48,7 +50,7 @@ class RecordingGUI:
         self.__winfo_screenheight = winfo_screenheight
         self.__record_audio_func = record_audio_func
         #
-        self.__tmp_file = rf"{self.__email}\temp.wav"
+        self.__tmp_file = f"{self.__email}\\temp.wav"
         #
         self.__playing_button: Button | None = None
         self.__playing_process: Process | None = None
@@ -56,7 +58,6 @@ class RecordingGUI:
         self.__playing_file_path: str = self.__tmp_file
         #
         os.makedirs(self.__email, exist_ok=True)
-        logging.info(f"[RecordingGUI]: finished initializing ({email})")
 
     def record_audio(self):
         """
@@ -124,25 +125,29 @@ class RecordingGUI:
         window_y = self.__winfo_screenheight / 2
         # create options window & configure it
         self.__options_window = Tk()
+        self.__options_window.columnconfigure(0, weight=1)
+        self.__options_window.rowconfigure(0, weight=1)
+        self.__options_window.rowconfigure(1, weight=1)
+        self.__options_window.rowconfigure(2, weight=1)
         self.__options_window.protocol("WM_DELETE_WINDOW", lambda: None)
         self.__options_window.title("Options")
         self.__options_window.geometry("250x%d+%d+%d" % (size, window_x, window_y))
         self.__options_window.minsize(250, size)
         self.__options_window.maxsize(250, size)
         self.__playing_file_path = self.__tmp_file
-        self.__playing_button = Button(self.__options_window, text="Play", bg=color, width=21)
+        self.__playing_button = Button(self.__options_window, text="Play", bg=color, justify=CENTER)
         self.__playing_button.configure(command=self.__play_audio_thread)
         self.__playing_button.grid(row=0, column=0, sticky="news")
-        delete = Button(self.__options_window, text="Delete", bg=color, command=self.__delete_file_close_window)
+        delete = Button(self.__options_window, text="Delete", bg=color, justify=CENTER,
+                        command=self.__delete_file_close_window)
         delete.grid(row=1, column=0, sticky="news")
         send = Button(
-            self.__options_window, text="Send", bg=color,
+            self.__options_window, text="Send", bg=color, justify=CENTER,
             command=lambda: self.__upload_file(
                 self.__chat_id, self.__tmp_file, self.__options_window, True
             )
         )
         send.grid(row=2, column=0, sticky="news")
-        logging.info(f"[RecordingGUI]: finished initializing recording options GUI ({self.__email})")
         logging.info(f"[RecordingGUI]: mainloop ({self.__email})")
         self.__options_window.mainloop()
         # if user didn't press anything and closed the window the recording file still exist so this deletes it
@@ -201,6 +206,8 @@ class RecordingGUI:
                     logging.info(f"[RecordingGUI]: removed audio file ({self.__email})")
                     break
                 except PermissionError:
+                    logging.debug(
+                        f"[RecordingGUI]: exception while removing the audio file, ex: {str(e)} ({self.__email})")
                     time.sleep(0.5)
                     count += 1
         self.__options_window.quit()
