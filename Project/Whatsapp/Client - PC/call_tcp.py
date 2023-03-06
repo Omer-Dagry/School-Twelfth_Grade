@@ -1,9 +1,7 @@
-import datetime
-import socket
-import threading
 import time
-
+import socket
 import pyaudio
+import threading
 import traceback
 
 
@@ -21,7 +19,6 @@ BUFFER_SIZE = CHUNK * 4
 def send(client_socket: socket.socket, stream):
     while True:
         try:
-            # Read audio data from the stream
             data = stream.read(CHUNK)
             client_socket.send(data)
         except socket.timeout:
@@ -32,10 +29,8 @@ def send(client_socket: socket.socket, stream):
 
 
 def recv(client_socket: socket.socket, stream):
-
     while True:
         try:
-            # write audio received from server to the stream
             data = client_socket.recv(BUFFER_SIZE)
             if data == b"":
                 raise Exception("disconnected")
@@ -49,10 +44,9 @@ def recv(client_socket: socket.socket, stream):
 
 
 def main():
-    # Create the socket
     client_socket = socket.socket()
     client_socket.connect((HOST, PORT))
-    client_socket.settimeout(0.05)
+    # client_socket.settimeout(0.05)
     p = pyaudio.PyAudio()
     stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, output=True, frames_per_buffer=CHUNK)
     try:

@@ -35,7 +35,7 @@ def broadcast_audio(data: bytes, sent_from: tuple):
         try:
             if addr != sent_from:
                 if data != b"":
-                    sock.sendto(data, addr)
+                    sock.send(data)
         except TimeoutError:
             print(f"closed {addr} 1")
             remove.append(addr)
@@ -52,7 +52,6 @@ def broadcast_audio(data: bytes, sent_from: tuple):
 
 def handle_client(sock: socket.socket, addr: tuple[str, int]):
     global stop
-    sock.settimeout(0.01)
     while clients or (datetime.datetime.now() - stop).seconds < 5:
         try:
             data = sock.recv(BUFFER_SIZE)
