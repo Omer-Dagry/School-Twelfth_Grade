@@ -13,7 +13,7 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 2
 RATE = 44100
 # Set up the socket
-HOST = 'localhost'
+HOST = '89.138.239.215'
 PORT = 8820
 BUFFER_SIZE = CHUNK * 4
 
@@ -24,6 +24,8 @@ def send(client_socket: socket.socket, stream):
             # Read audio data from the stream
             data = stream.read(CHUNK)
             client_socket.send(data)
+        except socket.timeout:
+            pass
         except Exception:
             traceback.print_exc()
             break
@@ -50,7 +52,7 @@ def main():
     # Create the socket
     client_socket = socket.socket()
     client_socket.connect((HOST, PORT))
-    client_socket.settimeout(0.01)
+    client_socket.settimeout(0.05)
     p = pyaudio.PyAudio()
     stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, output=True, frames_per_buffer=CHUNK)
     try:
