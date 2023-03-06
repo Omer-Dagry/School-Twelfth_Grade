@@ -236,7 +236,7 @@ def resource_path(relative_path):
 
 
 def main():
-    gui = ChatEaseGUI("omerdagry@gmail.com", "123", ("127.0.0.1", 8820), None)
+    gui = ChatEaseGUI("omerdagry@gmail.com", "123", ("127.0.0.1", 8820), EncryptedProtocolSocket())
     gui.fake_mainloop()
 
 

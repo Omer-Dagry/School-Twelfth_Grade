@@ -47,12 +47,14 @@ class SettingsGUI(Tk):
         self.__change_background_button = Button(self, text="Change Background Color", bg=color, justify=CENTER,
                                                  command=self.__change_background)
         self.__change_background_button.grid(row=0, column=0, sticky="news")
+        # TODO: add more settings
 
     def __change_background(self):
         color = colorchooser.askcolor()[1]
         if color is not None:
             logging.info(f"[SettingsGUI]: __change_background, user picked: '{color}' ({self.__email})")
-            self.__change_main_gui_background(color)
+            self.__change_main_gui_background(color)  # call ChatEaseGUI __change_background_color function
+            self.deiconify()  # put the settings GUI back to focus
 
 
 def main():

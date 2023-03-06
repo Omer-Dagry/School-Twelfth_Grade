@@ -1,0 +1,66 @@
+INFO | 2023-03-06 00:56:14,342 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:14,457 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:14,563 | MainProcess | MainThread | [ChatEaseGUI]: fake_mainloop (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:15,898 | MainProcess | MainThread | [ChatEaseGUI]: creating SettingsGUI instance (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:15,898 | MainProcess | MainThread | [SettingsGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:15,997 | MainProcess | MainThread | [SettingsGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:15,997 | MainProcess | MainThread | [ChatEaseGUI]: added SettingsGUI to fake_mainloop (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:19,087 | MainProcess | MainThread | [SettingsGUI]: __change_background, user picked: '#a544fd' (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:19,087 | MainProcess | MainThread | [ChatEaseGUI]: __change_background_color, bg = '#a544fd' (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:19,095 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:29,114 | MainProcess | MainThread | Program Ended
+INFO | 2023-03-06 00:56:52,751 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:52,865 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:52,980 | MainProcess | MainThread | [ChatEaseGUI]: fake_mainloop (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:54,011 | MainProcess | MainThread | [ChatEaseGUI]: creating SettingsGUI instance (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:54,011 | MainProcess | MainThread | [SettingsGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:54,114 | MainProcess | MainThread | [SettingsGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:54,114 | MainProcess | MainThread | [ChatEaseGUI]: added SettingsGUI to fake_mainloop (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:56,418 | MainProcess | MainThread | [SettingsGUI]: __change_background, user picked: '#8f5be6' (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:56,418 | MainProcess | MainThread | [ChatEaseGUI]: __change_background_color, bg = '#8f5be6' (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:56,425 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-06 00:56:59,170 | MainProcess | MainThread | Program Ended
+INFO | 2023-03-06 00:57:18,070 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:18,198 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:18,303 | MainProcess | MainThread | [ChatEaseGUI]: fake_mainloop (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:21,003 | MainProcess | MainThread | [ChatEaseGUI]: creating SettingsGUI instance (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:21,003 | MainProcess | MainThread | [SettingsGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:21,099 | MainProcess | MainThread | [SettingsGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:21,100 | MainProcess | MainThread | [ChatEaseGUI]: added SettingsGUI to fake_mainloop (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:24,480 | MainProcess | MainThread | [SettingsGUI]: __change_background, user picked: '#6a88d7' (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:24,480 | MainProcess | MainThread | [ChatEaseGUI]: __change_background_color, bg = '#6a88d7' (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:24,493 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:29,199 | MainProcess | MainThread | [ChatEaseGUI]: creating SettingsGUI instance (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:29,199 | MainProcess | MainThread | [SettingsGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:29,296 | MainProcess | MainThread | [SettingsGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:29,296 | MainProcess | MainThread | [ChatEaseGUI]: added SettingsGUI to fake_mainloop (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:31,499 | MainProcess | MainThread | [SettingsGUI]: __change_background, user picked: '#73a7ce' (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:31,499 | MainProcess | MainThread | [ChatEaseGUI]: __change_background_color, bg = '#73a7ce' (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:31,514 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:34,100 | MainProcess | MainThread | Program Ended
+INFO | 2023-03-06 00:57:36,963 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:37,083 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:37,180 | MainProcess | MainThread | [ChatEaseGUI]: fake_mainloop (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:38,686 | MainProcess | MainThread | [ChatEaseGUI]: creating SettingsGUI instance (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:38,686 | MainProcess | MainThread | [SettingsGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:38,781 | MainProcess | MainThread | [SettingsGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:38,782 | MainProcess | MainThread | [ChatEaseGUI]: added SettingsGUI to fake_mainloop (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:41,312 | MainProcess | MainThread | [SettingsGUI]: __change_background, user picked: '#5cd7e4' (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:41,312 | MainProcess | MainThread | [ChatEaseGUI]: __change_background_color, bg = '#5cd7e4' (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:41,321 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-06 00:57:44,209 | MainProcess | MainThread | Program Ended
+DEBUG | 2023-03-06 00:59:45,001 | MainProcess | MainThread | Received exception: Traceback (most recent call last):
+  File "D:\Projects\In Work or Frequently Used\School-Twelfth_Grade\Project\Whatsapp\Client - PC\main_gui.py", line 245, in <module>
+    main()
+  File "D:\Projects\In Work or Frequently Used\School-Twelfth_Grade\Project\Whatsapp\Client - PC\main_gui.py", line 239, in main
+    gui = ChatEaseGUI("omerdagry@gmail.com", "123", ("127.0.0.1", 8820), EncryptedProtocolSocket())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Projects\In Work or Frequently Used\School-Twelfth_Grade\Project\Whatsapp\Client - PC\protocol_socket.py", line 31, in __init__
+    raise TypeError("'ssl_socket' must be a ssl.SSLSocket.")
+TypeError: 'ssl_socket' must be a ssl.SSLSocket.
+
+INFO | 2023-03-06 00:59:45,001 | MainProcess | MainThread | Program Ended
+INFO | 2023-03-06 01:01:43,102 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-06 01:01:43,216 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-06 01:01:43,310 | MainProcess | MainThread | [ChatEaseGUI]: fake_mainloop (omerdagry@gmail.com)
+INFO | 2023-03-06 01:01:46,873 | MainProcess | MainThread | Program Ended

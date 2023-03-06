@@ -6,12 +6,13 @@ import socket
 
 
 class EncryptedProtocolSocket:
-    def __init__(self, cert_file: os.PathLike = None, key_file: os.PathLike = None, server_side: bool = False,
+    def __init__(self, cert_file: os.PathLike | str = None, key_file: os.PathLike | str = None,
+                 server_side: bool = False,
                  family: socket.AddressFamily | int = None, type: socket.SocketKind | int = None,
                  proto: int = None, fileno: int | None = None, ssl_socket: ssl.SSLSocket = None) -> None:
         #
         self.__server_side = server_side
-        if ssl_socket is not None:
+        if ssl_socket is None:
             kwargs = {"family": family, "type": type, "proto": proto, "fileno": fileno}
             kwargs = {key_word: arg for key_word, arg in kwargs.items() if arg is not None}
             self.__sock = socket.socket(**kwargs)
@@ -71,8 +72,10 @@ class EncryptedProtocolSocket:
         ssl_socket, ip_port = self.__encrypted_sock.accept()
         return EncryptedProtocolSocket(ssl_socket=ssl_socket), ip_port
 
-    def send_message(self, data: bytes, flags: None | int = None):
-        """ send a message according to the protocol """
+    def send_message(self, data: bytes, flags: None | int = None) -> bool:
+        """ send a message according to the protocol
+        :return: True connection alive, otherwise False
+        """
         # check that encrypted socket isn't None
         if self.__encrypted_sock is None:
             raise OSError(f"Please Call '{'bind' if self.__server_side else 'connect'}' before sending a message.")
@@ -80,8 +83,12 @@ class EncryptedProtocolSocket:
         data = str(len(data)).ljust(30).encode() + data
         flags = [] if flags is None else [flags]
         while data != b"":
-            sent = self.__encrypted_sock.send(data, *flags)
+            try:
+                sent = self.__encrypted_sock.send(data, *flags)
+            except ssl.SSLEOFError:  # connection closed
+                return False
             data = data[sent:]
+        return True
 
     def receive_message(self, timeout: int | None = None) -> bytes:
         """ receive a message according to the protocol
@@ -96,7 +103,7 @@ class EncryptedProtocolSocket:
         data_length = b""
         while len(data_length) < 30:
             try:
-                received = self.__encrypted_sock.recv(120 - len(data_length))
+                received = self.__encrypted_sock.recv(30 - len(data_length))
                 data_length += received
                 if received == b"":  # connection closed
                     return b""
