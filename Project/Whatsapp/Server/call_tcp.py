@@ -45,7 +45,8 @@ def broadcast_audio(data: bytes, sent_from: tuple):
             traceback.print_exc()
     lock.acquire()
     for addr in remove:
-        clients.pop(addr)
+        if addr in clients:
+            clients.pop(addr)
     lock.release()
 
 
@@ -63,7 +64,8 @@ def handle_client(sock: socket.socket, addr: tuple[str, int]):
         except Exception:
             print(f"disconnected '%s:%s', exc: {traceback.format_exc()}" % addr)
             lock.acquire()
-            clients.pop(addr)
+            if addr in clients:
+                clients.pop(addr)
             lock.release()
             break
 
