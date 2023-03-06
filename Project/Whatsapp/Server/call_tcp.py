@@ -28,17 +28,10 @@ stop: None | datetime.datetime = None
 def broadcast_audio(data: bytes, sent_from: tuple):
     global stop
     remove = []
-    lock.acquire()
-    addr_sock = clients.items()
-    lock.release()
-    for addr, sock in addr_sock:
+    for addr, sock in clients.items():
         try:
             if addr != sent_from:
-                if data != b"":
-                    sock.send(data)
-        except TimeoutError:
-            print(f"closed {addr} 1")
-            remove.append(addr)
+                sock.send(data)
         except Exception:
             print(f"closed {addr} 2")
             remove.append(addr)
@@ -58,8 +51,6 @@ def handle_client(sock: socket.socket, addr: tuple[str, int]):
             if data == b"":
                 raise Exception("client disconnected (received null)")
             broadcast_audio(data, addr)
-        except socket.timeout:
-            broadcast_audio(b"", (None, None))
         except Exception:
             print(f"disconnected '%s:%s', exc: {traceback.format_exc()}" % addr)
             lock.acquire()
