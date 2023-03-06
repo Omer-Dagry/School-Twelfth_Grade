@@ -33,7 +33,7 @@ def broadcast_audio(data: bytes, sent_from: tuple):
     lock.release()
     for addr, sock in addr_sock:
         try:
-            # if addr != sent_from:
+            if addr != sent_from:
                 if data != b"":
                     sock.sendto(data, addr)
         except TimeoutError:
