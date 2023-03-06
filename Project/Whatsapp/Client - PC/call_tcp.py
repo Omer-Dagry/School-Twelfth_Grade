@@ -25,11 +25,12 @@ def send(client_socket: socket.socket, stream):
             data = stream.read(CHUNK)
             client_socket.send(data)
         except Exception:
+            traceback.print_exc()
             break
 
 
 def recv(client_socket: socket.socket, stream):
-    
+
     while True:
         try:
             # write audio received from server to the stream
