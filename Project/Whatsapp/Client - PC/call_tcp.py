@@ -6,7 +6,7 @@ import traceback
 
 
 # Set up PyAudio
-CHUNK = 1024 * 2
+CHUNK = 1024
 FORMAT = pyaudio.paInt16
 CHANNELS = 2
 RATE = 44100
@@ -20,7 +20,9 @@ def send(client_socket: socket.socket, stream):
     while True:
         try:
             data = stream.read(CHUNK)
-            client_socket.send(data)
+            sent = 0
+            while sent < BUFFER_SIZE:
+                sent = client_socket.send(data[sent:])
         except socket.timeout:
             pass
         except Exception:

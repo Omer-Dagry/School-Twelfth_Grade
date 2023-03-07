@@ -6,7 +6,7 @@ import threading
 
 
 # Set up PyAudio
-CHUNK = 1024 * 2
+CHUNK = 1024
 FORMAT = pyaudio.paInt16
 CHANNELS = 2
 RATE = 44100
@@ -31,7 +31,9 @@ def broadcast_audio(data: bytes, sent_from: tuple):
     for addr, sock in clients.items():
         try:
             if addr != sent_from:
-                sock.send(data)
+                sent = 0
+                while sent < BUFFER_SIZE:
+                    sent = sock.send(data[sent:])
         except Exception:
             print(f"closed {addr} 2")
             remove.append(addr)
