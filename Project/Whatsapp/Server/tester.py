@@ -1,17 +1,11 @@
 import socket
-import pyaudio
 import datetime
 import traceback
 
 
-# Set up PyAudio
-CHUNK = 1024 * 2
-FORMAT = pyaudio.paInt16
-CHANNELS = 2
-RATE = 44100
-# Set up the socket
 HOST = 'localhost'
 PORT = 8820
+CHUNK = 1024 * 2
 BUFFER_SIZE = CHUNK * 4
 
 # Globals
@@ -32,12 +26,12 @@ def broadcast_audio(data: bytes, sent_from: tuple):
             if addr != sent_from and data != b"":
                 server_socket.sendto(data, addr)
         except TimeoutError:
-            print(f"closed {addr} 1")
+            print(f"{addr} timed out")
             remove.append(addr)
-        except Exception:
-            print(f"closed {addr} 2")
+        except Exception as e:
+            print(f"closed {addr}, ({str(e)})")
+            traceback.print_exception(e)
             remove.append(addr)
-            traceback.print_exc()
     for addr in remove:
         clients.pop(addr)
 
@@ -57,8 +51,8 @@ def main():
             pass
         except socket.timeout:
             broadcast_audio(b"", (None, None))
-        except Exception:
-            traceback.print_exc()
+        except Exception as e:
+            traceback.print_exception(e)
 
 
 if __name__ == '__main__':
