@@ -33,7 +33,9 @@ def send(client_socket: socket.socket, stream):
 def recv(client_socket: socket.socket, stream):
     while True:
         try:
-            data = client_socket.recv(BUFFER_SIZE)
+            data = b""
+            while len(data) != BUFFER_SIZE:
+                data = client_socket.recv((BUFFER_SIZE - len(data)))
             if data == b"":
                 raise Exception("disconnected")
             print(data)

@@ -49,7 +49,9 @@ def handle_client(sock: socket.socket, addr: tuple[str, int]):
     global stop
     while clients or (datetime.datetime.now() - stop).seconds < 5:
         try:
-            data = sock.recv(BUFFER_SIZE)
+            data = b""
+            while len(data) != BUFFER_SIZE:
+                data = sock.recv((BUFFER_SIZE - len(data)))
             if data == b"":
                 raise Exception("client disconnected (received null)")
             broadcast_audio(data, addr)
