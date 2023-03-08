@@ -18,6 +18,12 @@ def main():
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # Create PyAudio stream for recording and playing audio
     p = pyaudio.PyAudio()
+    # info = p.get_host_api_info_by_index(0)
+    # device_count = info.get('deviceCount')
+    # devices = [p.get_device_info_by_host_api_device_index(0, i) for i in range(device_count)]
+    # input_devices = [device for device in devices if "maxInputChannels" in device and device["maxInputChannels"] > 0]
+    # output_devices = [device for device in devices
+    #                   if "maxOutputChannels" in device and device["maxOutputChannels"] > 0]
     stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, output=True, frames_per_buffer=CHUNK)
     try:
         client_socket.settimeout(0.01)

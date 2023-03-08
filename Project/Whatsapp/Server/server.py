@@ -733,10 +733,19 @@ def call_group(from_email: str, to_emails: list[str]):
 def login_or_signup_response(mode: str, status: str, reason: str) -> bytes:
     """
     :param mode: login or signup
-    :param status: ok or not ok
+    :param status: 'ok' or 'not ok'
     :param reason: the reason
     """
-    return f"{mode.ljust(30)}{status.ljust(6)}{reason}".encode()
+    return f"{mode.ljust(30)}{status.lower().ljust(6)}{reason}".encode()
+
+
+def request_response(cmd: str, status: str, reason: str) -> bytes:
+    """
+    :param cmd: the requested command
+    :param status: 'ok' or 'not ok'
+    :param reason: the reason
+    """
+    return f"{cmd.ljust(30)}{status.lower().ljust(6)}{reason}".encode()
 
 
 def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[str, str]):
@@ -814,43 +823,67 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
             printing_lock.release()
             #
             # handle client's requests until client disconnects
-            request = client_socket.receive_message()
-            request = request.decode()
-            while request != "":
+            while True:
+                request: bytes
                 request = client_socket.receive_message()
-                request = request.decode()
+                if request == b"":
+                    break
+                cmd = request[:30].decode().strip()
+                request = request if cmd == "file" else request.decode()  # decode the request only if it's not a file
                 # TODO call the right func to handle the client's request
-                cmd = request[:30].strip()
+                response = None
                 if cmd == "sync new":
-                    sync(username)
-                elif cmd == "sync all":
-                    sync(username, sync_all=True)
-                elif cmd == "msg":
+                    request: str
+                    # sync(username)
                     pass
+                elif cmd == "sync all":
+                    request: str
+                    # sync(username, sync_all=True)
+                    pass
+                elif cmd == "msg":
+                    request: str
+                    len_chat_id = int(request[30:45].strip())  # currently 20
+                    chat_id = request[45:len_chat_id + 45]
+                    msg = request[len_chat_id + 45:]
+                    ok = send_msg(username, chat_id, msg)
+                    #
+                    response = request_response(cmd, "ok" if ok else "not ok", "")
                 elif cmd == "delete for everyone":
+                    request: str
                     pass
                 elif cmd == "file":
+                    request: bytes
                     pass
                 elif cmd == "delete for me":
+                    request: str
                     pass
                 elif cmd == "add user":
+                    request: str
                     pass
                 elif cmd == "remove user":
+                    request: str
                     pass
                 elif cmd == "new chat":
+                    request: str
                     pass
                 elif cmd == "new group":
+                    request: str
                     pass
                 elif cmd == "login":
+                    request: str
                     pass
                 elif cmd == "signup":
+                    request: str
                     pass
                 else:
                     print(f"[Server]: '%s:%s' Logged In As '{email}-{username}' - "
                           f"sent unknown cmd {cmd}" % client_ip_port)
                     logging.warning(f"[Server]: '%s:%s' Logged In As '{email}-{username}' - "
                                     f"sent unknown cmd {cmd}" % client_ip_port)
-            del request
+                    continue
+                # send response
+                if response is not None:
+                    client_socket.send_message(response)
     except (socket.error, TypeError, OSError, ConnectionError, Exception) as err:
         printing_lock.acquire()
         if "username" in locals():

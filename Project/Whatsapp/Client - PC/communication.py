@@ -1,7 +1,8 @@
 import os
-import tkinter
 
+from tkinter import *
 from threading import Thread
+from tkinter import messagebox
 from protocol_socket import EncryptedProtocolSocket
 
 
@@ -20,7 +21,7 @@ def signup(username: str, email: str, password: str, server_ip_port: tuple[str, 
     # signup (length 30)|len username (max 40)|username|len email (length 10)|
     # email|password (fixed length - md5 hash length)
     signup_msg = f"{'signup'.ljust(30)}{str(len(username)).ljust(2)}" \
-                 f"{username}{str(len(email)).ljust(10)}{email}{password}".encode()
+                 f"{username}{str(len(email)).ljust(15)}{email}{password}".encode()
     if sock is None:
         sock = EncryptedProtocolSocket()
         sock.connect(server_ip_port)
@@ -72,7 +73,7 @@ class Communication:
         :return: status, sock, reason for status
         """
         # login (length 30)     len email (length 10)   email    password (fixed length - md5 hash length)
-        login_msg = f"{'login'.ljust(30)}{str(len(self.__email)).ljust(10)}{self.__email}{self.__password}".encode()
+        login_msg = f"{'login'.ljust(30)}{str(len(self.__email)).ljust(15)}{self.__email}{self.__password}".encode()
         if sock is None:
             sock = EncryptedProtocolSocket()
             sock.connect(self.__server_ip_port)
@@ -106,7 +107,7 @@ class Communication:
         # TODO: finish this function
         raise NotImplementedError
 
-    def upload_file(self, chat_id: str | int, filename: str = "", root: tkinter.Tk = None, delete_file: bool = False):
+    def upload_file(self, chat_id: str | int, filename: str = "", root: Tk = None, delete_file: bool = False):
         upload_thread = Thread(target=self.upload_file_, args=(str(chat_id), filename, delete_file,), daemon=True)
         upload_thread.start()
         if root is not None:
@@ -124,10 +125,18 @@ class Communication:
         #     os.remove(filename)
         raise NotImplementedError
 
-    def send_message(self, chat_id: str | int, msg: str, sock: EncryptedProtocolSocket):
-        # chat_id = str(chat_id)
-        # TODO: send the msg
-        raise NotImplementedError
+    @staticmethod
+    def send_message(chat_id: str | int, msg: str, sock: EncryptedProtocolSocket) -> bool:
+        chat_id = str(chat_id)
+        request = f"{'msg'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{msg}".encode()
+        if not sock.send_message(request):
+            messagebox.showerror("Send Message Error", f"Could not send the message, lost connection to server.")
+            return False
+        status_msg = sock.receive_message().decode()
+        if status_msg != f"{'msg'.ljust(30)}{'ok'.ljust(6)}":
+            messagebox.showerror("Send Message Error", f"Could not send the message, server error.")
+            return False
+        return True
 
     def new_chat(self, other_email: str, sock: EncryptedProtocolSocket):
         raise NotImplementedError
