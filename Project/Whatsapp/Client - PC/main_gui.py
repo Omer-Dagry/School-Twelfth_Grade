@@ -1,7 +1,6 @@
 import os
 import logging
 import threading
-import tkinter
 import traceback
 
 from tkinter import *
@@ -11,8 +10,8 @@ from tkinter import *
 # from PIL import ImageTk as ImageTkPIL
 from settings_gui import SettingsGUI
 from recording_gui import RecordingGUI
+from communication import Communication as Com
 from protocol_socket import EncryptedProtocolSocket
-from communication import Communication as Com  # upload_file, send_message, new_chat
 
 
 # Constants
@@ -43,10 +42,10 @@ class ChatEaseGUI(Tk):
         self.__window_min_size = window_min_size
         self.__app_background_color = app_background_color
         #
+        self.__sock = sock
         self.__email: str = email
         self.__password: str = password
         self.__server_ip_port: tuple[str, int] = server_ip_port
-        self.__sock = sock
         self.__communication = Com(self.__email, self.__password, self.__server_ip_port)
         #
         self.__msg_box: Entry | None = None
@@ -59,6 +58,7 @@ class ChatEaseGUI(Tk):
         self.__record_button: Button | None = None
         self.__current_chat_name: Label | None = None
         #
+        self.setting_gui: SettingsGUI | None = None
         self.__add_to_update_dict: dict[Tk, str] = {}
         self.__update_dict: dict[Tk, str] = {self: "ChatEaseGUI"}
         #
@@ -124,6 +124,8 @@ class ChatEaseGUI(Tk):
         # Container for all the chat buttons
         self.__chat_buttons = Text(self, background=self.__app_background_color, width=42, cursor="arrow", height=27)
         self.__chat_buttons.grid(row=1, column=0, columnspan=2, rowspan=2, sticky="news")
+        # Profile Picture (of current chat, if 'home chat' your profile picture)
+        # TODO: add profile picture label
         # Current chat name label
         self.__current_chat_name = Label(self, text="Home", height=2, font="bold",
                                          bg=self.__app_background_color, fg="white", justify="center")
@@ -220,7 +222,9 @@ class ChatEaseGUI(Tk):
         top_levels = [isinstance(v, SettingsGUI) for v in self.get_top_levels(self)]
         if not all(top_levels) or not top_levels:  # check that there isn't already an open setting menu
             logging.info(f"[ChatEaseGUI]: creating SettingsGUI instance ({self.__email})")
-            SettingsGUI(self, self.__email, self.__change_background_color)
+            self.setting_gui = SettingsGUI(self, self.__email, self.__change_background_color)
+        else:  # if there is a settings gui, bring it back to focus
+            self.setting_gui.deiconify()
 
     def __del__(self) -> None:
         self.quit()

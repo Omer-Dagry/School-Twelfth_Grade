@@ -29,3 +29,21 @@ INFO | 2023-03-10 01:29:34,348 | MainProcess | MainThread | [SettingsGUI]: __cha
 INFO | 2023-03-10 01:29:34,349 | MainProcess | MainThread | [ChatEaseGUI]: __change_background_color, bg = '#85bc93' (omerdagry@gmail.com)
 INFO | 2023-03-10 01:29:34,353 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
 INFO | 2023-03-10 01:30:21,244 | MainProcess | MainThread | Program Ended
+INFO | 2023-03-10 01:53:52,346 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-10 01:53:52,440 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-10 01:53:55,065 | MainProcess | MainThread | [ChatEaseGUI]: creating SettingsGUI instance (omerdagry@gmail.com)
+INFO | 2023-03-10 01:53:55,065 | MainProcess | MainThread | [SettingsGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-10 01:53:55,065 | MainProcess | MainThread | [SettingsGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-10 01:53:57,517 | MainProcess | MainThread | [SettingsGUI]: __change_background, user picked: '#74cd82' (omerdagry@gmail.com)
+INFO | 2023-03-10 01:53:57,517 | MainProcess | MainThread | [ChatEaseGUI]: __change_background_color, bg = '#74cd82' (omerdagry@gmail.com)
+INFO | 2023-03-10 01:53:57,522 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-10 01:54:05,575 | MainProcess | MainThread | Program Ended
+INFO | 2023-03-10 01:54:22,836 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-10 01:54:22,934 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-10 01:54:24,191 | MainProcess | MainThread | [ChatEaseGUI]: creating SettingsGUI instance (omerdagry@gmail.com)
+INFO | 2023-03-10 01:54:24,191 | MainProcess | MainThread | [SettingsGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-10 01:54:24,191 | MainProcess | MainThread | [SettingsGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-10 01:54:35,048 | MainProcess | MainThread | [SettingsGUI]: __change_background, user picked: '#5ee364' (omerdagry@gmail.com)
+INFO | 2023-03-10 01:54:35,048 | MainProcess | MainThread | [ChatEaseGUI]: __change_background_color, bg = '#5ee364' (omerdagry@gmail.com)
+INFO | 2023-03-10 01:54:35,058 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-10 01:54:41,598 | MainProcess | MainThread | Program Ended

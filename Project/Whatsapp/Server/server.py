@@ -39,7 +39,9 @@ SERVER_EMAIL = "project.twelfth.grade@gmail.com"
 SERVER_EMAIL_APP_PASSWORD = "hbqbubnlppqxmupy"
 SERVER_DATA = "Data\\Server_Data\\"
 USERS_DATA = "Data\\Users_Data\\"
-SERVER_IP_PORT = ("0.0.0.0", 8820)
+IP = "0.0.0.0"
+PORT = 8820
+SERVER_IP_PORT = (IP, PORT)
 
 # Globals
 # File DBs

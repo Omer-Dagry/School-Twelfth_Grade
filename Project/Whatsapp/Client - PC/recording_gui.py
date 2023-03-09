@@ -210,7 +210,7 @@ class RecordingGUI:
                     os.remove(self.__playing_file_path)
                     logging.info(f"[RecordingGUI]: removed audio file ({self.__email})")
                     break
-                except PermissionError:
+                except PermissionError as e:
                     logging.debug(
                         f"[RecordingGUI]: exception while removing the audio file, ex: {str(e)} ({self.__email})")
                     time.sleep(0.5)
