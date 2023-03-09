@@ -20,12 +20,12 @@ if not os.path.isfile(LOG_FILE):
 logging.basicConfig(format=LOG_FORMAT, filename=LOG_FILE, level=LOG_LEVEL)
 
 
-class SettingsGUI(Tk):
-    def __init__(self, email: str, change_background: Callable,
-                 screen_name=None, base_name=None, class_name='Tk', use_tk=True, sync=False, use=None):
+class SettingsGUI(Toplevel):
+    def __init__(self, root: Tk | Toplevel, email: str, change_background: Callable):
         #
         logging.info(f"[SettingsGUI]: initializing GUI ({email})")
-        super().__init__(screen_name, base_name, class_name, use_tk, sync, use)
+        # super().__init__(screen_name, base_name, class_name, use_tk, sync, use)
+        Toplevel.__init__(self, root)
         self.__email = email
         self.__change_main_gui_background = change_background
         self.__setup()

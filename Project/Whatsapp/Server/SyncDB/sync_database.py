@@ -4,10 +4,12 @@ import threading
 import multiprocessing
 
 from typing import *
-from .file_database import FileDatabase
+from file_database import FileDatabase
 
 
 class SyncDatabase:
+    __slots__ = ("__database", "__mode", "__max_reads_together", "__edit_lock", "__semaphore", "__dict__")
+
     def __init__(self, database: FileDatabase, mode: bool, max_reads_together: int = 10):
         """ mode: True -> multiprocessing, False -> threading """
         #
@@ -28,6 +30,20 @@ class SyncDatabase:
         else:
             self.__edit_lock = threading.Lock()
             self.__semaphore = threading.Semaphore(self.__max_reads_together)
+
+    def __acquire_all(self):
+        # pickup edit lock
+        self.__edit_lock.acquire()
+        # acquire all the semaphores
+        for _ in range(self.__max_reads_together):
+            self.__semaphore.acquire()
+
+    def __release_all(self):
+        # release all the semaphores
+        for _ in range(self.__max_reads_together):
+            self.__semaphore.release()
+        # release the edit lock
+        self.__edit_lock.release()
 
     def keys(self):
         """ get all keys """
@@ -52,38 +68,20 @@ class SyncDatabase:
 
     def __setitem__(self, key: Hashable, val: Any) -> bool:
         """ set a value """
-        # pickup edit lock
-        self.__edit_lock.acquire()
-        # acquire all the semaphore
-        for _ in range(self.__max_reads_together):
-            self.__semaphore.acquire()
-        # here there is no one reading and or writing, so we can set key: val
+        self.__acquire_all()
         ok = self.__database[key] = val
-        # release the edit lock
-        self.__edit_lock.release()
-        # release all the semaphore
-        for _ in range(self.__max_reads_together):
-            self.__semaphore.release()
+        self.__release_all()
         return ok
 
     def safe_set(self, key: Hashable, val: Any) -> bool:
         """ add key: val, only if key is not already in database """
-        # pickup edit lock
-        self.__edit_lock.acquire()
-        # acquire all the semaphore
-        for _ in range(self.__max_reads_together):
-            self.__semaphore.acquire()
-        # here there is no one reading and or writing, so we can set key: val if key not already in database
+        self.__acquire_all()
         if key not in self.__database:
             result = False
         else:
             result = True
             self.__database[key] = val
-        # release the edit lock
-        self.__edit_lock.release()
-        # release all the semaphore
-        for _ in range(self.__max_reads_together):
-            self.__semaphore.release()
+        self.__release_all()
         return result
 
     def add(self, key: Hashable, val: list[Any]):
@@ -94,21 +92,13 @@ class SyncDatabase:
             key: current_val -> key: [current_val, *val]
             key: [current_values, ...] -> key: [current_values, ..., *val]
         """
-        # pickup edit lock
-        self.__edit_lock.acquire()
-        # acquire all the semaphore
-        for _ in range(self.__max_reads_together):
-            self.__semaphore.acquire()
+        self.__acquire_all()
         current_val = self.__database[key]
         if not isinstance(current_val, list):
             current_val = [current_val]
         current_val.extend(val)
         self.__database[key] = current_val
-        # release the edit lock
-        self.__edit_lock.release()
-        # release all the semaphore
-        for _ in range(self.__max_reads_together):
-            self.__semaphore.release()
+        self.__release_all()
 
     def remove(self, key: Hashable, val: Any) -> bool:
         """
@@ -120,11 +110,7 @@ class SyncDatabase:
             if val in current_val -> remove val
             :return: True if val was in the list of values and was removed else False
         """
-        # pickup edit lock
-        self.__edit_lock.acquire()
-        # acquire all the semaphore
-        for _ in range(self.__max_reads_together):
-            self.__semaphore.acquire()
+        self.__acquire_all()
         current_val = self.__database[key]
         if not isinstance(current_val, list):
             current_val = [current_val]
@@ -134,11 +120,7 @@ class SyncDatabase:
             result = True
             current_val.remove(val)
             self.__database[key] = current_val
-        # release the edit lock
-        self.__edit_lock.release()
-        # release all the semaphore
-        for _ in range(self.__max_reads_together):
-            self.__semaphore.release()
+        self.__release_all()
         return result
 
     def __getitem__(self, key: Hashable) -> Any:
@@ -156,12 +138,7 @@ class SyncDatabase:
 
     def pop(self, key: Hashable) -> Any:
         """ remove a value """
-        # pickup edit lock
-        self.__edit_lock.acquire()
-        # acquire all the semaphore
-        for _ in range(self.__max_reads_together):
-            self.__semaphore.acquire()
-        # here there is no one reading and or writing, so we can pop the key
+        self.__acquire_all()
         try:
             val = self.__database.pop(key)
         # make sure that the lock is released even if KeyError raised
@@ -171,11 +148,7 @@ class SyncDatabase:
             for _ in range(self.__max_reads_together):
                 self.__semaphore.release()
             raise
-        # release the lock
-        self.__edit_lock.release()
-        # release all the semaphore
-        for _ in range(self.__max_reads_together):
-            self.__semaphore.release()
+        self.__release_all()
         return val
 
     def get(self, key: Hashable) -> Any | None:

@@ -38,10 +38,11 @@ def playsound_wrapper(email: str, sound: str):
 
 
 class RecordingGUI:
-    def __init__(self, email: str, record_button: Button, winfo_screenwidth: int, winfo_screenheight: int,
-                 upload_file: Callable, chat_id: str, record_audio_func: Callable):
+    def __init__(self, root: Tk | Toplevel, email: str, record_button: Button, winfo_screenwidth: int,
+                 winfo_screenheight: int, upload_file: Callable, chat_id: str, record_audio_func: Callable):
         #
         logging.info(f"[RecordingGUI]: initializing ({email})")
+        self.__root = root
         self.__email = email
         self.__upload_file = upload_file
         self.__record_button = record_button
@@ -124,12 +125,12 @@ class RecordingGUI:
         window_x = self.__winfo_screenwidth / 2
         window_y = self.__winfo_screenheight / 2
         # create options window & configure it
-        self.__options_window = Tk()
+        self.__options_window = Toplevel(self.__root)
         self.__options_window.columnconfigure(0, weight=1)
         self.__options_window.rowconfigure(0, weight=1)
         self.__options_window.rowconfigure(1, weight=1)
         self.__options_window.rowconfigure(2, weight=1)
-        self.__options_window.protocol("WM_DELETE_WINDOW", lambda: None)
+        self.__options_window.protocol("WM_DELETE_WINDOW", self.__delete_file_close_window)
         self.__options_window.title("Options")
         self.__options_window.geometry("250x%d+%d+%d" % (size, window_x, window_y))
         self.__options_window.minsize(250, size)
@@ -148,8 +149,9 @@ class RecordingGUI:
             )
         )
         send.grid(row=2, column=0, sticky="news")
-        logging.info(f"[RecordingGUI]: mainloop ({self.__email})")
-        self.__options_window.mainloop()
+        logging.info(f"[RecordingGUI]: waiting for window to close ({self.__email})")
+        while self.__options_window.winfo_exists():
+            time.sleep(0.5)
         # if user didn't press anything and closed the window the recording file still exist so this deletes it
         if os.path.isfile(self.__tmp_file):
             count = 0
@@ -174,15 +176,17 @@ class RecordingGUI:
                         name="RecordingGUI - Play")
         play_.start()
         self.__playing_process = play_
-        self.__playing_button.configure(text="Stop")
-        self.__playing_button.configure(command=self.__terminate_and_restore_button)
+        if self.__options_window.winfo_exists():
+            self.__playing_button.configure(text="Stop")
+            self.__playing_button.configure(command=self.__terminate_and_restore_button)
 
         # Checks if the audio file is still being played, if not shuts the process
         while True:
             # update the gui window because we are in a while loop that
             # doesn't allow the gui to update unless we call update()
             self.__options_window.update()
-            if isinstance(self.__playing_process, Process) and not self.__playing_process.is_alive():
+            if (isinstance(self.__playing_process, Process) and not self.__playing_process.is_alive()) or \
+                    not self.__options_window.winfo_exists():
                 self.__terminate_and_restore_button()
                 break
             time.sleep(0.05)
@@ -193,8 +197,9 @@ class RecordingGUI:
             self.__playing_process.terminate()
         logging.info(f"[RecordingGUI]: stopped playing audio file ({self.__email})")
         self.__playing_process = None
-        self.__playing_button.configure(text="Play")
-        self.__playing_button.configure(command=self.__play_audio_thread)
+        if self.__options_window.winfo_exists():
+            self.__playing_button.configure(text="Play")
+            self.__playing_button.configure(command=self.__play_audio_thread)
 
     def __delete_file_close_window(self):
         """ Deletes the voice recording and closes the voice recording options window """
@@ -210,4 +215,4 @@ class RecordingGUI:
                         f"[RecordingGUI]: exception while removing the audio file, ex: {str(e)} ({self.__email})")
                     time.sleep(0.5)
                     count += 1
-        self.__options_window.quit()
+        self.__options_window.destroy()

@@ -13,8 +13,8 @@ import logging
 
 from typing import *
 from threading import Thread
-from gui import mainloop, update
-from communication import signup  # , login, sync
+from main_gui import ChatEaseGUI
+from communication import signup
 from communication import Communication as Com
 from protocol_socket import EncryptedProtocolSocket
 
@@ -127,18 +127,21 @@ def login_signup(server_ip_port: tuple[str, int]) -> tuple[bool, EncryptedProtoc
             return True, sock
 
 
-def sync_(sync_sock: EncryptedProtocolSocket, first_time_all: bool = False):
+def sync_(main_app: ChatEaseGUI, sync_sock: EncryptedProtocolSocket, first_time_all: bool = False,
+          time_between: int = 0.2) -> None:
     global password
     if first_time_all:
         communication.sync(sync_sock, "all")
     while True:
         new_data = communication.sync(sync_sock)
         if new_data:
-            update()
-        time.sleep(0.5)
+            main_app.update()
+        time.sleep(time_between)
 
 
 def main():
+    # TODO: create a GUI to login and signup (also add option to sync all once or just sync new)
+    first_time_sync_all = True
     global username, password
     try:
         # signup and then login / login (asks for username and password and logs in the socket)
@@ -148,9 +151,10 @@ def main():
             ok2, sync_sock, username = communication.login(verbose=False)
             ok &= ok2
             if username is not None and password is not None and ok:
-                sync_thread = Thread(target=sync_, args=(sync_sock, True))
-                mainloop(email)
-            print("\n\nApp Closed.")
+                main_app = ChatEaseGUI(email, password, SERVER_IP_PORT, sock)
+                sync_thread = Thread(target=sync_, args=(main_app, sync_sock, first_time_sync_all))
+                sync_thread.start()
+                main_app.mainloop()
     except (ConnectionError, socket.error):
         if "sock" in locals():
             sock.close()

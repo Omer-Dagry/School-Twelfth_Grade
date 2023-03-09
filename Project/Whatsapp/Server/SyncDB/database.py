@@ -2,6 +2,8 @@ from typing import *
 
 
 class Database:
+    __slots__ = ("__database", "__dict__")
+
     def __init__(self):
         self.__database = {}
 

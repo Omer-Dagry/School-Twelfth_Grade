@@ -55,7 +55,7 @@ def signup(username: str, email: str, password: str, server_ip_port: tuple[str, 
 
 
 class Communication:
-    def __init__(self, email: str, password: str, server_ip_port: tuple[str, int]):
+    def __init__(self, email: str, password: str, server_ip_port: tuple[str, int]) -> None:
         """
         :param email: the username
         :param password: the md5 hash of the real password
@@ -95,9 +95,10 @@ class Communication:
 
     @staticmethod
     def sync(sock: EncryptedProtocolSocket, mode: str = "new") -> bool:
-        """
+        """  sync once
+
         :param sock: the socket to the server
-        :param mode: new or all
+        :param mode: 'new' or 'all'
         :return: True if new data received else False
         """
         # if mode not in ["new", "all"]:
@@ -107,13 +108,13 @@ class Communication:
         # TODO: finish this function
         raise NotImplementedError
 
-    def upload_file(self, chat_id: str | int, filename: str = "", root: Tk = None, delete_file: bool = False):
+    def upload_file(self, chat_id: str | int, filename: str = "", root: Tk = None, delete_file: bool = False) -> None:
         upload_thread = Thread(target=self.upload_file_, args=(str(chat_id), filename, delete_file,), daemon=True)
         upload_thread.start()
         if root is not None:
             root.destroy()
 
-    def upload_file_(self, chat_id: str, filename: str = "", delete_file: bool = False):
+    def upload_file_(self, chat_id: str, filename: str = "", delete_file: bool = False) -> None:
         # if filename == "":
         #     from tkinter import filedialog
         #     filename = filedialog.askopenfilename()
@@ -123,6 +124,7 @@ class Communication:
         # TODO: upload file
         # if delete_file:
         #     os.remove(filename)
+        # TODO: finish
         raise NotImplementedError
 
     @staticmethod
@@ -138,12 +140,18 @@ class Communication:
             return False
         return True
 
-    def new_chat(self, other_email: str, sock: EncryptedProtocolSocket):
+    def new_chat(self, other_email: str, sock: EncryptedProtocolSocket) -> None:
+        # TODO: finish
         raise NotImplementedError
 
-    def make_call(self, chat_id: str):
+    def make_call(self, chat_id: str) -> None:
         # go to 'users' file of this chat and make call to users
         # OR
         # change the way a call works and call the chat_id and the server
         # will handle who to call
+        # TODO: finish
+        raise NotImplementedError
+
+    def upload_profile_picture(self, path_to_picture: os.PathLike | str) -> None:
+        # TODO: finish
         raise NotImplementedError
