@@ -3,6 +3,8 @@ import os
 from tkinter import *
 from threading import Thread
 from tkinter import messagebox
+from photo_tools import check_size
+from tkinter.filedialog import askopenfilename
 from protocol_socket import EncryptedProtocolSocket
 
 
@@ -116,8 +118,7 @@ class Communication:
 
     def upload_file_(self, chat_id: str, filename: str = "", delete_file: bool = False) -> None:
         # if filename == "":
-        #     from tkinter import filedialog
-        #     filename = filedialog.askopenfilename()
+        #     filename = askopenfilename()
         # ok, sock, _ = self.login(verbose=False)
         # if not ok:
         #     raise ValueError("email or password incorrect, could not login to upload file")
@@ -152,6 +153,12 @@ class Communication:
         # TODO: finish
         raise NotImplementedError
 
-    def upload_profile_picture(self, path_to_picture: os.PathLike | str) -> None:
+    def upload_profile_picture(self, path_to_picture: os.PathLike | str = None) -> None:
+        if path_to_picture is None:  # ask for file
+            file_types = [("PNG", "*.png"), ("JPG", "*.jpg"), ("JPEG", "*.jpeg")]
+            path_to_picture = askopenfilename(filetypes=file_types)
+        if not check_size(path_to_picture):  # check image size
+            messagebox.showerror("Profile Picture", "Image size is invalid,\nmust be at least 64x64.")
+            return
         # TODO: finish
         raise NotImplementedError

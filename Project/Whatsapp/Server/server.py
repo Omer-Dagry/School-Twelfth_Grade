@@ -585,7 +585,7 @@ def signup(username: str, email: str, password: str, client_sock: EncryptedProto
         return False, "Request timeout."
     msg = msg.decode()
     # check the response
-    if msg[:30].strip() != "confirmation_code" or msg[30:] != confirmation_code:
+    if msg[: 30].strip() != "confirmation_code" or msg[30:] != confirmation_code:
         logging.info(f"signup attempt (for '{email}') failed - "
                      f"got wrong confirmation code from user trying to signup as '{username}'")
         return False, "Confirmation code is incorrect."
@@ -632,7 +632,7 @@ def reset_password(email: str, client_sock: EncryptedProtocolSocket) -> tuple[bo
         return False, "Request timeout."
     msg = msg.decode()
     # check the response
-    if msg[:30].strip() != "confirmation_code" or msg[30:] != confirmation_code:
+    if msg[: 30].strip() != "confirmation_code" or msg[30:] != confirmation_code:
         logging.info(f"reset password attempt (for '{email}') failed - got wrong confirmation code from user")
         return False, "Confirmation code is incorrect."
     # send client a msg that says that we are waiting for a new password
@@ -644,7 +644,7 @@ def reset_password(email: str, client_sock: EncryptedProtocolSocket) -> tuple[bo
         return False, "Request timeout."
     msg = msg.decode()
     # validate the response
-    if msg[:30].strip() != "new_password":
+    if msg[: 30].strip() != "new_password":
         return False, ""
     # extract password
     password = msg[30:]
@@ -753,13 +753,13 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                 break
             client_socket.settimeout(None)
             msg = msg.decode()
-            cmd = msg[:30].strip()
+            cmd = msg[: 30].strip()
             # check if the msg is signup msg or login, else throw the msg
             # because the client hasn't logged in yet
             # if client sent login request
             if cmd == "login":
-                len_email = int(msg[30:40].strip())
-                email = msg[40:40 + len_email]
+                len_email = int(msg[30: 40].strip())
+                email = msg[40: 40 + len_email]
                 password = msg[40 + len_email:]
                 if not login(email, password):
                     client_socket.send_message(
@@ -772,10 +772,10 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                 client_socket.send_message(login_or_signup_response("login", "ok", username))
                 del msg, cmd, len_email, password
             elif cmd == "signup" and not signed_up:
-                len_username = int(msg[:2].strip())
-                username = msg[2:2 + len_username]
-                len_email = int(msg[2 + len_username:12 + len_username].strip())
-                email = msg[12 + len_username:12 + len_username + len_email]
+                len_username = int(msg[: 2].strip())
+                username = msg[2: 2 + len_username]
+                len_email = int(msg[2 + len_username: 12 + len_username].strip())
+                email = msg[12 + len_username: 12 + len_username + len_email]
                 password = msg[12 + len_username + len_email:]
                 ok, reason = signup(username, email, password, client_socket)
                 if not ok:
@@ -792,26 +792,32 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                 stop = True
                 break
         if not stop and logged_in:
-            threading.current_thread().name = f"{email} (client)"  # set thread name
-            client_socket.settimeout(None)
-            if email not in email_user_database:
+            if email not in email_user_database:  # double check that this user exists
                 logging.debug(f"[Server]: The email '{email}' doesn't exists in the database.")
                 raise ValueError(f"[Server]: The email '{email}' doesn't exists in the database.")
+            #
+            # set thread name                    email            number of connections (of this client)
+            threading.current_thread().name = f"{email} (client - {user_online_status_database[email]})"
+            client_socket.settimeout(None)
             username = email_user_database[email]
-            password = email_password_database[email]
+            # password = email_password_database[email]
+            password = None
+            #
             printing_lock.acquire()
             print(f"[Server]: '%s:%s' logged in as '{email}-{username}'." % client_ip_port)
             logging.info(f"[Server]: '%s:%s' logged in as '{email}-{username}'." % client_ip_port)
             printing_lock.release()
             #
+            stay_encoded = {"file", "upload profile picture", "upload group picture"}
             # handle client's requests until client disconnects
             while True:
                 request: bytes
                 request = client_socket.receive_message()
                 if request == b"":
                     break
-                cmd = request[:30].decode().strip()
-                request = request if cmd == "file" else request.decode()  # decode the request only if it's not a file
+                cmd = request[: 30].decode().strip()
+                # decode the request only if it's not a file
+                request = request if cmd in stay_encoded else request.decode()
                 # TODO call the right func to handle the client's request
                 response = None
                 if cmd == "sync new":
@@ -826,8 +832,8 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                     pass
                 elif cmd == "msg":
                     request: str
-                    len_chat_id = int(request[30:45].strip())  # currently 20
-                    chat_id = request[45:len_chat_id + 45]
+                    len_chat_id = int(request[30: 45].strip())  # currently 20
+                    chat_id = request[45: len_chat_id + 45]
                     msg = request[len_chat_id + 45:]
                     ok = send_msg(username, chat_id, msg)
                     #
@@ -847,16 +853,21 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                 elif cmd == "remove user":
                     request: str
                     pass
+                elif cmd == "upload profile picture":
+                    request: bytes
+                    # TODO: save photo in user data in user folder as '{email}_profile_picture.png'
+                    pass
+                elif cmd == "upload group picture":
+                    request: bytes
+                    # TODO: save photo in user data in chat_id folder as 'group_picture.png'
+                    pass
                 elif cmd == "new chat":
                     request: str
                     pass
                 elif cmd == "new group":
                     request: str
                     pass
-                elif cmd == "login":
-                    request: str
-                    pass
-                elif cmd == "signup":
+                elif cmd == "reset password":
                     request: str
                     pass
                 else:

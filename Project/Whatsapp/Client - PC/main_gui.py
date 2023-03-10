@@ -11,6 +11,7 @@ from tkinter import *
 from settings_gui import SettingsGUI
 from recording_gui import RecordingGUI
 from communication import Communication as Com
+from photo_tools import format_photo, check_size
 from protocol_socket import EncryptedProtocolSocket
 
 
@@ -117,45 +118,71 @@ class ChatEaseGUI(Tk):
         self.config(bg=self.__app_background_color)  # background color of window
         self.minsize(self.__window_min_size[0], self.__window_min_size[1])  # minimum size of window
         self.state("zoomed")  # open window in full-screen windowed
-        self.columnconfigure(2, weight=1)
+        self.columnconfigure(3, weight=1)
         self.rowconfigure(1, weight=1)
-        self.rowconfigure(2, weight=1)
-        #
-        # Container for all the chat buttons
-        self.__chat_buttons = Text(self, background=self.__app_background_color, width=42, cursor="arrow", height=27)
-        self.__chat_buttons.grid(row=1, column=0, columnspan=2, rowspan=2, sticky="news")
+
+        # --------------------------- ROW 0 ---------------------------
+
+        # Create an input box to search a username and start chat with him
+        self.__search_user = Entry(self, width=40, font=None)
+        self.__search_user.bind("<FocusIn>", self.__search_user_focus_in)
+        self.__search_user.bind("<FocusOut>", self.__search_user_focus_out)
+        self.__search_user.bind('<Return>', self.__search_user_enter)
+        self.__search_user.insert(END, "Start a new chat")
+        self.__search_user.last_search = ""
+        self.__search_user.grid(row=0, column=0, sticky='news')
+
+        # Create a button to submit the input from the input box
+        self.__search_chat = Button(self, text="Search", width=8, height=4, bg=self.__app_background_color, fg="white",
+                                    command=self.__search_user_enter, font=None, cursor="hand2")
+        self.__search_chat.grid(row=0, column=1, sticky='news')
+
         # Profile Picture (of current chat, if 'home chat' your profile picture)
-        # TODO: add profile picture label
+        format_photo(resource_path(f"{self.__email}\\{self.__email}_profile_picture.png"))
+        self.__profile_picture_photo = PhotoImage(
+            file=resource_path(f"{self.__email}\\{self.__email}_profile_picture.png"))
+        self.__profile_picture = Label(self, image=self.__profile_picture_photo, justify="center", fg="orange",
+                                       bg=self.__app_background_color, borderwidth=2, relief="groove")
+        self.__profile_picture.grid(row=0, column=2, sticky='news')
+
         # Current chat name label
-        self.__current_chat_name = Label(self, text="Home", height=2, font="bold",
+        self.__current_chat_name = Label(self, text="Home", font="bold",
                                          bg=self.__app_background_color, fg="white", justify="center")
         self.__current_chat_name.text = "Home"
         self.__current_chat_name.chat_id = None
-        self.__current_chat_name.grid(row=0, column=2, sticky="news")
+        self.__current_chat_name.grid(row=0, column=3, sticky="news")
+
         # Call button
         self.__call_photo = PhotoImage(file=resource_path("images\\call.png"))
         self.__call_button = Button(
-            self, text="Call", width=4, height=1, bg=self.__app_background_color,
-            fg="white", font=None, image=self.__call_photo,
+            self, text="Call", width=4, bg=self.__app_background_color,
+            fg="white", font=None, image=self.__call_photo, cursor="hand2",
             command=lambda: self.__communication.make_call(self.__current_chat_name.chat_id)
         )
-        self.__call_button.grid(row=0, column=3, sticky='news')
+        self.__call_button.grid(row=0, column=4, sticky='news')
+
         # Settings button
         self.__settings_photo = PhotoImage(file=resource_path("images\\setting.png"))
         self.__settings_button = Button(
-            self, text="Settings", width=4, height=1, bg=self.__app_background_color,
+            self, text="Settings", width=4, height=1, bg=self.__app_background_color, cursor="hand2",
             fg="white", font=None, image=self.__settings_photo, command=self.__settings
         )
-        self.__settings_button.grid(row=0, column=4, sticky='news')
-        # Entry box for text
-        self.__msg_box = Entry(self, width=121, bg=self.__app_background_color, fg="white", font=("helvetica", 16))
-        self.__msg_box.bind('<Return>', self.__enter_key)
-        self.__msg_box.grid(row=19, column=2, sticky='news')
-        # Button to record audio
-        self.__record_photo = PhotoImage(file=resource_path("images\\microphone.png"))
-        self.__record_button = Button(self, image=self.__record_photo, command=self.__record_audio, height=68,
-                                      width=140, bg=self.__app_background_color, fg="#63C8D8", text="Record")
-        self.__record_button.grid(row=19, column=3, columnspan=2, sticky='news')
+        self.__settings_button.grid(row=0, column=5, sticky='news')
+
+        # --------------------------- ROW 1 ---------------------------
+
+        # Container for all the chat buttons
+        self.__chat_buttons = Text(self, background=self.__app_background_color, width=42,
+                                   cursor="hand2", height=27, state=DISABLED)
+        self.__chat_buttons.grid(row=1, column=0, columnspan=2, sticky="news")
+
+        # Home window
+        self.__home_chat = Text(self, height=9999999, width=9999999, cursor="arrow",
+                                bg=self.__app_background_color, state=DISABLED, font=('helvetica', '16'))
+        self.__home_chat.grid(row=1, column=2, sticky='news', columnspan=4)
+
+        # --------------------------- ROW 2 ---------------------------
+
         # Button to submit the input from the input box
         self.__send_photo = PhotoImage(file=resource_path("images\\send.png"))
         self.__send_msg = Button(
@@ -165,30 +192,28 @@ class ChatEaseGUI(Tk):
                     self.__current_chat_name.chat_id, self.__msg_box.get(), self.__sock
                 ),
                 self.__msg_box.delete(0, END)
-            )
+            ), cursor="hand2"
         )
-        self.__send_msg.grid(row=19, column=0, sticky='news')
+        self.__send_msg.grid(row=2, column=0, sticky='news')
+
         # Button to upload files
         self.__upload_photo = PhotoImage(file=resource_path("images\\doc.png"))
         self.__file_upload = Button(self, image=self.__upload_photo, bg=self.__app_background_color, height=1, width=1,
-                                    command=lambda: self.__communication.upload_file(self.__current_chat_name.chat_id))
-        self.__file_upload.grid(row=19, column=1, sticky='news')
-        # Create an input box to search a username and start chat with him
-        self.__search_user = Entry(self, width=40, font=None)
-        self.__search_user.bind("<FocusIn>", self.__search_user_focus_in)
-        self.__search_user.bind("<FocusOut>", self.__search_user_focus_out)
-        self.__search_user.bind('<Return>', self.__search_user_enter)
-        self.__search_user.insert(END, "Start a new chat")
-        self.__search_user.last_search = ""
-        self.__search_user.grid(row=0, column=0, sticky='news')
-        # Create a button to submit the input from the input box
-        self.__search_chat = Button(self, text="Search", width=8, height=1, bg=self.__app_background_color, fg="white",
-                                    command=self.__search_user_enter, font=None)
-        self.__search_chat.grid(row=0, column=1, sticky='news')
-        # Home window
-        self.__home_chat = Text(self, height=9999999, width=9999999,
-                                bg=self.__app_background_color, state=DISABLED, font=('helvetica', '16'))
-        self.__home_chat.grid(row=1, column=2, sticky='news', columnspan=3)
+                                    command=lambda: self.__communication.upload_file(self.__current_chat_name.chat_id),
+                                    cursor="hand2")
+        self.__file_upload.grid(row=2, column=1, sticky='news')
+
+        # Entry box for text
+        self.__msg_box = Entry(self, width=121, bg=self.__app_background_color, fg="white", font=("helvetica", 16))
+        self.__msg_box.bind('<Return>', self.__enter_key)
+        self.__msg_box.grid(row=2, column=2, columnspan=2, sticky='news')
+
+        # Button to record audio
+        self.__record_photo = PhotoImage(file=resource_path("images\\microphone.png"))
+        self.__record_button = Button(self, image=self.__record_photo, command=self.__record_audio, height=68,
+                                      width=140, bg=self.__app_background_color, fg="#63C8D8", text="Record",
+                                      cursor="hand2")
+        self.__record_button.grid(row=2, column=4, columnspan=2, sticky='news')
 
     def update(self) -> None:
         """ update the current open chat in the GUI (load the new msgs, don't recreate everything) """
