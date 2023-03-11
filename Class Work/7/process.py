@@ -49,9 +49,18 @@ class Process:
         # pickle the args and kwargs
         pickled_data = (self.__args, self.__kwargs) if self.__args != () or self.__kwargs != {} else None
         pickled_data = b64encode(pickle.dumps(pickled_data)).decode()
+        # imports list
+        with open(target.__code__.co_filename, "r") as f:
+            lines = f.read().split("\n")
+        imports = ""
+        for line in lines:
+            line = line.lstrip(" ")
+            if line.startswith("import ") or (line.startswith("from") and " import " in line):
+                imports += line + "; "
         # create the command that the main thread of the process will run
-        self.__command_line = f'"{sys.executable}" -c "import {script_name}; {script_name}.Process.run('
-        self.__command_line += f"'{pickled_data}', '{func}', '{func_serialized_by}')" + '"'
+        self.__command_line = f'"{sys.executable}" -c "{imports}import {script_name}; ' \
+                              f"{script_name}.Process.run(" \
+                              f"'{pickled_data}', '{func}', '{func_serialized_by}', globals())" + '"'
         # parameters to start process using Windows api
         self.__process_security_attributes = process_security_attributes
         self.__thread_security_attributes = thread_security_attributes
@@ -75,13 +84,13 @@ class Process:
         )
 
     @staticmethod
-    def run(pickled_data: str, func: str, func_serialized_by: str):
+    def run(pickled_data: str, func: str, func_serialized_by: str, globals_dict: dict[str, Any]):
         """ This func unpickles the args & kwargs and then calls the target func """
         # if the function was serialized by pickle - un-pickle the function
         # if it was serialized by marshal - un-marshal the function and reconstruct it
         if func_serialized_by == "marshal":
             code = marshal.loads(b64decode(func.encode()))
-            func = types.FunctionType(code, {})
+            func = types.FunctionType(code, globals_dict)
         elif func_serialized_by == "pickle":
             func = pickle.loads(b64decode(func.encode()))
         else:
