@@ -129,6 +129,7 @@ def login_signup(server_ip_port: tuple[str, int]) -> tuple[bool, EncryptedProtoc
 
 def sync_(main_app: ChatEaseGUI, sync_sock: EncryptedProtocolSocket, first_time_all: bool = False,
           time_between: int = 0.2) -> None:
+    # TODO: make communication.sync return the modified/new files
     global password
     if first_time_all:
         communication.sync(sync_sock, "all")

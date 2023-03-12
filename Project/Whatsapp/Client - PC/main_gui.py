@@ -57,7 +57,15 @@ class ChatEaseGUI(Tk):
         self.__search_chat: Button | None = None
         self.__file_upload: Button | None = None
         self.__record_button: Button | None = None
+        self.__profile_picture: Label | None = None
         self.__current_chat_name: Label | None = None
+        #
+        self.__call_photo: PhotoImage | None = None
+        self.__send_photo: PhotoImage | None = None
+        self.__upload_photo: PhotoImage | None = None
+        self.__record_photo: PhotoImage | None = None
+        self.__settings_photo: PhotoImage | None = None
+        self.__profile_picture_photo: PhotoImage | None = None
         #
         self.setting_gui: SettingsGUI | None = None
         self.__add_to_update_dict: dict[Tk, str] = {}

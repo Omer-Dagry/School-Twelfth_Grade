@@ -96,18 +96,19 @@ class Communication:
         return True, sock, response[6:]
 
     @staticmethod
-    def sync(sock: EncryptedProtocolSocket, mode: str = "new") -> bool:
+    def sync(sock: EncryptedProtocolSocket, mode: str = "new") -> tuple[bool, list[str]]:
         """  sync once
 
         :param sock: the socket to the server
         :param mode: 'new' or 'all'
-        :return: True if new data received else False
+        :return: True if new data received else False, list of the modified/new files
         """
         # if mode not in ["new", "all"]:
         #     raise ValueError(f"param 'mode' should be either 'new' or 'all', got '{mode}'")
         # sock.send_message(f"sync {mode}".ljust(30).encode())
         # response = sock.receive_message()
         # TODO: finish this function
+        # TODO: make this function return True/False, a list of the modified/new files
         raise NotImplementedError
 
     def upload_file(self, chat_id: str | int, filename: str = "", root: Tk = None, delete_file: bool = False) -> None:

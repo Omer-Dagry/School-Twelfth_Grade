@@ -750,6 +750,7 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                 msg = client_socket.receive_message()
             except socket.timeout:
                 client_socket.send_message(login_or_signup_response("login", "not ok", "Request Timed Out."))
+                stop = True
                 break
             client_socket.settimeout(None)
             msg = msg.decode()

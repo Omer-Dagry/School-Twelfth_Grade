@@ -503,3 +503,45 @@ INFO | 2023-03-10 22:33:55,237 | MainProcess | MainThread | [ChatEaseGUI]: setup
 DEBUG | 2023-03-10 22:33:55,318 | MainProcess | MainThread | STREAM b'IHDR' 16 13
 DEBUG | 2023-03-10 22:33:55,318 | MainProcess | MainThread | STREAM b'IDAT' 41 1668
 INFO | 2023-03-10 22:34:00,679 | MainProcess | MainThread | Program Ended
+INFO | 2023-03-11 19:13:01,690 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-11 19:13:02,093 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+DEBUG | 2023-03-11 19:13:02,184 | MainProcess | MainThread | STREAM b'IHDR' 16 13
+DEBUG | 2023-03-11 19:13:02,184 | MainProcess | MainThread | STREAM b'IDAT' 41 1668
+INFO | 2023-03-11 19:13:09,443 | MainProcess | MainThread | [ChatEaseGUI]: creating SettingsGUI instance (omerdagry@gmail.com)
+INFO | 2023-03-11 19:13:09,443 | MainProcess | MainThread | [SettingsGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-11 19:13:09,444 | MainProcess | MainThread | [SettingsGUI]: setup (omerdagry@gmail.com)
+INFO | 2023-03-11 19:13:12,768 | MainProcess | MainThread | [SettingsGUI]: __change_background, user picked: '#52efa5' (omerdagry@gmail.com)
+INFO | 2023-03-11 19:13:12,768 | MainProcess | MainThread | [ChatEaseGUI]: __change_background_color, bg = '#52efa5' (omerdagry@gmail.com)
+INFO | 2023-03-11 19:13:12,776 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+DEBUG | 2023-03-11 19:13:12,782 | MainProcess | MainThread | STREAM b'IHDR' 16 13
+DEBUG | 2023-03-11 19:13:12,782 | MainProcess | MainThread | STREAM b'IDAT' 41 1668
+INFO | 2023-03-11 19:13:16,717 | MainProcess | MainThread | [SettingsGUI]: __change_background, user picked: '#596be8' (omerdagry@gmail.com)
+INFO | 2023-03-11 19:13:16,717 | MainProcess | MainThread | [ChatEaseGUI]: __change_background_color, bg = '#596be8' (omerdagry@gmail.com)
+INFO | 2023-03-11 19:13:16,725 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+DEBUG | 2023-03-11 19:13:16,731 | MainProcess | MainThread | STREAM b'IHDR' 16 13
+DEBUG | 2023-03-11 19:13:16,731 | MainProcess | MainThread | STREAM b'IDAT' 41 1668
+DEBUG | 2023-03-11 19:15:45,286 | MainProcess | MainThread | Received exception: Traceback (most recent call last):
+  File "D:\Projects\In Work or Frequently Used\School-Twelfth_Grade\Project\Whatsapp\Client - PC\main_gui.py", line 270, in <module>
+    main()
+  File "D:\Projects\In Work or Frequently Used\School-Twelfth_Grade\Project\Whatsapp\Client - PC\main_gui.py", line 265, in main
+    gui.mainloop()
+  File "C:\Users\omerd\AppData\Local\Programs\Python\Python311\Lib\tkinter\__init__.py", line 1485, in mainloop
+    self.tk.mainloop(n)
+KeyboardInterrupt
+
+INFO | 2023-03-11 19:15:45,286 | MainProcess | MainThread | Program Ended
+INFO | 2023-03-11 19:19:09,089 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-11 19:19:09,180 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+DEBUG | 2023-03-11 19:19:09,256 | MainProcess | MainThread | STREAM b'IHDR' 16 13
+DEBUG | 2023-03-11 19:19:09,256 | MainProcess | MainThread | STREAM b'IDAT' 41 1668
+INFO | 2023-03-11 19:19:10,870 | MainProcess | MainThread | Program Ended
+INFO | 2023-03-11 19:19:36,393 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-11 19:19:36,480 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+DEBUG | 2023-03-11 19:19:36,553 | MainProcess | MainThread | STREAM b'IHDR' 16 13
+DEBUG | 2023-03-11 19:19:36,553 | MainProcess | MainThread | STREAM b'IDAT' 41 1668
+INFO | 2023-03-11 19:19:37,611 | MainProcess | MainThread | Program Ended
+INFO | 2023-03-11 19:19:59,917 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI (omerdagry@gmail.com)
+INFO | 2023-03-11 19:20:00,007 | MainProcess | MainThread | [ChatEaseGUI]: setup (omerdagry@gmail.com)
+DEBUG | 2023-03-11 19:20:00,087 | MainProcess | MainThread | STREAM b'IHDR' 16 13
+DEBUG | 2023-03-11 19:20:00,087 | MainProcess | MainThread | STREAM b'IDAT' 41 1668
+INFO | 2023-03-11 19:20:01,140 | MainProcess | MainThread | Program Ended
