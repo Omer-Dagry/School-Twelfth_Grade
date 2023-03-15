@@ -107,6 +107,8 @@ class Communication:
         #     raise ValueError(f"param 'mode' should be either 'new' or 'all', got '{mode}'")
         # sock.send_message(f"sync {mode}".ljust(30).encode())
         # response = sock.receive_message()
+        #                         cmd                  {}             str       bytes
+        # response -> f"{'sync new/all'.ljust(30)}{empty-dict/dict[file_name, file_data]}"
         # TODO: finish this function
         # TODO: make this function return True/False, a list of the modified/new files
         raise NotImplementedError

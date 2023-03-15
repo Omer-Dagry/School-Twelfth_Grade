@@ -73,22 +73,24 @@ class ChatEaseGUI(Tk):
         #
         self.__setup()
 
+    # "Private"
+
     def __change_background_color(self, bg: str) -> None:
         """ changes __app_background_color and destroys all widgets and calls __setup """
         logging.info(f"[ChatEaseGUI]: __change_background_color, bg = '{bg}' ({self.__email})")
         self.__app_background_color = bg
-        top_levels = self.get_top_levels(self)
+        top_levels = self.__get_top_levels(self)
         for widget in self.winfo_children():
             if widget not in top_levels:
                 widget.destroy()
         self.__setup()
 
-    def get_top_levels(self, root: Tk | Toplevel) -> list[Toplevel]:
+    def __get_top_levels(self, root: Tk | Toplevel) -> list[Toplevel]:
         top = []
         for k, v in root.children.items():
             if isinstance(v, Toplevel):
                 top.append(v)
-                return top + self.get_top_levels(v)
+                return top + self.__get_top_levels(v)
         return []
 
     def __enter_key(self, event=None) -> None:
@@ -223,17 +225,12 @@ class ChatEaseGUI(Tk):
                                       cursor="hand2")
         self.__record_button.grid(row=2, column=4, columnspan=2, sticky='news')
 
-    def update(self) -> None:
-        """ update the current open chat in the GUI (load the new msgs, don't recreate everything) """
-        # TODO: finish
-        raise NotImplementedError
-
-    def load_chat(self, chat_id: str) -> None:
+    def __load_chat(self, chat_id: str) -> None:
         """ loads 2 files of msgs of the chat (1600 msgs) """
         # TODO: finish
         raise NotImplementedError
 
-    def load_more_messages(self, chat_id: str) -> None:
+    def __load_more_messages(self, chat_id: str) -> None:
         """ loads more messages in the current chat (from another file of msgs - 800 more msgs) """
         # TODO: finish
         raise NotImplementedError
@@ -252,12 +249,21 @@ class ChatEaseGUI(Tk):
         logging.info(f"[ChatEaseGUI]: opened a thread and called RecordingGUI.record_audio ({self.__email})")
 
     def __settings(self) -> None:
-        top_levels = [isinstance(v, SettingsGUI) for v in self.get_top_levels(self)]
+        top_levels = [isinstance(v, SettingsGUI) for v in self.__get_top_levels(self)]
         if not all(top_levels) or not top_levels:  # check that there isn't already an open setting menu
             logging.info(f"[ChatEaseGUI]: creating SettingsGUI instance ({self.__email})")
             self.setting_gui = SettingsGUI(self, self.__email, self.__change_background_color)
         else:  # if there is a settings gui, bring it back to focus
             self.setting_gui.deiconify()
+
+    # "Public"
+
+    def update(self) -> None:
+        """ update the current open chat in the GUI (load the new msgs, don't recreate everything) """
+        # TODO: finish
+        raise NotImplementedError
+
+    # dunder methods
 
     def __del__(self) -> None:
         self.quit()
