@@ -25,8 +25,6 @@ tried_boom_boom = False  # type: bool
 icepital_turns_to_min = None  # type: int | None # turns till icepital gets to min amount of penguins
 nearest_to_cloneberg_enemy = None  # type: Iceberg | None
 nearest_to_cloneberg = None  # type: Iceberg | None
-enemy_side_stop = 0  # type: int # stop sending to cloneberg for x more turns
-our_side_stop = 0  # type: int # stop sending to cloneberg for x more turns
 our_side_count = None  # type: int | None # amount of icebergs that "belong" to us (should belong)
 sent_to_nearest_at = 0  # type: int
 # all our & neutral icebergs that the enemy currently has penguins on the way to
@@ -39,6 +37,8 @@ enemy_siege_icebergs = {}  # type: dict[Iceberg, int]
 siege_on_the_way = {}  # type: dict[Iceberg, int]  # Iceberg, game_turn
 siege_on_the_way_amount = {}  # type: dict[Iceberg, int]  # Iceberg, siege_amount
 amount_till_40 = 5  # type: int
+boomed_from_all_together = False  # type: bool
+iceberg_siege_groups = {}  # type: dict[Iceberg, int]
 
 
 def gather_data():
@@ -85,7 +85,6 @@ def gather_data():
                                    for i in my_icebergs_min_ if my_icebergs_min_[i][0] < 0))
     print("our icebergs in danger:", under_attack_in_danger)
     enemy_icebergs_penguin_amount = dict(((i, penguin_amount(i)) for i in game.get_enemy_icebergs()))
-    # enemy_under_attack_in_danger = in_danger(enemy=True, danger_from=5)
     #
     mine = game.get_my_penguin_groups()
     for my_iceberg, enemy_iceberg, speed in add_to_accelerate_dict:
@@ -107,10 +106,12 @@ def gather_data():
                 or pg not in all_penguin_groups:
             siege_groups.pop(pg)
             removed_from_siege.add(pg)
+            iceberg_siege_groups.pop(pg.destination)
     for pg in game.get_all_penguin_groups():
         if pg not in siege_groups and pg.is_siege_group and pg not in removed_from_siege:
             if pg.turns_till_arrival == 0:
                 siege_groups[pg] = game.turn
+                iceberg_siege_groups[pg.destination] = game.turn
                 if pg.destination in siege_on_the_way:
                     siege_on_the_way.pop(pg.destination)
                     siege_on_the_way_amount.pop(pg.destination)
@@ -620,10 +621,12 @@ def defend_icebergs(my_iceberg, current):
         under_attack_in_danger_keys.sort(key=lambda i: i.get_turns_till_arrival(my_iceberg))
         close_to_me = under_attack_in_danger_keys[0]
         danger_amount = under_attack_in_danger[close_to_me][0]
+        siege_amount_other = my_siege_icebergs[close_to_me] if close_to_me in my_siege_icebergs else 0
+        danger_amount += siege_amount_other
         turns_to_min = under_attack_in_danger[close_to_me][1]
-        danger_amount += close_to_me.penguins_per_turn * (my_iceberg.get_turns_till_arrival(close_to_me) -
-                                                          turns_to_min) \
-            if my_iceberg.get_turns_till_arrival(close_to_me) > turns_to_min else 0
+        if my_iceberg.get_turns_till_arrival(close_to_me) > turns_to_min:
+            danger_amount += close_to_me.penguins_per_turn * (
+                    my_iceberg.get_turns_till_arrival(close_to_me) - turns_to_min)
         #
         msg = "defend icebergs"
         func_args_kwargs = {send_to_iceberg_arrive_with_enemy: ((my_iceberg, close_to_me, msg), {}),
@@ -642,6 +645,8 @@ def defend_icebergs(my_iceberg, current):
             turns_till_arrival = my_iceberg.get_turns_till_arrival(close_to_me)
             if turns_till_arrival > in_x_turns:
                 danger_amount += close_to_me.penguins_per_turn * (turns_till_arrival - in_x_turns)
+            siege_amount_other = my_siege_icebergs[close_to_me] if close_to_me in my_siege_icebergs else 0
+            danger_amount += siege_amount_other
             if danger_amount <= net:
                 send_penguins(my_iceberg, close_to_me, danger_amount, msg)
                 return danger_amount, True
@@ -657,26 +662,40 @@ def icepital_can_send(amount, net):
 
     :type net: int
     """
+    icepital_siege_amount = my_siege_icebergs[my_icepital] if my_icepital in my_siege_icebergs else 0
+    helper_1 = all_icebergs_from_icepital[1].penguin_amount // cost // cost - icepital_siege_amount
+    helper_2 = all_icebergs_from_icepital[2].penguin_amount // cost // cost - icepital_siege_amount
+    helper_1_and_2 = helper_1 + helper_2 + icepital_siege_amount
+    all_enemy_icebergs_boom_s8 = 0
+    # boom from 1 iceberg at every speed possible
     speeds = [1, 2, 4, 8]
     for enemy in game.get_enemy_icebergs():  # type: Iceberg
         for speed in speeds:
-            amount_after = net - amount
-            enemy_boom = enemy.penguin_amount
-            for _ in range(speed // 2):
-                enemy_boom //= cost
             turns_till_arrival = enemy.get_turns_till_arrival(my_icepital)
             turns_till_arrival = ((turns_till_arrival - (speed // 2)) // speed) + (speed // 2) + 1
-            amount_after += my_icepital.penguins_per_turn * turns_till_arrival
+            amount_after = net - amount + my_icepital.penguins_per_turn * turns_till_arrival
+            enemy_boom = enemy.penguin_amount
+            all_enemy_icebergs_boom_s8 += enemy_boom // cost // cost // cost
+            for _ in range(speed // 2):
+                enemy_boom //= cost
             if not (amount_after > enemy_boom or (
+                    all_icebergs_from_icepital[1] in all_my_icebergs_set and amount_after + helper_1 > enemy_boom) or (
+                    all_icebergs_from_icepital[2] in all_my_icebergs_set and amount_after + helper_2 > enemy_boom) or (
                     all_icebergs_from_icepital[1] in all_my_icebergs_set and
-                    amount_after + all_icebergs_from_icepital[1].penguin_amount // cost // cost > enemy_boom) or (
-                            all_icebergs_from_icepital[2] in all_my_icebergs_set and
-                            amount_after + all_icebergs_from_icepital[2].penguin_amount // cost // cost > enemy_boom) or (
-                            all_icebergs_from_icepital[1] in all_my_icebergs_set and
-                            all_icebergs_from_icepital[2] in all_my_icebergs_set and
-                            amount_after + all_icebergs_from_icepital[1].penguin_amount // cost // cost +
-                            all_icebergs_from_icepital[2].penguin_amount // cost // cost > enemy_boom)):
+                    all_icebergs_from_icepital[2] in all_my_icebergs_set and
+                    amount_after + helper_1_and_2 > enemy_boom)):
                 return False
+    if boomed_from_all_together:
+        # boom from all icebergs at speed 8
+        enemy_boom = all_enemy_icebergs_boom_s8
+        amount_after = net - amount + my_icepital.penguins_per_turn * 5
+        if not (amount_after > enemy_boom or (
+                all_icebergs_from_icepital[1] in all_my_icebergs_set and amount_after + helper_1 > enemy_boom) or (
+                all_icebergs_from_icepital[2] in all_my_icebergs_set and amount_after + helper_2 > enemy_boom) or (
+                all_icebergs_from_icepital[1] in all_my_icebergs_set and
+                all_icebergs_from_icepital[2] in all_my_icebergs_set and
+                amount_after + helper_1_and_2 > enemy_boom)):
+            return False
     return True
 
 
@@ -759,11 +778,20 @@ def boom_boom_v2(my_icepital_net):
     return False
 
 
+def check_if_boomed_from_all_icebergs():
+    global boomed_from_all_together
+    groups_in_route_to_icepital = {pg.source for pg in game.get_enemy_penguin_groups() if pg.destination == my_icepital}
+    for enemy_iceberg in game.get_enemy_icebergs():
+        if enemy_iceberg not in groups_in_route_to_icepital:
+            return
+    boomed_from_all_together = True
+
+
 def real_do_turn():
     """
     this function implements the read do_turn function.
     """
-    global my_icepital, my_icebergs, my_icebergs_min, game, our_side_stop, enemy_side_stop, \
+    global my_icepital, my_icebergs, my_icebergs_min, game, \
         nearest_to_cloneberg, nearest_to_cloneberg_enemy, our_side_count, sent_to_nearest_at, siege_amount, \
         my_siege_icebergs, enemy_siege_icebergs, siege_on_the_way, amount_till_40, siege_on_the_way_amount
     #
@@ -771,12 +799,17 @@ def real_do_turn():
     m = min_penguins(my_icepital)
     my_icepital_net = m if m < my_icepital_net else my_icepital_net
     if my_icepital in under_attack_in_danger:
-        under_attack_in_danger[my_icepital][0] += 10
+        icepital_siege_amount = my_siege_icebergs[my_icepital] if my_icepital in my_siege_icebergs else 0
+        under_attack_in_danger[my_icepital][0] += 10 + icepital_siege_amount
     icepital_skip = False
     #
 
     #
     accelerate_if_worth_it()
+    # if not boomed_from_all_together:
+    #     check_if_boomed_from_all_icebergs()
+    #
+
     #
     if boom_boom_v2(my_icepital_net):
         return
@@ -1039,11 +1072,10 @@ def real_do_turn():
 
         # send to cloneberg if my_iceberg is nearest_to_cloneberg or nearest_to_cloneberg_enemy
         if my_iceberg == nearest_to_cloneberg or my_iceberg == nearest_to_cloneberg_enemy:
-            if my_iceberg in siege_on_the_way:
-                if net < game.go_through_siege_cost:
-                    continue
-                while net % game.go_through_siege_cost != 0:
-                    net -= 1
+            if net < game.go_through_siege_cost:
+                continue
+            while net % game.go_through_siege_cost != 0:
+                net -= 1
             send_penguins(my_iceberg, game.get_cloneberg(), net, "clone")
             net = 0
         my_icebergs_min[my_iceberg] = net
@@ -1070,9 +1102,11 @@ def real_do_turn():
     my_icepital_net -= siege_amount
     if icepital_can_boom_boom and not icepital_skip:
         boom_boom(my_icepital, current_net=my_icepital_net)
-    elif not icepital_skip and my_icepital not in under_attack_in_danger:
+    elif not icepital_skip and my_icepital not in under_attack_in_danger and \
+            (my_icepital not in iceberg_siege_groups or (
+                    my_icepital in iceberg_siege_groups and iceberg_siege_groups[my_icepital] - game.turn > 5)):
         # nearest to cloneberg
-        if nearest_to_cloneberg not in all_my_icebergs_set or game.turn < sent_to_nearest_at:
+        if (nearest_to_cloneberg not in all_my_icebergs_set or game.turn < sent_to_nearest_at) and game.turn > 10:
             turns_till_arrival = my_icepital.get_turns_till_arrival(nearest_to_cloneberg)
             amount = penguin_amount(nearest_to_cloneberg, my_icepital, turns_till_arrival)
             if amount <= 0 and (game.turn >= sent_to_nearest_at + 4 or sent_to_nearest_at == 0):
@@ -1080,9 +1114,11 @@ def real_do_turn():
                 if my_icepital_net >= amount:
                     msg = "conquer nearest to cloneberg (from icepital)"
                     if nearest_to_cloneberg in iceberg_under_attack:
-                        sent, did_attack = send_to_iceberg_arrive_with_enemy(my_icepital, nearest_to_cloneberg, msg)
+                        sent, did_attack = send_to_iceberg_arrive_with_enemy(my_icepital, nearest_to_cloneberg, msg,
+                                                                             is_icepital=(True, my_icepital_net))
                     else:
-                        sent, did_attack = send_with_acceleration(my_icepital, nearest_to_cloneberg, msg)
+                        sent, did_attack = send_with_acceleration(my_icepital, nearest_to_cloneberg, msg,
+                                                                  is_icepital=(True, my_icepital_net))
                     # if accelerated turns_till_arrival will be less
                     if add_to_accelerate_dict and nearest_to_cloneberg == add_to_accelerate_dict[-1][0]:
                         speed = add_to_accelerate_dict[-1][2]
@@ -1154,11 +1190,6 @@ def real_do_turn():
                         my_icepital_net -= sent_amount
             #
         #
-    #
-    if our_side_stop > 0:
-        our_side_stop -= 1
-    if enemy_side_stop > 0:
-        enemy_side_stop -= 1
 
 
 def do_turn(ga):
