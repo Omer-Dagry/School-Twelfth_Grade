@@ -399,8 +399,7 @@ def create_new_chat(user_created: str, with_user: str) -> tuple[bool, str]:
     except OSError:
         return False, ""
     # chat metadata
-    write_to_file(f"{USERS_DATA}{chat_id}\\name", "w",
-                  f"{user_created} - {with_user_username}\n{with_user} - {user_created_username}")
+    write_to_file(f"{USERS_DATA}{chat_id}\\name", "wb", pickle.dumps([user_created, with_user]))
     write_to_file(f"{USERS_DATA}{chat_id}\\type", "w", "chat")
     write_to_file(f"{USERS_DATA}{chat_id}\\users", "wb", b"")
     add_user_to_group_users_file(user_created, chat_id)
@@ -435,7 +434,7 @@ def create_new_group(user_created: str, users: list[str], group_name: str) -> tu
     except OSError:
         return False, ""
     # chat metadata
-    write_to_file(f"{USERS_DATA}{chat_id}\\name", "w", group_name)
+    write_to_file(f"{USERS_DATA}{chat_id}\\name", "wb", pickle.dumps([group_name]))
     write_to_file(f"{USERS_DATA}{chat_id}\\type", "w", "group")
     write_to_file(f"{USERS_DATA}{chat_id}\\users", "wb", b"")
     write_to_file(
@@ -824,7 +823,7 @@ def sync(email: str, sync_all: bool = False) -> bytes:
             new_data[-1], new_data[index] = new_data[index], new_data[-1]
             new_data.pop()
         new_data.extend(add)
-        del add
+        del add, remove
     else:
         # user meta data
         new_data = [f"{USERS_DATA}{email}\\known_users", f"{USERS_DATA}{email}\\{email}_profile_picture.png"]
@@ -972,10 +971,12 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                 if cmd == "sync new":
                     request: str
                     response = sync(username)
+                    response = f"{'sync new'.ljust(30)}".encode() + response
                     pass
                 elif cmd == "sync all":
                     request: str
                     response = sync(username, sync_all=True)
+                    response = f"{'sync all'.ljust(30)}".encode() + response
                     pass
                 elif cmd == "msg":
                     request: str
@@ -987,6 +988,7 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                     response = request_response(cmd, "ok" if ok else "not ok", "")
                 elif cmd == "delete for everyone":
                     request: str
+                    # delete_msg_for_everyone()
                     pass
                 elif cmd == "file":
                     request: bytes

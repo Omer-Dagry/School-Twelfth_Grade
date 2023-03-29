@@ -1,17 +1,21 @@
 import os
+import pickle
 import logging
+import datetime
 import threading
 import traceback
 
 from tkinter import *
-# from PIL.ImageOps import contain
-# from PIL import Image as ImagePIL
-# from multiprocessing import Process
-# from PIL import ImageTk as ImageTkPIL
+from collections import ChainMap
+from PIL.ImageOps import contain
+from PIL import Image as ImagePIL
 from settings_gui import SettingsGUI
 from recording_gui import RecordingGUI
+from PIL import ImageTk as ImageTkPIL
+from message_options import MessageOptions
+from tkinter.scrolledtext import ScrolledText
 from communication import Communication as Com
-from photo_tools import format_photo, check_size
+from photo_tools import format_photo, check_size  # TODO: check size
 from protocol_socket import EncryptedProtocolSocket
 
 
@@ -21,6 +25,9 @@ LOG_DIR = 'log'
 LOG_LEVEL = logging.DEBUG
 LOG_FILE = LOG_DIR + "/ChatEase-Client.log"
 LOG_FORMAT = "%(levelname)s | %(asctime)s | %(processName)s | %(threadName)s | %(message)s"
+
+# Globals
+update_chat_lock = threading.Lock()
 
 # Create All Needed Directories & Files & Initialize logging
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -50,7 +57,11 @@ class ChatEaseGUI(Tk):
         self.__communication = Com(self.__email, self.__password, self.__server_ip_port)
         #
         self.__msg_box: Entry | None = None
-        self.__home_chat: Text | None = None
+        self.__loaded_chat_files: list[str] = []
+        self.__most_recent_loaded_file_amount: int = 0
+        self.__home_chat: ScrolledText | None = None
+        self.__chat_text: ScrolledText | None = None
+        self.__message_options_gui: MessageOptions | None = None
         self.__send_msg: Button | None = None
         self.__chat_buttons: Text | None = None
         self.__search_user: Entry | None = None
@@ -86,6 +97,7 @@ class ChatEaseGUI(Tk):
         self.__setup()
 
     def __get_top_levels(self, root: Tk | Toplevel) -> list[Toplevel]:
+        """ returns all the top levels of root"""
         top = []
         for k, v in root.children.items():
             if isinstance(v, Toplevel):
@@ -94,12 +106,14 @@ class ChatEaseGUI(Tk):
         return []
 
     def __enter_key(self, event=None) -> None:
+        """ send the message in the input if enter key is pressed """
         if event is not None and event.type == EventType.KeyPress and self.__current_chat_name.text != "Home":
             msg = self.__msg_box.get()
             self.__msg_box.delete(0, END)
             self.__communication.send_message(self.__current_chat_name.chat_id, msg, self.__sock)
 
     def __search_user_focus_in(self, event: Event = None) -> None:
+        """ search user in focus """
         if event is not None and event.type == EventType.FocusIn:
             text = self.__search_user.get()
             if text == "Start a new chat":
@@ -107,6 +121,7 @@ class ChatEaseGUI(Tk):
                 self.__search_user.insert(END, self.__search_user.last_search)
 
     def __search_user_focus_out(self, event: Event = None) -> None:
+        """ search user out of focus """
         if event is not None and event.type == EventType.FocusOut:
             text = self.__search_user.get()
             self.__search_user.last_search = text
@@ -114,6 +129,7 @@ class ChatEaseGUI(Tk):
             self.__search_user.insert(END, "Start a new chat")
 
     def __search_user_enter(self, event: Event = None) -> None:
+        """ search the user in the user input """
         if event is not None and event.type == EventType.KeyPress:
             user = self.__search_user.get()
             self.__search_user.delete(0, END)
@@ -121,6 +137,7 @@ class ChatEaseGUI(Tk):
             self.__communication.new_chat(user, self.__sock)
 
     def __setup(self) -> None:
+        """ set up the GUI """
         logging.info(f"[ChatEaseGUI]: setup ({self.__email})")
         # Configure Window
         self.title(self.__app_name)  # title of window
@@ -187,9 +204,11 @@ class ChatEaseGUI(Tk):
         self.__chat_buttons.grid(row=1, column=0, columnspan=2, sticky="news")
 
         # Home window
-        self.__home_chat = Text(self, height=9999999, width=9999999, cursor="arrow",
-                                bg=self.__app_background_color, state=DISABLED, font=('helvetica', '16'))
+        self.__home_chat = ScrolledText(self, height=9999999, width=9999999, cursor="arrow",
+                                        bg=self.__app_background_color, state=DISABLED, font=('helvetica', '16'))
         self.__home_chat.grid(row=1, column=2, sticky='news', columnspan=4)
+
+        self.__chat_text = self.__home_chat
 
         # --------------------------- ROW 2 ---------------------------
 
@@ -224,31 +243,141 @@ class ChatEaseGUI(Tk):
                                       width=140, bg=self.__app_background_color, fg="#63C8D8", text="Record",
                                       cursor="hand2")
         self.__record_button.grid(row=2, column=4, columnspan=2, sticky='news')
+        logging.info(f"[ChatEaseGUI]: setup done ({self.__email})")
+
+    @staticmethod
+    def __load_messages_dict_from_file(path: str | os.PathLike) \
+            -> dict[int, list[str, str, str, list[str], bool, list[str], datetime.datetime]]:
+        """ loads a file of messages """
+        logging.info(f"[ChatEaseGUI]: loading a messages dict")
+        with open(path, "rb") as f:
+            try:
+                messages_dict = pickle.loads(f.read())
+            except EOFError:
+                messages_dict = {}
+        return messages_dict
+
+    def __message_options(self, message_index: int) -> None:
+        """ opens MessageOption GUI """
+        if self.__message_options_gui is not None:
+            if self.__message_options_gui.winfo_exists():
+                self.__message_options_gui.destroy()
+        self.__message_options_gui = MessageOptions(self, self.__email, self.__password,
+                                                    self.__server_ip_port, message_index)
+
+    def __add_messages_to_text_chat(self, *messages_dicts: dict[
+            int, list[str, str, str, list[str], bool, list[str], datetime.datetime]]) -> None:
+        """ adds messages from the messages dicts passed to this function
+
+        :param messages_dicts: {msg_id: [from_user, msg, msg_type, deleted_for, delete_for_all, seen by, time]}
+        """
+        if self.__current_chat_name.text != "Home":
+            all_messages_combined = dict(ChainMap(*messages_dicts))
+            chats_id_ordered = sorted(all_messages_combined.keys(), key=lambda x: x)
+            self.__chat_text.config(state=NORMAL)
+            last_date = None
+            for chat_id in chats_id_ordered:
+                from_user, msg, msg_type, deleted_for, delete_for_all, seen_by, time = all_messages_combined[chat_id]
+                from_user: str
+                msg: str
+                msg_type: str
+                deleted_for: list[str]
+                delete_for_all: bool
+                seen_by: list[str]
+                time: datetime.datetime
+                time_formatted = time.strftime("%H:%M")
+                justify = "left" if from_user != self.__email else "right"
+                bg = "#d0ffff" if from_user != self.__email else "#ffffd0"
+                if last_date != time.date():
+                    last_date = time.date()
+                    # label = Label(self.__chat_text)
+                    # add the new date -> --------- date --------- (maybe a centered label, if possible, green)
+                if self.__email not in seen_by:
+                    # add ----------- unread messages ----------- (green)
+                    pass
+                if self.__email in deleted_for:
+                    continue
+                elif delete_for_all:
+                    # This message was deleted.
+                    label = Label(self.__chat_text, text="This message was deleted.", bg="gray", font=("helvetica", 16),
+                                  justify="left", fg="black")
+                    # label.bind("<Button-3>", lambda: )  # TODO: add message options
+                elif msg_type == "msg":
+                    # regular msg
+                    # TODO: add message options
+                    pass
+                elif msg_type == "file":
+                    # file msg
+                    # TODO: add message options
+                    pass
+                elif msg_type == "remove":
+                    # x was removed by y
+                    # TODO: add message options
+                    pass
+                else:
+                    logging.debug(f"[ChatEaseGUI]: unknown message type '{msg_type}'")
+            self.__chat_text.config(state=DISABLED)
 
     def __load_chat(self, chat_id: str) -> None:
         """ loads 2 files of msgs of the chat (1600 msgs) """
-        # TODO: finish
-        raise NotImplementedError
+        # don't allow loading new messages while changing chat
+        update_chat_lock.acquire()
+        if self.__current_chat_name.chat_id != chat_id:
+            self.__chat_text.delete(1.0, END)  # clear all messages, they are from another chat
+            chat_path = f"{self.__email}\\{chat_id}\\data\\chat"
+            if os.path.isdir(chat_path):
+                if self.__message_options_gui is not None:  # destroy any open MessageOptions
+                    if self.__message_options_gui.winfo_exists():
+                        self.__message_options_gui.destroy()
+                    self.__message_options_gui = None
+                with open(f"{self.__email}\\{chat_id}\\data\\name", "rb") as f:  # load chat name
+                    chat_name_list: list[str] = pickle.loads(f.read())
+                    #                                       group          one on one (this user created)
+                    chat_name: str = chat_name_list[0] if len(chat_name_list) == 1 or chat_name_list[1] == self.__email\
+                        else chat_name_list[1]  # one on one (the other user created)
+                self.__current_chat_name.text = chat_name  # update chat name variable
+                self.__current_chat_name.config(text=chat_name)  # update chat name displayed text
+                self.__current_chat_name.chat_id = chat_id  # update chat id variable
+                messages_dicts: list[dict[int, list[str, str, str, list[str], bool, list[str], datetime.datetime]]] = []
+                last_messages_file = max(os.listdir(chat_path))
+                messages_dicts.append(self.__load_messages_dict_from_file(f"{chat_path}\\{last_messages_file}"))
+                # reset __loaded_chat_files
+                self.__loaded_chat_files = [last_messages_file]  # reset loaded chat files and add last_800_file
+                self.__most_recent_loaded_file_amount = len(messages_dicts[0])
+                if os.path.isfile(f"{chat_path}\\{int(last_messages_file) - 1}"):
+                    messages_dicts.append(self.__load_messages_dict_from_file(
+                        f"{chat_path}\\{int(last_messages_file) - 1}"))
+                    self.__loaded_chat_files.append(str(int(last_messages_file) - 1))
+                self.__add_messages_to_text_chat(*messages_dicts)
+        self.__chat_text.yview_pickplace(END)
+        update_chat_lock.release()
 
-    def __load_more_messages(self, chat_id: str) -> None:
+    def __load_more_messages(self) -> None:
         """ loads more messages in the current chat (from another file of msgs - 800 more msgs) """
-        # TODO: finish
-        raise NotImplementedError
+        if self.__current_chat_name.text != "Home" and self.__chat_text.yview()[0] == 0:
+            chat_id = self.__current_chat_name.chat_id
+            chat_path = f"{self.__email}\\{chat_id}\\data\\chat"
+            load_file_path = f"{chat_path}\\{int(self.__loaded_chat_files[-1]) - 1}"
+            if os.path.isdir(chat_path) and os.path.isfile(load_file_path):
+                self.__add_messages_to_text_chat(self.__load_messages_dict_from_file(load_file_path))
+                self.__loaded_chat_files.append(str(int(self.__loaded_chat_files[-1]) - 1))
+            # TODO: scroll back to after the new loaded messages
+        self.after(500, self.__load_more_messages)
 
     def __record_audio(self) -> None:
         """ Opens a thread and calls record_audio of RecordingGUI """
-        # TODO: uncomment the following line
-        # if self.__current_chat_name.text != "Home":
-        logging.info(f"[ChatEaseGUI]: record audio called, creating RecordingGUI instance ({self.__email})")
-        audio_gui = RecordingGUI(
-            self, self.__email, self.__record_button, self.winfo_screenwidth(), self.winfo_screenheight(),
-            self.__communication.upload_file, str(self.__current_chat_name.chat_id), self.__record_audio
-        )
-        t = threading.Thread(target=audio_gui.record_audio, daemon=True, name="RecordingGUI")
-        t.start()
-        logging.info(f"[ChatEaseGUI]: opened a thread and called RecordingGUI.record_audio ({self.__email})")
+        if self.__current_chat_name.text != "Home":
+            logging.info(f"[ChatEaseGUI]: record audio called, creating RecordingGUI instance ({self.__email})")
+            audio_gui = RecordingGUI(
+                self, self.__email, self.__record_button, self.winfo_screenwidth(), self.winfo_screenheight(),
+                self.__communication.upload_file, str(self.__current_chat_name.chat_id), self.__record_audio
+            )
+            t = threading.Thread(target=audio_gui.record_audio, daemon=True, name="RecordingGUI")
+            t.start()
+            logging.info(f"[ChatEaseGUI]: opened a thread and called RecordingGUI.record_audio ({self.__email})")
 
     def __settings(self) -> None:
+        """ opens SettingsGUI """
         top_levels = [isinstance(v, SettingsGUI) for v in self.__get_top_levels(self)]
         if not all(top_levels) or not top_levels:  # check that there isn't already an open setting menu
             logging.info(f"[ChatEaseGUI]: creating SettingsGUI instance ({self.__email})")
@@ -260,8 +389,29 @@ class ChatEaseGUI(Tk):
 
     def update(self) -> None:
         """ update the current open chat in the GUI (load the new msgs, don't recreate everything) """
-        # TODO: finish
-        raise NotImplementedError
+        # don't allow loading new messages while changing chat
+        update_chat_lock.acquire()
+        chat_path = f"{self.__email}\\{self.__current_chat_name.chat_id}\\data\\chat"
+        messages_dicts = []
+        most_recent_file_number = max(os.listdir(chat_path))
+        most_recent_loaded_file_number = max(self.__loaded_chat_files)
+        most_recent_loaded_dict = self.__load_messages_dict_from_file(f"{chat_path}\\{most_recent_loaded_file_number}")
+        #
+        # if the last loaded dict was updated
+        if self.__most_recent_loaded_file_amount != len(most_recent_loaded_dict):
+            messages_dicts.append(most_recent_loaded_dict)
+        #
+        # if there are new files after the last loaded one
+        if most_recent_file_number != most_recent_loaded_file_number:
+            #                           from 1 after the last loaded one         up to the most recent file
+            for file_number in range(int(most_recent_loaded_file_number) + 1, int(most_recent_file_number) + 1):
+                messages_dicts.append(self.__load_messages_dict_from_file(f"{chat_path}\\{file_number}"))
+                self.__loaded_chat_files.append(f"{chat_path}\\{file_number}")
+        #
+        if messages_dicts:  # if there is new data
+            self.__most_recent_loaded_file_amount = len(messages_dicts[-1])
+            self.__add_messages_to_text_chat(*messages_dicts)
+        update_chat_lock.release()
 
     # dunder methods
 
