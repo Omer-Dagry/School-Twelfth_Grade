@@ -26,7 +26,7 @@ class MessageOptions(Toplevel):
     def __init__(self, root: Tk | Toplevel, email: str, password: str,
                  server_ip_port: tuple[str, int], msg: str, message_index: int,
                  message_type: Literal["mine", "other"], seen_by: list[str], chat_id: str) -> None:
-        logging.info(f"[MessageOptions]: init ({email})")
+        logging.info(f"[MessageOptions]: initializing")
         super().__init__(root)
         #
         self.__msg = msg
@@ -58,7 +58,7 @@ class MessageOptions(Toplevel):
         self.update()
 
     def __setup(self) -> None:
-        logging.info(f"[MessageOptions]: setup ({self.__email})")
+        logging.info(f"[MessageOptions]: setup")
         #
         for widget in self.winfo_children():
             widget.destroy()
@@ -88,10 +88,10 @@ class MessageOptions(Toplevel):
         seen_by = Button(self, text="Seen By", bg=color, command=self.__setup_seen_by, width=21)
         seen_by.grid(row=3, column=0, sticky="news")
         #
-        logging.info(f"[MessageOptions]: setup done ({self.__email})")
+        logging.info(f"[MessageOptions]: setup done")
 
     def __setup_seen_by(self):
-        logging.info(f"[MessageOptions]: setup seen_by ({self.__email})")
+        logging.info(f"[MessageOptions]: setup seen_by")
         #
         width = 250
         height = 250
@@ -118,4 +118,4 @@ class MessageOptions(Toplevel):
         seen_by_label.lift()
         back.lift()
         #
-        logging.info(f"[MessageOptions]: setup seen_by done ({self.__email})")
+        logging.info(f"[MessageOptions]: setup seen_by done")

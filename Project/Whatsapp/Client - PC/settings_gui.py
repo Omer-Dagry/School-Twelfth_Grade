@@ -22,7 +22,7 @@ logging.basicConfig(format=LOG_FORMAT, filename=LOG_FILE, level=LOG_LEVEL)
 
 class SettingsGUI(Toplevel):
     def __init__(self, root: Tk | Toplevel, email: str, change_background: Callable):
-        logging.info(f"[SettingsGUI]: initializing GUI ({email})")
+        logging.info(f"[SettingsGUI]: initializing GUI")
         Toplevel.__init__(self, root)
         #
         self.__email = email
@@ -31,7 +31,7 @@ class SettingsGUI(Toplevel):
         self.__setup()
 
     def __setup(self):
-        logging.info(f"[SettingsGUI]: setup ({self.__email})")
+        logging.info(f"[SettingsGUI]: setup")
         size = 120
         color = "#ffffd0"
         window_x = self.winfo_screenwidth() / 2
@@ -52,16 +52,6 @@ class SettingsGUI(Toplevel):
     def __change_background(self):
         color = colorchooser.askcolor()[1]
         if color is not None:
-            logging.info(f"[SettingsGUI]: __change_background, user picked: '{color}' ({self.__email})")
+            logging.info(f"[SettingsGUI]: __change_background, user picked: '{color}'")
             self.__change_main_gui_background(color)  # call ChatEaseGUI __change_background_color function
             self.deiconify()  # put the settings GUI back to focus
-
-
-def main():
-    # settings = SettingsGUI(None)
-    # settings.mainloop()
-    pass
-
-
-if __name__ == '__main__':
-    main()

@@ -12,8 +12,8 @@ from typing import Literal
 from PIL.ImageOps import contain
 from PIL import Image as ImagePIL
 from settings_gui import SettingsGUI
-from recording_gui import RecordingGUI
 from PIL import ImageTk as ImageTkPIL
+from recording_gui import RecordingGUI
 from message_options import MessageOptions
 from tkinter.scrolledtext import ScrolledText
 from communication import Communication as Com
@@ -37,6 +37,7 @@ if not os.path.isfile(LOG_FILE):
     with open(LOG_FILE, "w"):
         pass
 logging.basicConfig(format=LOG_FORMAT, filename=LOG_FILE, level=LOG_LEVEL)
+logging.getLogger('PIL').setLevel(logging.WARNING)  # fix a bug in PIL/tkinter ImageTk (unwanted logs)
 
 
 class ChatEaseGUI(Tk):
@@ -45,7 +46,7 @@ class ChatEaseGUI(Tk):
                  app_name: str = "ChatEase", window_min_size: tuple[int, int] = (980, 520),
                  app_background_color: str = "#1E1F22") -> None:
         #
-        logging.info(f"[ChatEaseGUI]: initializing GUI ({email})")
+        logging.info(f"[ChatEaseGUI]: initializing GUI")
         super().__init__(screen_name, base_name, class_name, use_tk, sync, use)
         #
         self.__app_name = app_name
@@ -90,7 +91,7 @@ class ChatEaseGUI(Tk):
 
     def __change_background_color(self, bg: str) -> None:
         """ changes __app_background_color and destroys all widgets and calls __setup """
-        logging.info(f"[ChatEaseGUI]: __change_background_color, bg = '{bg}' ({self.__email})")
+        logging.info(f"[ChatEaseGUI]: __change_background_color, bg = '{bg}'")
         self.__app_background_color = bg
         top_levels = self.__get_top_levels(self)
         for widget in self.winfo_children():
@@ -140,7 +141,7 @@ class ChatEaseGUI(Tk):
 
     def __setup(self) -> None:
         """ set up the GUI """
-        logging.info(f"[ChatEaseGUI]: setup ({self.__email})")
+        logging.info(f"[ChatEaseGUI]: setup")
         # Configure Window
         self.title(self.__app_name)  # title of window
         self.iconbitmap(resource_path("images\\ChatEase.ico"))  # icon of window
@@ -245,7 +246,7 @@ class ChatEaseGUI(Tk):
                                       width=140, bg=self.__app_background_color, fg="#63C8D8", text="Record",
                                       cursor="hand2")
         self.__record_button.grid(row=2, column=4, columnspan=2, sticky='news')
-        logging.info(f"[ChatEaseGUI]: setup done ({self.__email})")
+        logging.info(f"[ChatEaseGUI]: setup done")
 
     @staticmethod
     def __load_messages_dict_from_file(path: str | os.PathLike) \
@@ -370,20 +371,20 @@ class ChatEaseGUI(Tk):
     def __record_audio(self) -> None:
         """ Opens a thread and calls record_audio of RecordingGUI """
         if self.__current_chat_name.text != "Home":
-            logging.info(f"[ChatEaseGUI]: record audio called, creating RecordingGUI instance ({self.__email})")
+            logging.info(f"[ChatEaseGUI]: record audio called, creating RecordingGUI instance")
             audio_gui = RecordingGUI(
                 self, self.__email, self.__record_button, self.winfo_screenwidth(), self.winfo_screenheight(),
                 self.__communication.upload_file, str(self.__current_chat_name.chat_id), self.__record_audio
             )
             t = threading.Thread(target=audio_gui.record_audio, daemon=True, name="RecordingGUI")
             t.start()
-            logging.info(f"[ChatEaseGUI]: opened a thread and called RecordingGUI.record_audio ({self.__email})")
+            logging.info(f"[ChatEaseGUI]: opened a thread and called RecordingGUI.record_audio")
 
     def __settings(self) -> None:
         """ opens SettingsGUI """
         top_levels = [isinstance(v, SettingsGUI) for v in self.__get_top_levels(self)]
         if not all(top_levels) or not top_levels:  # check that there isn't already an open setting menu
-            logging.info(f"[ChatEaseGUI]: creating SettingsGUI instance ({self.__email})")
+            logging.info(f"[ChatEaseGUI]: creating SettingsGUI instance")
             self.setting_gui = SettingsGUI(self, self.__email, self.__change_background_color)
         else:  # if there is a settings gui, bring it back to focus
             self.setting_gui.deiconify()
@@ -438,5 +439,6 @@ if __name__ == '__main__':
     except (Exception, KeyboardInterrupt):
         exc = traceback.format_exc()
         print(exc)
-        logging.debug(f"Received exception: {exc}")
-    logging.info("Program Ended")
+        logging.debug(f"Program ended with exception: '{exc}'")
+    else:
+        logging.info("Program ended with no exceptions")

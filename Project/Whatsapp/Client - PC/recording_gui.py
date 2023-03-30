@@ -34,14 +34,14 @@ def playsound_wrapper(email: str, sound: str):
         play_obj = wave_obj.play()
         play_obj.wait_done()
     except Exception as e:
-        logging.warning(f"[RecordingGUI]: exception when playing audio file, ex: {e} ({email})")
+        logging.warning(f"[RecordingGUI]: exception when playing audio file, ex: {e}")
 
 
 class RecordingGUI:
     def __init__(self, root: Tk | Toplevel, email: str, record_button: Button, winfo_screenwidth: int,
                  winfo_screenheight: int, upload_file: Callable, chat_id: str, record_audio_func: Callable):
         #
-        logging.info(f"[RecordingGUI]: initializing ({email})")
+        logging.info(f"[RecordingGUI]: initializing")
         self.__root = root
         self.__email = email
         self.__upload_file = upload_file
@@ -81,7 +81,7 @@ class RecordingGUI:
         Records Audio
         Saves it to a file named temp.wav in the user folder
         """
-        logging.info(f"[RecordingGUI]: starting to record ({self.__email})")
+        logging.info(f"[RecordingGUI]: starting to record")
         global stop_rec
         skip = False
         try:
@@ -103,13 +103,13 @@ class RecordingGUI:
                 sound_file.close()
         except Exception as e:  # in case there is no microphone
             skip = True
-            logging.debug(f"[RecordingGUI]: exception recording, ex: {str(e)} ({self.__email})")
+            logging.debug(f"[RecordingGUI]: exception recording, ex: {str(e)}")
         finally:
             # disable recording button
             self.__record_button.configure(command=self.__record_audio_func, text="Record", state=DISABLED)
             stop_rec = True
         if not skip:
-            logging.info(f"[RecordingGUI]: finished recording ({self.__email})")
+            logging.info(f"[RecordingGUI]: finished recording")
             self.__recording_options()
 
     def __recording_options(self):
@@ -119,7 +119,7 @@ class RecordingGUI:
         2) delete - deletes the voice recording (doesn't send it)
         3) send - send the voice recording
         """
-        logging.info(f"[RecordingGUI]: initializing recording options GUI ({self.__email})")
+        logging.info(f"[RecordingGUI]: initializing recording options GUI")
         color = "#ffffd0"
         size = 120
         window_x = self.__winfo_screenwidth / 2
@@ -149,7 +149,7 @@ class RecordingGUI:
             )
         )
         send.grid(row=2, column=0, sticky="news")
-        logging.info(f"[RecordingGUI]: waiting for window to close ({self.__email})")
+        logging.info(f"[RecordingGUI]: waiting for window to close")
         while self.__options_window.winfo_exists():
             time.sleep(0.5)
         # if user didn't press anything and closed the window the recording file still exist so this deletes it
@@ -158,11 +158,11 @@ class RecordingGUI:
             while count < 5:
                 try:
                     os.remove(self.__tmp_file)
-                    logging.info(f"[RecordingGUI]: removed audio file ({self.__email})")
+                    logging.info(f"[RecordingGUI]: removed audio file")
                     break
                 except Exception as e:
                     logging.debug(
-                        f"[RecordingGUI]: exception while removing the audio file, ex: {str(e)} ({self.__email})")
+                        f"[RecordingGUI]: exception while removing the audio file, ex: {str(e)}")
                     time.sleep(0.5)
                     count += 1
         self.__record_button.configure(command=self.__record_audio_func, text="Record", state=NORMAL)
@@ -171,7 +171,7 @@ class RecordingGUI:
         """ Creates a thread that plays the audio file and changes the button text """
         if self.__playing_process is not None:  # if there is something playing right now it will terminate it
             self.__terminate_and_restore_button()
-        logging.info(f"[RecordingGUI]: playing audio file ({self.__email})")
+        logging.info(f"[RecordingGUI]: playing audio file")
         play_ = Process(target=playsound_wrapper, args=(self.__email, self.__playing_file_path,), daemon=True,
                         name="RecordingGUI - Play")
         play_.start()
@@ -195,7 +195,7 @@ class RecordingGUI:
         """ Terminates the process of the audio file, Restores button """
         if isinstance(self.__playing_process, Process):
             self.__playing_process.terminate()
-        logging.info(f"[RecordingGUI]: stopped playing audio file ({self.__email})")
+        logging.info(f"[RecordingGUI]: stopped playing audio file")
         self.__playing_process = None
         if self.__options_window.winfo_exists():
             self.__playing_button.configure(text="Play")
@@ -208,11 +208,11 @@ class RecordingGUI:
             while count < 5:
                 try:
                     os.remove(self.__playing_file_path)
-                    logging.info(f"[RecordingGUI]: removed audio file ({self.__email})")
+                    logging.info(f"[RecordingGUI]: removed audio file")
                     break
                 except PermissionError as e:
                     logging.debug(
-                        f"[RecordingGUI]: exception while removing the audio file, ex: {str(e)} ({self.__email})")
+                        f"[RecordingGUI]: exception while removing the audio file, ex: {str(e)}")
                     time.sleep(0.5)
                     count += 1
         self.__options_window.destroy()
