@@ -260,10 +260,11 @@ body {
 ::-webkit-scrollbar-thumb {
     -webkit-border-radius: 10px;
     border-radius: 10px;
-    background: rgb(33, 170, 33);
+    /* background: rgb(33, 170, 33); */
+    background: transparent;
     -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
 }
 
-::-webkit-scrollbar-thumb:window-inactive {
-    background: black;
+::-webkit-scrollbar-thumb:hover {
+    background: rgb(33, 170, 33) !important;
 }

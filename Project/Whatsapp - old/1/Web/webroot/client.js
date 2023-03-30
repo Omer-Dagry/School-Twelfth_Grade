@@ -204,7 +204,7 @@ function main() {
     user_profile_picture.style.backgroundImage = 'url(' + 'images/profile3.jpg' + ")";
     // create all chat boxes
     for (var i = 1; i < 200; i++) {
-        chat_box_left('images/profile' + i + '.jpg', "test" + i, "holla", "10:43");
+        chat_box_left('imgs/profile' + '.jpg', "test" + i, "holla", "10:43");
         msg_from_me("aoiushdfoiahsdfoijasdopifjasopdifjasl;dk1234567890uw3n4yct9o7823y4trc908weymcopgfiuweyr", "18:05");
         msg_from_others("aoiushdfoiahsdfoijasdopifjasopdifjasl;dk12345678909m3cy9t723htf79weuhrfgiuwer", "18:05");
     }
