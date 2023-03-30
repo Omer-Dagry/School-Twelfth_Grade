@@ -7,6 +7,8 @@ import traceback
 
 from tkinter import *
 from collections import ChainMap
+from typing import Literal
+
 from PIL.ImageOps import contain
 from PIL import Image as ImagePIL
 from settings_gui import SettingsGUI
@@ -257,19 +259,20 @@ class ChatEaseGUI(Tk):
                 messages_dict = {}
         return messages_dict
 
-    def __message_options(self, message_index: int) -> None:
+    def __message_options(self, msg: str, message_index: int, message_type: Literal["mine", "other"],
+                          seen_by: list[str]) -> None:
         """ opens MessageOption GUI """
         if self.__message_options_gui is not None:
             if self.__message_options_gui.winfo_exists():
                 self.__message_options_gui.destroy()
-        self.__message_options_gui = MessageOptions(self, self.__email, self.__password,
-                                                    self.__server_ip_port, message_index)
+        self.__message_options_gui = MessageOptions(
+            self, self.__email, self.__password, self.__server_ip_port, msg, message_index, message_type, seen_by)
 
     def __add_messages_to_text_chat(self, *messages_dicts: dict[
             int, list[str, str, str, list[str], bool, list[str], datetime.datetime]]) -> None:
         """ adds messages from the messages dicts passed to this function
 
-        :param messages_dicts: {msg_id: [from_user, msg, msg_type, deleted_for, delete_for_all, seen by, time]}
+        :param messages_dicts: {msg_index: [from_user, msg, msg_type, deleted_for, delete_for_all, seen by, time]}
         """
         if self.__current_chat_name.text != "Home":
             all_messages_combined = dict(ChainMap(*messages_dicts))

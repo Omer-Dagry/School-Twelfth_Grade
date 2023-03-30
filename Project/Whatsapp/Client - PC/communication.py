@@ -165,3 +165,17 @@ class Communication:
             return
         # TODO: finish
         raise NotImplementedError
+
+    def delete_message_for_me(self, chat_id: str, message_index: int, root: Tk | Toplevel):
+        # close the MessageOptions window
+        root.destroy()
+        pass
+        # TODO: finish
+        raise NotImplementedError
+
+    def delete_message_for_everyone(self, chat_id: str, message_index: int, root: Tk | Toplevel):
+        # close the MessageOptions window
+        root.destroy()
+        pass
+        # TODO: finish
+        raise NotImplementedError
