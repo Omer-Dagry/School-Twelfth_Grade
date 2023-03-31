@@ -20,8 +20,7 @@ class EncryptedProtocolSocket:
             if server_side:
                 if cert_file is None or key_file is None:
                     c_f = 'cert_file' if cert_file is None else ''
-                    k_f = ', key_file' if key_file is None and cert_file is None \
-                        else 'key_file' if key_file is None else ''
+                    k_f = '' if key_file is not None else ', key_file' if cert_file is None else 'key_file'
                     raise ValueError(f"missing {c_f}{k_f}")
                 self.__context.load_cert_chain(cert_file, key_file)
             else:
@@ -107,7 +106,7 @@ class EncryptedProtocolSocket:
                 data_length += received
                 if received == b"":  # connection closed
                     return b""
-            except socket.timeout:  # return only if received nothing
+            except socket.timeout:  # return only if received nothing, else ignore timeout
                 if data_length == b"":
                     return b""
         data_length = int(data_length.strip())
@@ -118,7 +117,7 @@ class EncryptedProtocolSocket:
                 data += received
                 if received == b"":  # connection closed
                     return b""
-            except socket.timeout:  # return only if received nothing
+            except socket.timeout:  # return only if received nothing, else ignore timeout
                 if data == b"":
                     return b""
         self.settimeout(current_timeout)

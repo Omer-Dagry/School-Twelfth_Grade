@@ -290,7 +290,7 @@ class ChatEaseGUI(Tk):
                 seen_by: list[str]
                 time: datetime.datetime
                 time_formatted = time.strftime("%H:%M")
-                justify = "left" if from_user != self.__email else "right"
+                side = "left" if from_user != self.__email else "right"
                 bg = "#d0ffff" if from_user != self.__email else "#ffffd0"
                 if last_date != time.date():
                     last_date = time.date()

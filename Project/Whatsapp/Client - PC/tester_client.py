@@ -30,7 +30,7 @@ class Check(Tk):
         back = Button(self, text="Back", command=self.__setup)
         back.place(x=0, y=0)
         #
-        seen_by_label = Label(self, text="Seen By", anchor=CENTER, height=2)
+        seen_by_label = Label(self, text="Seen", anchor=CENTER, height=2)
         seen_by_label.pack(fill=X)
         #
         seen_by_list = ScrolledText(self, font=('helvetica', '16'))
