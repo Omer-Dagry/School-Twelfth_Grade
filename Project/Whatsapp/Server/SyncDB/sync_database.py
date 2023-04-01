@@ -4,7 +4,7 @@ import threading
 import multiprocessing
 
 from typing import *
-from file_database import FileDatabase
+from .file_database import FileDatabase
 
 
 class SyncDatabase:
@@ -84,30 +84,93 @@ class SyncDatabase:
         self.__release_all()
         return result
 
-    def add(self, key: Hashable, val: list[Any]):
+    def add(self, key: Hashable, val: Hashable) -> None:
         """
-            extends the list of current_val with val
-            (if current_val isn't a list it will become [current_val] and then it will be extended)
+        use either this function if a set is the container of the values or use 'append' if a list is
 
-            key: current_val -> key: [current_val, *val]
+            adds val to the set
+
+            key: {current_values, ...} -> key: {current_values, ..., val}
+        """
+        self.__acquire_all()
+        current_val: set = self.__database[key]
+        current_val.add(val)
+        self.__database[key] = current_val
+        self.__release_all()
+
+    def update(self, key: Hashable, val: Iterable[Hashable]) -> None:
+        """
+        use either this function if a set is the container of the values or use 'extend' if a list is or 'db[] = ' if
+        it's 1 value
+
+            extends the set with val
+
+            key: {current_values, ...} -> key: {current_values, ..., *val}
+        """
+        self.__acquire_all()
+        current_val: set = self.__database[key]
+        current_val.update(val)
+        self.__database[key] = current_val
+        self.__release_all()
+
+    def remove_set(self, key: Hashable, val: Hashable) -> bool:
+        """
+        use either this function if a set is the container of the values or use 'remove_list' if a set is or 'pop' if
+        it's 1 value
+
+            removes val from the set
+
+            key: {current_values, ..., val} -> key: {current_values, ...}
+        """
+        self.__acquire_all()
+        current_val: set = self.__database[key]
+        if val in current_val:
+            result = True
+            current_val.remove(val)
+        else:
+            result = False
+        self.__database[key] = current_val
+        self.__release_all()
+        return result
+
+    def append(self, key: Hashable, val: Any) -> None:
+        """
+        use either this function if a list is the container of the values or use 'add' if a set is or 'db[] = ' if
+        it's 1 value
+
+            appends val to the list
+
+            key: [current_values, ...] -> key: [current_values, ..., val]
+        """
+        self.__acquire_all()
+        current_val: list = self.__database[key]
+        current_val.append(val)
+        self.__database[key] = current_val
+        self.__release_all()
+
+    def extend(self, key: Hashable, val: Iterable[Any]) -> None:
+        """
+        use either this function if you want a list as the container of the values or use 'update' if you want a set
+
+            extends the list of current_val with val
+
             key: [current_values, ...] -> key: [current_values, ..., *val]
         """
         self.__acquire_all()
         current_val = self.__database[key]
-        if not isinstance(current_val, list):
-            current_val = [current_val]
         current_val.extend(val)
         self.__database[key] = current_val
         self.__release_all()
 
-    def remove(self, key: Hashable, val: Any) -> bool:
+    def remove_list(self, key: Hashable, val: Any) -> bool:
         """
-            removes val from the list of current_val
-            (if current_val isn't a list it will become [current_val])
+        use either this function if a list is the container of the values or use 'remove_set' if a set is or 'pop' if
+        it's 1 value
 
-            key: current_val -> key: [current_val]
-            key: [current_values, ...] -> key: [current_values, ...]
-            if val in current_val -> remove val
+            removes val from the list of current_val
+
+            key: [current_values, ..., val] -> key: [current_values, ...]
+
             :return: True if val was in the list of values and was removed else False
         """
         self.__acquire_all()

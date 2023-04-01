@@ -2,11 +2,11 @@ import os
 import pickle
 
 from typing import *
-from database import Database
+from .database import Database
 
 
 class FileDatabase(Database):
-    __slots__ = ("__database_file_name", "__dict__")
+    __slots__ = ("__database_file_name",)
 
     def __init__(self, database_file_name: str, ignore_existing: bool = False, clear_database: bool = False):
         super().__init__()

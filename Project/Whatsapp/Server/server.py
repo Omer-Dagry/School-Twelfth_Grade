@@ -2,7 +2,7 @@
 ###############################################
 Author: Omer Dagry
 Mail: omerdagry@gmail.com
-Date: 06/01/2023 (dd/mm/yyyy)
+Final Date:  (dd/mm/yyyy) TODO: add date, and copy this to all files
 ###############################################
 """
 import os
@@ -34,15 +34,23 @@ LOG_LEVEL = logging.DEBUG
 LOG_FILE = LOG_DIR + "/ChatEase-Server.log"
 LOG_FORMAT = "%(levelname)s | %(asctime)s | %(processName)s | %(message)s"
 # Others
+# Chat id's possible characters
 CHAT_ID_CHARS = [letter for letter in string.ascii_uppercase + string.ascii_lowercase + string.digits]
 random.shuffle(CHAT_ID_CHARS)
+# Server email and special app password
 SERVER_EMAIL = "project.twelfth.grade@gmail.com"
 SERVER_EMAIL_APP_PASSWORD = "hbqbubnlppqxmupy"
+# Paths
 SERVER_DATA = "Data\\Server_Data\\"
 USERS_DATA = "Data\\Users_Data\\"
+# IP & Port
 IP = "0.0.0.0"
 PORT = 8820
 SERVER_IP_PORT = (IP, PORT)
+# Blocking Clients
+BLOCK_TIME = 60 * 5
+BLOCK_AFTER_X_EXCEPTIONS = 100
+EXCEPTIONS_WINDOW_TIME = 60 * 5
 
 # Globals
 # File DBs
@@ -55,13 +63,21 @@ chat_id_users_file_database = FileDatabase(f"{SERVER_DATA}chat_id_users", ignore
 # user_online_status_database -> {email: ["Online", None], email: ["Offline" / last_seen - datetime.datetime], ...}
 user_online_status_file_database = FileDatabase(f"{SERVER_DATA}user_online_status", ignore_existing=True)
 # Sync DBs
+# {email (str): password (str)}
 email_password_database = SyncDatabase(email_password_file_database, False, max_reads_together=1000)
+# {email (str), username (str)}
 email_user_database = SyncDatabase(email_user_file_database, False, max_reads_together=1000)
+# {chat_id (str): users (set[str])}
 chat_id_users_database = SyncDatabase(chat_id_users_file_database, False, max_reads_together=1000)
+# {email (str): status (list[str, None | datetime.datetime])}
 user_online_status_database = SyncDatabase(user_online_status_file_database, False, max_reads_together=1000)
 # Others
 clients_sockets = []
 printing_lock = threading.Lock()
+received_exception_from: dict[str, set[datetime.datetime]] = {}  # {ip: {time of exception (for each exception)}}
+blocked_ips: dict[str, datetime.datetime] = {}  # {ip: time of block}
+add_exception_lock = threading.Lock()
+blocked_client_lock = threading.Lock()
 
 # Create All Needed Directories
 os.makedirs(f"{SERVER_DATA}", exist_ok=True)
@@ -76,8 +92,8 @@ def start_server() -> EncryptedProtocolSocket:
     try:
         server_socket.bind(SERVER_IP_PORT)
         printing_lock.acquire()
-        print("Server Is Up!!")
-        logging.info("Server Is Up!!")
+        print(f"Server is up !! ({PORT = })")
+        logging.info(f"Server is up !! ({PORT = })")
         printing_lock.release()
         server_socket.listen()
     except OSError:
@@ -121,6 +137,55 @@ def read_from_file(file_path: str, mode: str) -> str | bytes:
     with open(file_path, mode) as f:
         data: str | bytes = f.read()
     return data
+
+
+def add_exception_for_ip(ip: str) -> None:
+    """ Add the ip to a list of exceptions """
+    add_exception_lock.acquire()
+    if ip in received_exception_from:
+        received_exception_from[ip].add(datetime.datetime.now())
+    else:
+        received_exception_from[ip] = {datetime.datetime.now()}
+    printing_lock.acquire()
+    print(f"[Server]: added the exception that was received while handling '{ip}' to the list of exceptions")
+    printing_lock.release()
+    logging.debug(f"[Server]: added the exception that was received while handling '{ip}' to the list of exceptions")
+    add_exception_lock.release()
+
+
+def watch_exception_dict():
+    """
+    watch over the list of exceptions received from IPs, if an IP has more than BLOCK_AFTER_X_EXCEPTIONS
+    exception in the last EXCEPTIONS_WINDOW_TIME minutes block that IP for BLOCK_TIME minutes
+
+    open a thread for this function
+    """
+    while True:
+        current_time = datetime.datetime.now()
+        remove_ips = []
+        for ip in received_exception_from:
+            remove = []
+            for ex_time in received_exception_from[ip]:
+                if (current_time - ex_time).seconds > EXCEPTIONS_WINDOW_TIME:
+                    remove.append(ex_time)
+            for ex_time in remove:
+                received_exception_from[ip].remove(ex_time)
+            # if we received more than BLOCK_AFTER_X_EXCEPTIONS exception in the last EXCEPTIONS_WINDOW_TIME from
+            # the same ip, block this ip for BLOCK_TIME
+            if len(received_exception_from[ip]) >= BLOCK_AFTER_X_EXCEPTIONS:
+                blocked_client_lock.acquire()
+                blocked_ips[ip] = current_time
+                blocked_client_lock.release()
+                printing_lock.acquire()
+                print(f"[Server]: the IP '{ip}' received more than {BLOCK_AFTER_X_EXCEPTIONS} exception "
+                      f"in under than {EXCEPTIONS_WINDOW_TIME} seconds. this IP is blocked for {BLOCK_TIME}")
+                printing_lock.release()
+                logging.warning(f"[Server]: the IP '{ip}' received more than {BLOCK_AFTER_X_EXCEPTIONS} exception "
+                                f"in under than {EXCEPTIONS_WINDOW_TIME} seconds. this IP is blocked for {BLOCK_TIME}")
+                remove_ips.append(ip)
+        for ip in remove_ips:
+            received_exception_from.pop(ip)
+        time.sleep(10)  # check every 10 seconds
 
 
 def block(path: str) -> bool:
@@ -389,7 +454,7 @@ def create_new_chat(user_created: str, with_user: str) -> tuple[bool, str]:
     if with_user in user_created_one_on_one_chats:
         return False, "Chat Already Exists."
     chat_id = "".join(random.choices(CHAT_ID_CHARS, k=20))
-    while not chat_id_users_database.safe_set(chat_id, [user_created, with_user]):
+    while not chat_id_users_database.safe_set(chat_id, {user_created, with_user}):
         chat_id = "".join(random.choices(CHAT_ID_CHARS, k=20))
     try:
         os.makedirs(f"{USERS_DATA}{chat_id}\\data\\chat", exist_ok=False)
@@ -399,7 +464,7 @@ def create_new_chat(user_created: str, with_user: str) -> tuple[bool, str]:
     except OSError:
         return False, ""
     # chat metadata
-    write_to_file(f"{USERS_DATA}{chat_id}\\name", "wb", pickle.dumps([user_created, with_user]))
+    write_to_file(f"{USERS_DATA}{chat_id}\\name", "wb", pickle.dumps([user_created_username, with_user_username]))
     write_to_file(f"{USERS_DATA}{chat_id}\\type", "w", "chat")
     write_to_file(f"{USERS_DATA}{chat_id}\\users", "wb", b"")
     add_user_to_group_users_file(user_created, chat_id)
@@ -424,7 +489,7 @@ def create_new_group(user_created: str, users: list[str], group_name: str) -> tu
         if email not in email_user_database:
             return False, ""
     chat_id = "".join(random.choices(CHAT_ID_CHARS, k=20))
-    while not chat_id_users_database.safe_set(chat_id, users):
+    while not chat_id_users_database.safe_set(chat_id, set(users)):
         chat_id = "".join(random.choices(CHAT_ID_CHARS, k=20))
     try:
         os.makedirs(f"{USERS_DATA}{chat_id}\\data\\chat", exist_ok=False)
@@ -455,7 +520,7 @@ def add_user_to_group(from_user: str, add_user: str, group_id: str) -> bool:
             not is_user_in_chat(from_user, group_id):
         return False
     # update database
-    chat_id_users_database.add(group_id, [add_user])
+    chat_id_users_database.add(group_id, add_user)
     # update file of users
     add_user_to_group_users_file(add_user, group_id)
     #
@@ -464,25 +529,27 @@ def add_user_to_group(from_user: str, add_user: str, group_id: str) -> bool:
     return True
 
 
-def remove_user_from_group(from_user: str, remove_user: str, group_id: str) -> bool:
+def remove_user_from_group(ip: str, from_user: str, remove_user: str, group_id: str) -> bool:
     """ remove a user from group (all the messages will be deleted for him) """
     if from_user not in email_user_database or remove_user not in email_user_database or \
             not is_user_in_chat(from_user, group_id):
         return False
     # update database
-    chat_id_users_database.remove(group_id, remove_user)
+    chat_id_users_database.remove_set(group_id, remove_user)
     # update file of users
     remove_user_from_group_users_file(remove_user, group_id)
     #
     remove_chat_id_from_user_chats(remove_user, group_id)
-    # TODO: remove chat files for the user (on the user side)
+    add_new_data_to(remove_user, f"{USERS_DATA}{remove_user}\\chats")
     add_new_data_to(get_group_users(group_id), f"{USERS_DATA}{group_id}\\users")
-    send_msg(from_user, group_id, f"{from_user} removed {remove_user}", remove_msg=True)
+    add_new_data_to(remove_user, f"remove - {USERS_DATA}{group_id}")
+    send_msg(ip, from_user, group_id, f"{from_user} removed {remove_user}", remove_msg=True)
     return True
 
 
-def send_msg(from_user: str, chat_id: str, msg: str, file_msg: bool = False, remove_msg: bool = False) -> bool:
+def send_msg(ip: str, from_user: str, chat_id: str, msg: str, file_msg: bool = False, remove_msg: bool = False) -> bool:
     """ send message (to chat/group)
+    :param ip: the ip of the client that sent the request
     :param from_user: the email of the user that sent the msg
     :param chat_id: the id of the chat that the msg is being sent to
     :param msg: the msg
@@ -497,7 +564,7 @@ def send_msg(from_user: str, chat_id: str, msg: str, file_msg: bool = False, rem
         return False
     lock = block(f"{USERS_DATA}{chat_id}\\data\\not free")
     try:
-        users_in_chat = chat_id_users_database.get(chat_id)
+        users_in_chat: set = chat_id_users_database.get(chat_id)
         if users_in_chat is None or not is_user_in_chat(from_user, chat_id):
             return False
         list_of_chat_files = os.listdir(f"{USERS_DATA}{chat_id}\\data\\chat\\")
@@ -527,22 +594,25 @@ def send_msg(from_user: str, chat_id: str, msg: str, file_msg: bool = False, rem
         add_new_data_to(users_in_chat, f"{USERS_DATA}{chat_id}\\data\\chat\\{latest}")
         return True
     except Exception as e:
-        logging.debug(f"exception: {traceback.format_exception(e)} (user: '{from_user}', func: 'send_msg')")
+        add_exception_for_ip(ip)
+        logging.warning(f"received exception while handling '{ip}' exception: "
+                        f"{traceback.format_exception(e)} (user: '{from_user}', func: 'send_msg')")
         return False
     finally:
         if lock:
             unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
 
 
-def send_file(from_user: str, chat_id: str, file_data: bytes, file_name: str) -> bool:
+def send_file(ip: str, from_user: str, chat_id: str, file_data: bytes, file_name: str) -> bool:
     """ send file (to chat/group)
+    :param ip: the ip of the client that sent the request
     :param from_user: the email of the user that sent the file
     :param chat_id: the id of the chat that the file is being sent to
     :param file_data: the data of the file
     :param file_name: the name of the file
     """
     try:
-        users_in_chat = chat_id_users_database.get(chat_id)
+        users_in_chat: set = chat_id_users_database.get(chat_id)
         if users_in_chat is None or not is_user_in_chat(from_user, chat_id):
             return False
         location = f"{USERS_DATA}{chat_id}\\data\\files\\"
@@ -565,13 +635,15 @@ def send_file(from_user: str, chat_id: str, file_data: bytes, file_name: str) ->
             os.remove(location + new_file_name)
             return False
     except Exception as e:
-        logging.debug(f"exception: {traceback.format_exception(e)} (user: '{from_user}', func: 'send_file')")
+        add_exception_for_ip(ip)
+        logging.warning(f"received while handling '{ip}' exception: "
+                        f"{traceback.format_exception(e)} (user: '{from_user}', func: 'send_file')")
         return False
 
 
-def delete_msg_for_me(from_user: str, chat_id: str, index_of_msg: int) -> bool:
+def delete_msg_for_me(ip: str, from_user: str, chat_id: str, index_of_msg: int) -> bool:
     """ delete massage only for yourself (in chat/group) """
-    users_in_chat = chat_id_users_database.get(chat_id)
+    users_in_chat: set = chat_id_users_database.get(chat_id)
     if users_in_chat is None or not is_user_in_chat(from_user, chat_id):
         return False
     file_number = index_of_msg // 800  # there are 800 messages per file
@@ -599,16 +671,18 @@ def delete_msg_for_me(from_user: str, chat_id: str, index_of_msg: int) -> bool:
         add_new_data_to(from_user, f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}")
         return True
     except Exception as e:
-        logging.debug(f"exception: {traceback.format_exception(e)} (user: '{from_user}', func: 'delete_msg_for_me')")
+        add_exception_for_ip(ip)
+        logging.debug(f"received while handling '{ip}' exception: "
+                      f"{traceback.format_exception(e)} (user: '{from_user}', func: 'delete_msg_for_me')")
         return False
     finally:
         if lock:
             unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
 
 
-def delete_msg_for_everyone(from_user: str, chat_id: str, index_of_msg: int) -> bool:
+def delete_msg_for_everyone(ip: str, from_user: str, chat_id: str, index_of_msg: int) -> bool:
     """ delete massage for everyone (in chat/group) """
-    users_in_chat = chat_id_users_database.get(chat_id)
+    users_in_chat: set = chat_id_users_database.get(chat_id)
     if users_in_chat is None or not is_user_in_chat(from_user, chat_id):
         return False
     file_number = index_of_msg // 800  # there are 800 messages per file
@@ -627,18 +701,21 @@ def delete_msg_for_everyone(from_user: str, chat_id: str, index_of_msg: int) -> 
             msg[4] = True
             data[index_of_msg] = msg
             write_to_file(f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}", "wb", pickle.dumps(data))
-            if msg[2] == "file":  # file msg
+            if msg[2] == "file":  # file msg, remove the file as well
                 #                                              file name
                 os.remove(f"{USERS_DATA}{chat_id}\\data\\files\\{msg[1]}")
+                # tell all the clients to remove this file on their side
+                add_new_data_to(users_in_chat, f"remove - {USERS_DATA}{chat_id}\\data\\files\\{msg[1]}")
         else:
             unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
             return False
         unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
-        add_new_data_to(from_user, f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}")
+        add_new_data_to(users_in_chat, f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}")
         return True
     except Exception as e:
-        logging.debug(f"exception: {traceback.format_exception(e)} "
-                      f"(user: '{from_user}', func: 'delete_msg_for_everyone')")
+        add_exception_for_ip(ip)
+        logging.debug(f"received while handling '{ip}' exception: "
+                      f"{traceback.format_exception(e)} (user: '{from_user}', func: 'delete_msg_for_everyone')")
         return False
     finally:
         if lock:
@@ -657,7 +734,7 @@ def upload_profile_picture(email: str, picture_file: bytes) -> bool:
 
 def update_group_photo(from_user: str, chat_id: str, picture_file: bytes) -> bool:
     """ change group picture """
-    users_in_chat = chat_id_users_database.get(chat_id)
+    users_in_chat: set = chat_id_users_database.get(chat_id)
     if users_in_chat is None or not is_user_in_chat(from_user, chat_id):
         return False
     write_to_file(f"{USERS_DATA}\\{chat_id}\\group_profile_picture.png", "wb", picture_file)
@@ -700,7 +777,7 @@ def signup(username: str, email: str, password: str, client_sock: EncryptedProto
               f"Your code is: {confirmation_code}",
               f"<div style='color: rgb(18, 151, 228); font-size: xx-large;'>Your code is: {confirmation_code}</div>")
     printing_lock.acquire()
-    print(f"A mail was sent to '{email}' with the confirmation code '{confirmation_code}'")
+    print(f"[Server]: A mail was sent to '{email}' with the confirmation code '{confirmation_code}'")
     printing_lock.release()
     # send client a msg that says that we are waiting for a confirmation code
     client_sock.send_message(f"{'confirmation_code'.ljust(30)}".encode())
@@ -751,7 +828,7 @@ def reset_password(email: str, client_sock: EncryptedProtocolSocket) -> tuple[bo
               f"Your code is: {confirmation_code}",
               f"<div style='color: rgb(18, 151, 228); font-size: xx-large;'>Your code is: {confirmation_code}</div>")
     printing_lock.acquire()
-    print(f"A mail was sent to '{email}' with the confirmation code '{confirmation_code}'")
+    print(f"[Server]: A mail was sent to '{email}' with the confirmation code '{confirmation_code}'")
     printing_lock.release()
     # send client a msg that says that we are waiting for a confirmation code
     client_sock.send_message(f"{'confirmation_code'.ljust(30)}".encode())
@@ -839,9 +916,17 @@ def sync(email: str, sync_all: bool = False) -> bytes:
     # TODO: on the client side when receiving 'users_status' file, remember it's a file about online status
     file_name_data: dict[str, str] = {"users_status": [user_online_status_database.get(user) for user in known_to_user]}
     for file in new_data:
-        #                            remove Data\\Users_Data
-        file_path_for_user = "\\".join(file.split("\\")[2:])
-        file_name_data[file_path_for_user] = read_from_file(file, "rb")
+        if os.path.isfile(file):
+            #                            remove Data\\Users_Data
+            file_path_for_user = "\\".join(file.split("\\")[2:])
+            file_name_data[file_path_for_user] = read_from_file(file, "rb")
+        elif file.startswith("remove - "):
+            file_name_data[" - ".join(file.split(" - ")[1:])] = "remove"
+        else:
+            printing_lock.acquire()
+            print(f"[Server]: error in 'sync' function, FileNotFound: '{file}'")
+            printing_lock.release()
+            logging.debug(f"[Server]: error in 'sync' function, FileNotFound: '{file}'")
 
     # pickle the dictionary
     sync_res: bytes = pickle.dumps(file_name_data)
@@ -860,7 +945,8 @@ def call_group(from_email: str, chat_id: str):
         2. start a UDP server on port x and send the user that started the call the port,
            and for the other users send a "call message" with the port number
     """
-    pass
+    users_in_chat = get_group_users(chat_id)
+    # TODO: finish this func
 
 
 def login_or_signup_response(mode: str, status: str, reason: str) -> bytes:
@@ -881,7 +967,7 @@ def request_response(cmd: str, status: str, reason: str) -> bytes:
     return f"{cmd.ljust(30)}{status.lower().ljust(6)}{reason}".encode()
 
 
-def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[str, str]) -> None:
+def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[str, int]) -> None:
     """ handle a client (each client gets a thread that runs this function) """
     logged_in = False
     signed_up = False
@@ -896,6 +982,7 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
             try:
                 msg = client_socket.receive_message()
             except socket.timeout:
+                add_exception_for_ip(client_ip_port[0])
                 client_socket.send_message(login_or_signup_response("login", "not ok", "Request Timed Out."))
                 stop = True
                 break
@@ -937,6 +1024,7 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                 stop = True
                 break
             else:
+                add_exception_for_ip(client_ip_port[0])
                 stop = True
                 break
         if not stop and logged_in:
@@ -945,7 +1033,7 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                 raise ValueError(f"[Server]: The email '{email}' doesn't exists in the database.")
             #
             # set thread name                    email            number of connections (of this client)
-            threading.current_thread().name = f"{email} (client - {user_online_status_database[email]})"
+            threading.current_thread().name = f"{email} (client - {user_online_status_database[email][1]})"
             client_socket.settimeout(None)
             username = email_user_database[email]
             # password = email_password_database[email]
@@ -953,8 +1041,8 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
             #
             printing_lock.acquire()
             print(f"[Server]: '%s:%s' logged in as '{email}-{username}'." % client_ip_port)
-            logging.info(f"[Server]: '%s:%s' logged in as '{email}-{username}'." % client_ip_port)
             printing_lock.release()
+            logging.info(f"[Server]: '%s:%s' logged in as '{email} - {username}'." % client_ip_port)
             #
             stay_encoded = {"file", "upload profile picture", "upload group picture"}
             # handle client's requests until client disconnects
@@ -983,7 +1071,7 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                     len_chat_id = int(request[30: 45].strip())  # currently 20
                     chat_id = request[45: len_chat_id + 45]
                     msg = request[len_chat_id + 45:]
-                    ok = send_msg(username, chat_id, msg)
+                    ok = send_msg(client_ip_port[0], username, chat_id, msg)
                     #
                     response = request_response(cmd, "ok" if ok else "not ok", "")
                 elif cmd == "delete for everyone":
@@ -1036,6 +1124,7 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                 if response is not None:
                     client_socket.send_message(response)
     except (socket.error, TypeError, OSError, ConnectionError, Exception) as err:
+        add_exception_for_ip(client_ip_port[0])
         printing_lock.acquire()
         if "username" in locals():
             print(f"[Server]: error while handling '%s:%s' ('{username}'): {str(err)}" % client_ip_port)
@@ -1065,12 +1154,40 @@ def main():
     server_socket = start_server()
     clients_threads: list[threading.Thread] = []
     clients_threads_socket: dict[threading.Thread, EncryptedProtocolSocket] = {}
+    watch_exception_dict_thread = threading.Thread(target=watch_exception_dict, daemon=True)
+    watch_exception_dict_thread.start()
     while True:
         time.sleep(0.5)
         client_socket, client_ip_port = accept_client(server_socket)
         if client_socket is not None:
             client_socket: EncryptedProtocolSocket
             client_ip_port: tuple[str, int]
+            # check if the client's IP is blocked
+            blocked_client_lock.acquire()
+            if client_ip_port[0] in blocked_ips:
+                # blocked but BLOCK_TIME passed
+                if (datetime.datetime.now() - blocked_ips[client_ip_port[0]]).seconds > BLOCK_TIME:
+                    blocked_ips.pop(client_ip_port[0])
+                else:  # blocked
+                    printing_lock.acquire()
+                    print(f"[Server]: the IP '{client_ip_port[0]}' is blocked and tried to "
+                          f"connect again. closing connection.")
+                    printing_lock.release()
+                    logging.warning(f"[Server]: the IP '{client_ip_port[0]}' is blocked and tried to "
+                                    f"connect again. closing connection.")
+                    blocked_client_lock.release()
+                    try:
+                        client_socket.close()
+                    except Exception as e:
+                        printing_lock.acquire()
+                        print(f"[Server]: exception when closing connection with a "
+                              f"blocked ip '{client_ip_port[0]}' (ex: {traceback.format_exception(e)})")
+                        printing_lock.release()
+                        logging.warning(f"exception when closing connection with a "
+                                        f"blocked ip '{client_ip_port[0]}' (ex: {traceback.format_exception(e)})")
+                    continue  # skip blocked client
+            blocked_client_lock.release()
+            # pass the client to the 'handle client' function (with a thread)
             client_thread = threading.Thread(target=handle_client,
                                              args=(client_socket, client_ip_port),
                                              daemon=True, name="%s:%s" % client_ip_port)

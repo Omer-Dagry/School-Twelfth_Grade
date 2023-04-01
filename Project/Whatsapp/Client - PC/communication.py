@@ -1,4 +1,6 @@
 import os
+import pickle
+import shutil
 
 from tkinter import *
 from threading import Thread
@@ -6,6 +8,11 @@ from tkinter import messagebox
 from photo_tools import check_size
 from tkinter.filedialog import askopenfilename
 from protocol_socket import EncryptedProtocolSocket
+
+
+# Globals
+REMOVE = "remove"
+SYNC_MODES = ["new", "all"]
 
 
 def signup(username: str, email: str, password: str, server_ip_port: tuple[str, int], verbose: bool = True,
@@ -95,23 +102,48 @@ class Communication:
             print("Logged in Successfully.")
         return True, sock, response[6:]
 
-    @staticmethod
-    def sync(sock: EncryptedProtocolSocket, mode: str = "new") -> tuple[bool, list[str]]:
+    def sync(self, sock: EncryptedProtocolSocket, mode: str = "new") \
+            -> tuple[bool, list[str | os.PathLike], list[str | os.PathLike]]:
         """  sync once
 
         :param sock: the socket to the server
         :param mode: 'new' or 'all'
-        :return: True if new data received else False, list of the modified/new files
+        :return: True if new data received else False, list of the modified/new files, list of deleted files/folders
         """
-        # if mode not in ["new", "all"]:
-        #     raise ValueError(f"param 'mode' should be either 'new' or 'all', got '{mode}'")
-        # sock.send_message(f"sync {mode}".ljust(30).encode())
-        # response = sock.receive_message()
+        if mode not in SYNC_MODES:
+            raise ValueError(f"param 'mode' should be either 'new' or 'all', got '{mode}'")
+        sock.send_message(f"sync {mode}".ljust(30).encode())
+        response = sock.receive_message()
         #                         cmd                  {}             str       bytes
         # response -> f"{'sync new/all'.ljust(30)}{empty-dict/dict[file_name, file_data]}"
-        # TODO: finish this function
-        # TODO: make this function return True/False, a list of the modified/new files
-        raise NotImplementedError
+        if response[:30] != f"sync {mode}".ljust(30).encode():
+            return False, [], []
+        try:
+            files_dict = pickle.loads(response[30:])
+        except EOFError:
+            files_dict = {}
+        if files_dict:
+            deleted_files_path: list[str | os.PathLike] = []
+            modified_files_path: list[str | os.PathLike] = []
+            for file_path, file_data in files_dict.items():
+                file_path = f"{self.__email}\\{file_path}"
+                # if it's a not remove message
+                # a remove message will be after a request of a client
+                # to delete message for everyone, if the message is a file
+                # in order to delete the file on the clients side
+                if file_data != REMOVE:
+                    modified_files_path.append(file_path)
+                    with open(file_path, "wb") as f:
+                        f.write(file_data)
+                elif os.path.isfile(file_path):  # a file was deleted in a chat
+                    deleted_files_path.append(file_path)
+                    os.remove(file_path)
+                elif os.path.isdir(file_path):  # the user was removed from the chat
+                    deleted_files_path.append(file_path)
+                    shutil.rmtree(file_path)
+            return True, modified_files_path, deleted_files_path
+        else:
+            return False, [], []
 
     def upload_file(self, chat_id: str | int, filename: str = "", root: Tk = None, delete_file: bool = False) -> None:
         upload_thread = Thread(target=self.upload_file_, args=(str(chat_id), filename, delete_file,), daemon=True)

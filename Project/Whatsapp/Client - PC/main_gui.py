@@ -27,6 +27,9 @@ LOG_DIR = 'log'
 LOG_LEVEL = logging.DEBUG
 LOG_FILE = LOG_DIR + "/ChatEase-Client.log"
 LOG_FORMAT = "%(levelname)s | %(asctime)s | %(processName)s | %(threadName)s | %(message)s"
+# Others
+PHOTO_PREVIEW_FILE_EXTENSIONS = [".png", ".jpeg", ".ico", ".jpg", ".tif"]
+AUDIO_FILE_EXTENSIONS = [".mp3", ".wav", ".m4a", ".mp2"]
 
 # Globals
 update_chat_lock = threading.Lock()
@@ -391,31 +394,34 @@ class ChatEaseGUI(Tk):
 
     # "Public"
 
-    def update(self) -> None:
+    def update_chat(self, modified_files_path: str | os.PathLike) -> None:
         """ update the current open chat in the GUI (load the new msgs, don't recreate everything) """
-        # don't allow loading new messages while changing chat
-        update_chat_lock.acquire()
-        chat_path = f"{self.__email}\\{self.__current_chat_name.chat_id}\\data\\chat"
-        messages_dicts = []
-        most_recent_file_number = max(os.listdir(chat_path))
-        most_recent_loaded_file_number = max(self.__loaded_chat_files)
-        most_recent_loaded_dict = self.__load_messages_dict_from_file(f"{chat_path}\\{most_recent_loaded_file_number}")
-        #
-        # if the last loaded dict was updated
-        if self.__most_recent_loaded_file_amount != len(most_recent_loaded_dict):
-            messages_dicts.append(most_recent_loaded_dict)
-        #
-        # if there are new files after the last loaded one
-        if most_recent_file_number != most_recent_loaded_file_number:
-            #                           from 1 after the last loaded one         up to the most recent file
-            for file_number in range(int(most_recent_loaded_file_number) + 1, int(most_recent_file_number) + 1):
-                messages_dicts.append(self.__load_messages_dict_from_file(f"{chat_path}\\{file_number}"))
-                self.__loaded_chat_files.append(f"{chat_path}\\{file_number}")
-        #
-        if messages_dicts:  # if there is new data
-            self.__most_recent_loaded_file_amount = len(messages_dicts[-1])
-            self.__add_messages_to_text_chat(*messages_dicts)
-        update_chat_lock.release()
+        chat_dir = f"{self.__email}\\{self.__current_chat_name.chat_id}"
+        # if there was a change/update in the chat dir
+        if any((file_path.startswith(chat_dir) for file_path in modified_files_path)):
+            # don't allow loading new messages while changing chat
+            update_chat_lock.acquire()
+            chat_path = f"{chat_dir}\\data\\chat"
+            messages_dicts = []
+            most_recent_file_number = max(os.listdir(chat_path))
+            most_recent_loaded_file_number = max(self.__loaded_chat_files)
+            most_recent_loaded_dict = self.__load_messages_dict_from_file(f"{chat_path}\\{most_recent_loaded_file_number}")
+            #
+            # if the last loaded dict was updated
+            if self.__most_recent_loaded_file_amount != len(most_recent_loaded_dict):
+                messages_dicts.append(most_recent_loaded_dict)
+            #
+            # if there are new files after the last loaded one
+            if most_recent_file_number != most_recent_loaded_file_number:
+                #                           from 1 after the last loaded one         up to the most recent file
+                for file_number in range(int(most_recent_loaded_file_number) + 1, int(most_recent_file_number) + 1):
+                    messages_dicts.append(self.__load_messages_dict_from_file(f"{chat_path}\\{file_number}"))
+                    self.__loaded_chat_files.append(f"{chat_path}\\{file_number}")
+            #
+            if messages_dicts:  # if there is new data
+                self.__most_recent_loaded_file_amount = len(messages_dicts[-1])
+                self.__add_messages_to_text_chat(*messages_dicts)
+            update_chat_lock.release()
 
     # dunder methods
 
