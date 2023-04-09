@@ -188,18 +188,6 @@ function window_inactive(evt) {
 
 
 function main() {
-    const sock = new WebSocket("ws://127.0.0.1:8080");
-    sock.onopen = function(e) {
-        sock.send("holla");  // logins
-        console.log("sent1");
-    }
-    sock.onclose = function(e) {
-        sock.send("holla");
-        console.log("sent2");
-    }
-    // onmessage - send the request if login was succesfull
-    // sock.send("holla");
-    // set profile picture
     var user_profile_picture = document.getElementById("user-profile-picture");
     user_profile_picture.style.backgroundImage = 'url(' + 'images/profile3.jpg' + ")";
     // create all chat boxes

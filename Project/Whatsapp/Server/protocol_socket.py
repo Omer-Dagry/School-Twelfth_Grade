@@ -11,6 +11,8 @@ class EncryptedProtocolSocket:
                  family: socket.AddressFamily | int = None, type: socket.SocketKind | int = None,
                  proto: int = None, fileno: int | None = None, ssl_socket: ssl.SSLSocket = None) -> None:
         #
+        self.__type = type
+        self.__family = family
         self.__server_side = server_side
         if ssl_socket is None:
             kwargs = {"family": family, "type": type, "proto": proto, "fileno": fileno}
@@ -53,6 +55,8 @@ class EncryptedProtocolSocket:
         return self.__encrypted_sock.bind(ip_port)
 
     def listen(self, __backlog: int = None) -> None:
+        if self.__family == socket.AF_INET and self.__type == socket.SOCK_DGRAM:
+            raise OSError("UDP socket can't use 'listen'.")
         if not self.__server_side:
             raise OSError("client socket can't use 'listen'.")
         if self.__encrypted_sock is None:
@@ -62,6 +66,8 @@ class EncryptedProtocolSocket:
         self.__listening = True
 
     def accept(self) -> tuple[EncryptedProtocolSocket, tuple[str, int]]:
+        if self.__family == socket.AF_INET and self.__type == socket.SOCK_DGRAM:
+            raise OSError("UDP socket can't use 'accept'.")
         if not self.__server_side:
             raise OSError("client socket can't use 'listen'.")
         if self.__encrypted_sock is None:
@@ -71,17 +77,19 @@ class EncryptedProtocolSocket:
         ssl_socket, ip_port = self.__encrypted_sock.accept()
         return EncryptedProtocolSocket(ssl_socket=ssl_socket), ip_port
 
-    def send_message(self, data: bytes, flags: None | int = None) -> bool:
+    def send_message(self, data: bytearray | memoryview | bytes, flags: None | int = None) -> bool:
         """ send a message according to the protocol
         :return: True connection alive, otherwise False
         """
+        if self.__family == socket.AF_INET and self.__type == socket.SOCK_DGRAM:
+            raise OSError("UDP socket can't use 'send_message', instead of 'sendto'")
         # check that encrypted socket isn't None
         if self.__encrypted_sock is None:
             raise OSError(f"Please Call '{'bind' if self.__server_side else 'connect'}' before sending a message.")
         # add the length of the data unencrypted before the data itself
         data = str(len(data)).ljust(30).encode() + data
         flags = [] if flags is None else [flags]
-        while data != b"":
+        while len(data) > 0:
             try:
                 sent = self.__encrypted_sock.send(data, *flags)
             except ssl.SSLEOFError:  # connection closed
@@ -94,6 +102,8 @@ class EncryptedProtocolSocket:
         :param timeout: set a timeout to receive a message, if timeout is passed but part
                         of the message is received, the timeout is ignored
         """
+        if self.__family == socket.AF_INET and self.__type == socket.SOCK_DGRAM:
+            raise OSError("UDP socket can't use 'receive_message', instead use 'recvfrom'")
         # check that encrypted socket isn't None
         if self.__encrypted_sock is None:
             raise OSError(f"Please Call '{'bind' if self.__server_side else 'connect'}' before receiving a message.")
@@ -122,6 +132,21 @@ class EncryptedProtocolSocket:
                     return b""
         self.settimeout(current_timeout)
         return data
+
+    def sendto(self, data: bytearray | memoryview | bytes, addr: tuple[str, int]) -> bool:
+        """ sendto - for UDP sockets """
+        while len(data) > 0:
+            try:
+                sent = self.__encrypted_sock.sendto(data, addr)
+            except ssl.SSLEOFError:  # connection closed
+                return False
+            data = data[sent:]
+        return True
+
+    def recvfrom(self, bufsize: int, flags: int | None = None):
+        """ recvfrom - for UDP sockets """
+        flags = [] if flags is None else [flags]
+        return self.__encrypted_sock.recvfrom(bufsize, *flags)
 
     def settimeout(self, __value: float | None) -> None:
         return self.__encrypted_sock.settimeout(__value)

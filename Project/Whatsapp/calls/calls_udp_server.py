@@ -17,7 +17,6 @@ stop: None | datetime.datetime = None
 
 # Function to broadcast audio stream to all connected clients
 def broadcast_audio(data: bytes, sent_from: tuple):
-    global stop
     remove = []
     for addr in clients.keys():
         try:

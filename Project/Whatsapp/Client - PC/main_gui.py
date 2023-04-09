@@ -9,15 +9,15 @@ from tkinter import *
 from collections import ChainMap
 from typing import Literal
 
-from PIL.ImageOps import contain
-from PIL import Image as ImagePIL
+# from PIL.ImageOps import contain
+# from PIL import Image as ImagePIL
 from settings_gui import SettingsGUI
-from PIL import ImageTk as ImageTkPIL
+# from PIL import ImageTk as ImageTkPIL
 from recording_gui import RecordingGUI
 from message_options import MessageOptions
 from tkinter.scrolledtext import ScrolledText
 from communication import Communication as Com
-from photo_tools import format_photo, check_size  # TODO: check size
+from photo_tools import format_photo  # , check_size  # TODO: check size
 from protocol_socket import EncryptedProtocolSocket
 
 
@@ -270,7 +270,9 @@ class ChatEaseGUI(Tk):
             if self.__message_options_gui.winfo_exists():
                 self.__message_options_gui.destroy()
         self.__message_options_gui = MessageOptions(
-            self, self.__email, self.__password, self.__server_ip_port, msg, message_index, message_type, seen_by)
+            self, self.__email, self.__password, self.__server_ip_port, msg,
+            message_index, message_type, seen_by, self.__current_chat_name.chat_id
+        )
 
     def __add_messages_to_text_chat(self, *messages_dicts: dict[
             int, list[str, str, str, list[str], bool, list[str], datetime.datetime]]) -> None:
@@ -405,7 +407,8 @@ class ChatEaseGUI(Tk):
             messages_dicts = []
             most_recent_file_number = max(os.listdir(chat_path))
             most_recent_loaded_file_number = max(self.__loaded_chat_files)
-            most_recent_loaded_dict = self.__load_messages_dict_from_file(f"{chat_path}\\{most_recent_loaded_file_number}")
+            most_recent_loaded_dict = self.__load_messages_dict_from_file(
+                f"{chat_path}\\{most_recent_loaded_file_number}")
             #
             # if the last loaded dict was updated
             if self.__most_recent_loaded_file_amount != len(most_recent_loaded_dict):
