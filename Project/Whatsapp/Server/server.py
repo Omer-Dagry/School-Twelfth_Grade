@@ -514,7 +514,7 @@ def create_new_group(user_created: str, users: list[str], group_name: str) -> tu
     return True, chat_id
 
 
-def add_user_to_group(from_user: str, add_user: str, group_id: str) -> bool:
+def add_user_to_group(ip: str, from_user: str, add_user: str, group_id: str) -> bool:
     """ add a user to group (all the messages from before will be visible to him) """
     if from_user not in email_user_database or add_user not in email_user_database or \
             not is_user_in_chat(from_user, group_id):
@@ -526,6 +526,7 @@ def add_user_to_group(from_user: str, add_user: str, group_id: str) -> bool:
     #
     add_chat_id_to_user_chats(add_user, group_id)
     add_new_data_to(get_group_users(group_id), f"{USERS_DATA}{group_id}")
+    send_msg(ip, from_user, group_id, f"{from_user} added {add_user}.", add_message=True)
     return True
 
 
@@ -543,11 +544,12 @@ def remove_user_from_group(ip: str, from_user: str, remove_user: str, group_id: 
     add_new_data_to(remove_user, f"{USERS_DATA}{remove_user}\\chats")
     add_new_data_to(get_group_users(group_id), f"{USERS_DATA}{group_id}\\users")
     add_new_data_to(remove_user, f"remove - {USERS_DATA}{group_id}")
-    send_msg(ip, from_user, group_id, f"{from_user} removed {remove_user}", remove_msg=True)
+    send_msg(ip, from_user, group_id, f"{from_user} removed {remove_user}.", remove_msg=True)
     return True
 
 
-def send_msg(ip: str, from_user: str, chat_id: str, msg: str, file_msg: bool = False, remove_msg: bool = False) -> bool:
+def send_msg(ip: str, from_user: str, chat_id: str, msg: str,
+             file_msg: bool = False, remove_msg: bool = False, add_message: bool = False) -> bool:
     """ send message (to chat/group)
     :param ip: the ip of the client that sent the request
     :param from_user: the email of the user that sent the msg
@@ -557,9 +559,11 @@ def send_msg(ip: str, from_user: str, chat_id: str, msg: str, file_msg: bool = F
                      function will call this function with file_msg=True
                      and the msg will be the file location
     :param remove_msg: a message that will say 'x removed y' and will be displayed different
+    :param add_message: a message that will say 'x added y' and will be displayed different
     """
     # 3 types: regular msg / file msg (if it's a file) / remove msg (if someone removed someone)
-    msg_type = "msg" if not file_msg and not remove_msg else "file" if file_msg else "remove" if remove_msg else None
+    msg_type = "msg" if not file_msg and not remove_msg else \
+        "file" if file_msg else "remove" if remove_msg else "add" if add_message else None
     if msg_type is None:
         return False
     lock = block(f"{USERS_DATA}{chat_id}\\data\\not free")
@@ -1056,7 +1060,7 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
             printing_lock.release()
             logging.info(f"[Server]: '%s:%s' logged in as '{email} - {username}'." % client_ip_port)
             #
-            stay_encoded = {"file", "upload profile picture", "upload group picture"}
+            stay_encoded = {"file", "upload profile picture", "upload group picture", "new group"}
             # handle client's requests until client disconnects
             while True:
                 request: bytes
@@ -1077,7 +1081,6 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                     request: str
                     response = sync(username, sync_all=True)
                     response = f"{'sync all'.ljust(30)}".encode() + response
-                    pass
                 elif cmd == "msg":
                     request: str
                     len_chat_id = int(request[30: 45].strip())  # currently 20
@@ -1088,21 +1091,21 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                     response = request_response(cmd, "ok" if ok else "not ok", "")
                 elif cmd == "delete for everyone":
                     request: str
-                    chat_id_len = int(request[30: 45])
+                    chat_id_len = int(request[30: 45].strip())
                     chat_id = request[45: 45 + chat_id_len]
-                    message_index = int(request[45 + chat_id_len:])
+                    message_index = int(request[45 + chat_id_len:].strip())
                     delete_msg_for_everyone(client_ip_port[0], email, chat_id, message_index)
                 elif cmd == "file":
                     request: bytes
-                    chat_id_len = int(request[30: 45])
+                    chat_id_len = int(request[30: 45].strip())
                     chat_id = request[45: 45 + chat_id_len].decode()
-                    file_name_len = int(request[45 + chat_id_len: 60 + chat_id_len])
+                    file_name_len = int(request[45 + chat_id_len: 60 + chat_id_len].strip())
                     file_name = request[60 + chat_id_len: 60 + chat_id_len + file_name_len].decode()
                     file_data = request[60 + chat_id_len + file_name_len:]
                     send_file(client_ip_port[0], email, chat_id, file_data, file_name)
                 elif cmd == "delete for me":
                     request: str
-                    chat_id_len = int(request[30: 45])
+                    chat_id_len = int(request[30: 45].strip())
                     chat_id = request[45: 45 + chat_id_len]
                     message_index = int(request[45 + chat_id_len:])
                     delete_msg_for_me(client_ip_port[0], email, chat_id, message_index)
@@ -1112,12 +1115,18 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                     pass
                 elif cmd == "add user":
                     request: str
-                    # TODO: finish
-                    pass
+                    chat_id_len = int(request[30: 45].strip())
+                    chat_id = request[45: 45 + chat_id_len]
+                    other_user = request[45 + chat_id_len:]
+                    ok = add_user_to_group(client_ip_port[0], email, other_user, chat_id)
+                    response = request_response(cmd, "ok" if ok else "not ok", "")
                 elif cmd == "remove user":
                     request: str
-                    # TODO: finish
-                    pass
+                    chat_id_len = int(request[30: 45].strip())
+                    chat_id = request[45: 45 + chat_id_len]
+                    other_user = request[45 + chat_id_len:]
+                    ok = remove_user_from_group(client_ip_port[0], email, other_user, chat_id)
+                    response = request_response(cmd, "ok" if ok else "not ok", "")
                 elif cmd == "upload profile picture":
                     request: bytes
                     # save photo in user data in user folder as '{email}_profile_picture.png'
@@ -1132,12 +1141,16 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                     response = request_response(cmd, "ok" if status else "not ok", "")
                 elif cmd == "new chat":
                     request: str
-                    # TODO: finish
-                    pass
+                    other_user = response[30:]
+                    status, chat_id = create_new_chat(email, other_user)
+                    response = request_response(cmd, "ok" if status else "not ok", chat_id)
                 elif cmd == "new group":
-                    request: str
-                    # TODO: finish
-                    pass
+                    request: bytes
+                    group_name_len = int(request[30: 45].decode().strip())
+                    group_name = request[45: 45 + group_name_len].decode()
+                    other_users_list: list[str] = pickle.loads(request[45: group_name_len:])
+                    status, chat_id = create_new_group(email, other_users_list, group_name)
+                    response = request_response(cmd, "ok" if status else "not ok", chat_id)
                 else:
                     print(f"[Server]: '%s:%s' Logged In As '{email}-{username}' - "
                           f"sent unknown cmd {cmd}" % client_ip_port)

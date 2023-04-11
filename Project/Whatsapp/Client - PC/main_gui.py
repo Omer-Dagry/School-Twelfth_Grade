@@ -323,6 +323,10 @@ class ChatEaseGUI(Tk):
                     # x was removed by y
                     # TODO: add message options
                     pass
+                elif msg_type == "add":
+                    # x was added by y
+                    # TODO: add message options
+                    pass
                 else:
                     logging.debug(f"[ChatEaseGUI]: unknown message type '{msg_type}'")
             self.__chat_text.config(state=DISABLED)

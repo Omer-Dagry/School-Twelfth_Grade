@@ -198,7 +198,7 @@ class Communication:
         request = f"{'file'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}" \
                   f"{str(len(file_name)).ljust(15)}{file_name}".encode() + file_data
         if not sock.send_message(request):
-            messagebox.showerror("Upload File Error", "Could not upload the file, lost connection to server.")
+            messagebox.showerror("Failed to upload file", "Could not upload the file, lost connection to server.")
             return
         if delete_file:
             os.remove(filepath)
@@ -209,24 +209,64 @@ class Communication:
         chat_id = str(chat_id)
         request = f"{'msg'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{msg}".encode()
         if not sock.send_message(request):
-            messagebox.showerror("Send Message Error", f"Could not send the message, lost connection to server.")
+            messagebox.showerror("Failed to send message", f"Could not send the message, lost connection to server.")
             return False
         status_msg = sock.receive_message().decode()
         if status_msg != f"{'msg'.ljust(30)}{'ok'.ljust(6)}":
-            messagebox.showerror("Send Message Error", f"Could not send the message, server error.")
+            messagebox.showerror("Failed to send message", f"Could not send the message, server error.")
             return False
         return True
 
-    def new_chat(self, other_email: str, sock: EncryptedProtocolSocket) -> None:
-        # TODO: finish
-        raise NotImplementedError
+    @staticmethod
+    def new_chat(other_email: str, sock: EncryptedProtocolSocket) -> bool:
+        request = f"{'new chat'.ljust(30)}{other_email}".encode()
+        if not sock.send_message(request):
+            messagebox.showerror(f"Failed to create new chat with '{other_email}'", "lost connection to server.")
+            return False
+        response = sock.receive_message()
+        if "not ok" in response.decode():
+            messagebox.showerror(f"Failed to create new chat with '{other_email}'", "server error.")
+            return False
+        return True
 
     @staticmethod
-    def new_group(other_emails: str, sock: EncryptedProtocolSocket) -> None:
-        # TODO: finish
-        raise NotImplementedError
+    def new_group(other_emails: list[str], group_name: str, sock: EncryptedProtocolSocket) -> tuple[bool, str]:
+        request = f"{'new chat'.ljust(30)}{group_name}".encode() + pickle.dumps(other_emails)
+        if not sock.send_message(request):
+            messagebox.showerror(f"Failed to create new group", "lost connection to server.")
+            return False, ""
+        response = sock.receive_message().decode()
+        if "not ok" in response:
+            messagebox.showerror(f"Failed to create new group", "server error.")
+            return False, ""
+        chat_id = response.split("ok")[-1].strip()
+        return True, chat_id
 
-    def make_call(self, chat_id: str) -> None:
+    @staticmethod
+    def add_user_to_group(other_email: str, chat_id: str, sock: EncryptedProtocolSocket) -> bool:
+        request = f"{'add user'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{other_email}".encode()
+        if not sock.send_message(request):
+            messagebox.showerror(f"Failed to add '{other_email}' to group", "lost connection to server.")
+            return False
+        status_msg = sock.receive_message()
+        if "not ok" in status_msg.decode():
+            messagebox.showerror(f"Failed to add '{other_email}' to group", "server error.")
+            return False
+        return True
+
+    @staticmethod
+    def remove_user_from_group(other_email: str, chat_id: str, sock: EncryptedProtocolSocket) -> bool:
+        request = f"{'remove user'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{other_email}".encode()
+        if not sock.send_message(request):
+            messagebox.showerror(f"Failed to remove '{other_email}' from group", "lost connection to server.")
+            return False
+        status_msg = sock.receive_message()
+        if "not ok" in status_msg.decode():
+            messagebox.showerror(f"Failed to remove '{other_email}' from group", "server error.")
+            return False
+        return True
+
+    def make_call(self, chat_id: str) -> bool:
         # go to 'users' file of this chat and make call to users
         # OR
         # change the way a call works and call the chat_id and the server
@@ -234,15 +274,15 @@ class Communication:
         # TODO: finish
         raise NotImplementedError
 
-    def upload_profile_picture(self, path_to_picture: os.PathLike | str = None) -> None:
+    def upload_profile_picture(self, path_to_picture: os.PathLike | str = None) -> bool:
         if path_to_picture is None:  # ask for file
             file_types = [("PNG", "*.png"), ("JPG", "*.jpg"), ("JPEG", "*.jpeg")]
             path_to_picture = askopenfilename(filetypes=file_types)
             if path_to_picture == "" or not os.path.isfile(path_to_picture):
-                return
+                return False
         if not check_size(path_to_picture):  # check image size
             messagebox.showerror("Profile Picture", "Image size is invalid,\nmust be at least 64x64.")
-            return
+            return False
         ok, sock, _ = self.login(verbose=False)
         if not ok:
             raise ValueError("email or password incorrect, could not login to upload file")
@@ -252,23 +292,28 @@ class Communication:
         if not sock.send_message(request):
             messagebox.showerror(
                 "Upload Profile Picture Error", "Could not upload the file, lost connection to server.")
-            return
+            return False
         sock.close()
+        return True
 
     @staticmethod
     def delete_message_for_me(chat_id: str, message_index: int, root: Tk | Toplevel,
-                              sock: EncryptedProtocolSocket) -> None:
+                              sock: EncryptedProtocolSocket) -> bool:
         # close the MessageOptions window
         root.destroy()
         request = f"{'delete message for me'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{message_index}"
         if not sock.send_message(request.encode()):
             messagebox.showerror("Delete Message For Me Error", "Could not delete the message.")
+            return False
+        return True
 
     @staticmethod
     def delete_message_for_everyone(chat_id: str, message_index: int, root: Tk | Toplevel,
-                                    sock: EncryptedProtocolSocket) -> None:
+                                    sock: EncryptedProtocolSocket) -> bool:
         # close the MessageOptions window
         root.destroy()
         request = f"{'delete message for everyone'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{message_index}"
         if not sock.send_message(request.encode()):
             messagebox.showerror("Delete Message For Me Error", "Could not delete the message.")
+            return False
+        return True
