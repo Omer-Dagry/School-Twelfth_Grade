@@ -1,4 +1,11 @@
+function assert(condition, message) {
+    if (!condition) throw "Assertion failed - " + message;
+}
 
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 
 function chat_box_left(chat_picture_path, chat_name, last_message, last_message_time) {
@@ -62,15 +69,16 @@ function reset_chat_and_status_bar() {
 }
 
 function handle_msg_length(msg) {
-    if (msg.length < 50) return msg;
+    var max_chars = 55;
+    if (msg.length < max_chars) return msg;
     var row_length = 0;
     var i = 0;
     while (i < msg.length) {
-        if (msg[i] == " " && row_length > 30) {
-            msg[i] = "\n";
+        if (msg[i] == " " && row_length > max_chars * 0.6) {
+            msg = msg.slice(0, i) + "\n" + msg.slice(i);
             row_length = 0;
         }
-        else if (row_length == 50) {
+        else if (row_length >= max_chars) {
             msg = msg.slice(0, i) + "\n" + msg.slice(i);
             row_length = 0;
             i++;
@@ -81,67 +89,86 @@ function handle_msg_length(msg) {
     return msg;
 }
 
-function msg_from_me(msg, time) {
+/* Create an global msg (from yourself) because it's faster to copy it when creating a new msg */
+// msg row
+var my_msg_row = document.createElement("div");
+my_msg_row.className = "my_msg_row";
+// msg box
+var my_msg_box = document.createElement("div");
+my_msg_box.className = "my_msg_box";
+// msg text and time
+var my_text_and_time = document.createElement("div");
+my_text_and_time.className = "msg_text_and_time";
+// msg text
+var my_msg_text = document.createElement("div");
+my_msg_text.className = "msg_text";
+// my_msg_text.innerHTML = msg;
+// msg time
+var my_msg_time = document.createElement("div");
+my_msg_time.className = "msg_time";
+// my_msg_time.innerHTML = time;
+// append all elements to msg row
+my_text_and_time.appendChild(my_msg_text);
+my_text_and_time.appendChild(my_msg_time);
+my_msg_box.appendChild(my_text_and_time);
+my_msg_row.appendChild(my_msg_box);
+function msg_from_me(msg, time, position="END") {
+    // position: "END" or "START"
+    assert(
+        position == "END" || position == "START",
+        "msg_from_me: param position must be either 'END' or 'START', got '" + position + "'"
+    );
     msg = handle_msg_length(msg);
-    // msg row
-    var msg_row = document.createElement("div");
-    msg_row.className = "my_msg_row";
-    // msg box
-    var msg_box = document.createElement("div");
-    msg_box.className = "my_msg_box";
-    // msg text and time
-    var text_and_time = document.createElement("div");
-    text_and_time.className = "msg_text_and_time";
-    // msg text
-    var msg_text = document.createElement("div");
-    msg_text.className = "msg_text";
-    msg_text.innerHTML = msg;
-    // msg time
-    var msg_time = document.createElement("div");
-    msg_time.className = "msg_time";
-    msg_time.innerHTML = time;
-    // append all elements to msg row
-    text_and_time.appendChild(msg_text);
-    text_and_time.appendChild(msg_time);
-    msg_box.appendChild(text_and_time);
-    msg_row.appendChild(msg_box);
+    var this_msg_row = my_msg_row.cloneNode(true);
+    this_msg_row.getElementsByClassName("msg_text")[0].innerHTML = msg;
+    this_msg_row.getElementsByClassName("msg_time")[0].innerHTML = time;
     // append msg row to chat
     var chat = document.getElementById("chat");
-    chat.appendChild(msg_row);
-    chat.scrollTo(0, chat.scrollHeight);
+    if (position == "END") chat.appendChild(this_msg_row);
+    else chat.prepend(this_msg_row);
+    // chat.scrollTo(0, chat.scrollHeight);
     // add event listener
     // msg_row.addEventListener("click", function() {func_name(params)})
 }
 
-
-function msg_from_others(msg, time) {
+/* Create an global msg (from others) because it's faster to copy it when creating a new msg */
+// msg row
+var msg_row = document.createElement("div");
+msg_row.className = "msg_row";
+// msg box
+var msg_box = document.createElement("div");
+msg_box.className = "msg_box";
+// msg text and time
+var text_and_time = document.createElement("div");
+text_and_time.className = "msg_text_and_time";
+// msg text
+var msg_text = document.createElement("div");
+msg_text.className = "msg_text";
+// msg_text.innerHTML = msg;
+// msg time
+var msg_time = document.createElement("div");
+msg_time.className = "msg_time";
+// msg_time.innerHTML = time;
+// append all elements to msg row
+text_and_time.appendChild(msg_text);
+text_and_time.appendChild(msg_time);
+msg_box.appendChild(text_and_time);
+msg_row.appendChild(msg_box);
+function msg_from_others(msg, time, position="END") {
+    // position: "END" or "START"
+    assert(
+        position == "END" || position == "START",
+        "msg_from_others: param position must be either 'END' or 'START', got '" + position + "'"
+    );
     msg = handle_msg_length(msg);
-    // msg row
-    var msg_row = document.createElement("div");
-    msg_row.className = "msg_row";
-    // msg box
-    var msg_box = document.createElement("div");
-    msg_box.className = "msg_box";
-    // msg text and time
-    var text_and_time = document.createElement("div");
-    text_and_time.className = "msg_text_and_time";
-    // msg text
-    var msg_text = document.createElement("div");
-    msg_text.className = "msg_text";
-    msg_text.innerHTML = msg;
-    // msg time
-    var msg_time = document.createElement("div");
-    msg_time.className = "msg_time";
-    msg_time.innerHTML = time;
-    // append all elements to msg row
-    text_and_time.appendChild(msg_text);
-    text_and_time.appendChild(msg_time);
-    msg_box.appendChild(text_and_time);
-    msg_row.appendChild(msg_box);
+    var this_msg_row = msg_row.cloneNode(true);
+    this_msg_row.getElementsByClassName("msg_text")[0].innerHTML = msg;
+    this_msg_row.getElementsByClassName("msg_time")[0].innerHTML = time;
     // append msg row to chat
     var chat = document.getElementById("chat");
-    chat.appendChild(msg_row);
-    chat.scrollTo(0, chat.scrollHeight);
+    if (position == "END") chat.appendChild(this_msg_row);
+    else chat.prepend(this_msg_row);
+    // chat.scrollTo(0, chat.scrollHeight);
     // add event listener
     // msg_row.addEventListener("click", function() {func_name(params)})
 }
@@ -163,8 +190,6 @@ function window_active(evt) {
     sep.id = "search_bar_sep";
     // append it
     search_bar_box.appendChild(sep);
-    //
-                            /*  */
 }
 
 function window_inactive(evt) {
@@ -182,28 +207,58 @@ function window_inactive(evt) {
     sep.id = "search_bar_sep";
     // append it
     search_bar_box.appendChild(sep);
-    //
-                            /*  */
+}
+
+
+function addEmoji(emoji) {
+    document.getElementById('input_bar').value += emoji;
+}
+  
+function toggleEmojiDrawer() {
+    let drawer = document.getElementById('drawer');
+
+    if (drawer.classList.contains('hidden')) {
+        drawer.classList.remove('hidden');
+    } else {
+        drawer.classList.add('hidden');
+    }
+}
+
+
+async function demo() {
+    console.log("demo");
+    // create all chat boxes
+    for (var i = 1; i < 200; i ++) chat_box_left('imgs/profile.jpg', "test" + i, "holla", "10:43");
+    for (var i = 1; i < 800; i++) {
+        msg_from_me("aoiushdfoiahsdfoijasdopifjasopdifjasl;dk1234567890uw3n4yct9o7823y4trc908weymcopgfiuweyr", "18:05", "START");
+        msg_from_others("aoiushdfoiahsdfoijasdopifjasopdifjasl;dk12345678909m3cy9t723htf79weuhrfgiuwer", "18:05", "START");
+        await sleep(0.01);
+    }
+    msg_from_me("מה קורה", "18:01", "START");
+    // reset_chat_and_status_bar();
+    chat.scrollTo(0, chat.scrollHeight);
+    console.log("done");
 }
 
 
 function main() {
-    var user_profile_picture = document.getElementById("user-profile-picture");
-    user_profile_picture.style.backgroundImage = 'url(' + 'images/profile3.jpg' + ")";
-    // create all chat boxes
-    for (var i = 1; i < 200; i++) {
-        chat_box_left('imgs/profile' + '.jpg', "test" + i, "holla", "10:43");
-        msg_from_me("aoiushdfoiahsdfoijasdopifjasopdifjasl;dk1234567890uw3n4yct9o7823y4trc908weymcopgfiuweyr", "18:05");
-        msg_from_others("aoiushdfoiahsdfoijasdopifjasopdifjasl;dk12345678909m3cy9t723htf79weuhrfgiuwer", "18:05");
-    }
+    // profile picture
+    let user_profile_picture = document.getElementById("user-profile-picture");
+    user_profile_picture.style.backgroundImage = 'url("imgs/profile.jpg")';
+    demo();
     console.log("ok");
-    // window active
+    // window active & inactive event listeners
     window.addEventListener('focus', window_active);
-    // window inactive
     window.addEventListener('blur', window_inactive);
     if (document.hasFocus()) window_active();
     else window_inactive();
+    // bind functions
+    // let drawer = document.getElementById('drawer');
+    // drawer.onclick = toggleEmojiDrawer;
+    let send_btn = document.getElementById('send_msg');
+    send_btn.addEventListener("click", demo);
 }
 
 
+// eel.expose(main);
 main();

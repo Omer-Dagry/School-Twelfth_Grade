@@ -5,6 +5,7 @@ from tkinter import *
 from typing import Literal
 from tkinter.scrolledtext import ScrolledText
 from communication import Communication as Com
+from protocol_socket import EncryptedProtocolSocket
 
 
 # Constants
@@ -23,7 +24,7 @@ logging.basicConfig(format=LOG_FORMAT, filename=LOG_FILE, level=LOG_LEVEL)
 
 
 class MessageOptions(Toplevel):
-    def __init__(self, root: Tk | Toplevel, email: str, password: str,
+    def __init__(self, root: Tk | Toplevel, email: str, password: str, sock: EncryptedProtocolSocket,
                  server_ip_port: tuple[str, int], msg: str, message_index: int,
                  message_type: Literal["mine", "other"], seen_by: list[str], chat_id: str) -> None:
         logging.info(f"[MessageOptions]: initializing")

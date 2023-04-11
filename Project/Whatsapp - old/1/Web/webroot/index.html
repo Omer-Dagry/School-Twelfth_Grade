@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html>
   <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Learning HTML</title>
+    <title>ChatEase</title>
     <link rel="stylesheet" href="style.css">
+    <script type="module" src="client.js"></script>
+    <script type="text/javascript" src="/eel.js"></script>
   </head>
 
   <body>
@@ -14,16 +13,11 @@
       <div class="grid">
 
         <div class="left">
-
           <div class="profile-setting_box">
-
             <div class="profile-setting">
-
               <button class="profile-picture" id="user-profile-picture"></button>
               <button class="setting-button"></button>
-
             </div>
-
           </div>
 
           <div class="search-bar-box" id="search_bar_box">
@@ -32,39 +26,42 @@
           </div>
 
           <div class="chats-list" id="chats-list-div"></div>
-
         </div>
 
         <div class="left_right_sep"></div>
 
         <div class="right">
-
           <div class="chat_status_box">
-
             <div class="chat_status_bar">
 
-              <div class="chat_status_bar_picture" id="status-bar-picture">
+              <div class="chat_status_bar_picture" id="status-bar-picture"></div>
 
-              </div>
+              <div class="chat_name_status_bar" id="status-bar-name">Omer Dagry</div>
 
-              <div class="chat_name_status_bar" id="status-bar-name">
-                Omer Dagry
-              </div>
-
-              <div class="chat_status_bar_last_seen" id="status-bar-last-seen">
-                18:00
-              </div>
+              <div class="chat_status_bar_last_seen" id="status-bar-last-seen">18:00</div>
 
             </div>
           </div>
 
-          <div class="right-messages" id="chat">
-          </div>
+          <div class="right-messages" id="chat"></div>
 
+          <div class="chat_actions">
+            <div class="left_side_actions">
+              <button class="upload_file"></button>
+              <button class="emoji_drawer_btn"></button>
+            </div>
+            
+            <div id="input_box">
+              <textarea class="input_bar" id="msg_input"
+                cols="50" rows="5" placeholder="Type a message"></textarea>
+            </div>
+
+            <div class="right_side_actions">
+              <button class="send_btn" id="send_msg"></button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    <script type="module" src="client.js"></script>
-    <script type=”text/javascript” src=”/eel.js”></script>
   </body>
 </html>

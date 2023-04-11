@@ -63,6 +63,39 @@ def signup(username: str, email: str, password: str, server_ip_port: tuple[str, 
     return True, sock
 
 
+def reset_password(username: str, email: str, server_ip_port: tuple[str, int]
+                   ) -> tuple[bool, EncryptedProtocolSocket | None]:
+    """
+    :return: the returned socket isn't connected !!
+    """
+    sock = EncryptedProtocolSocket()
+    sock.connect(server_ip_port)
+    if not sock.send_message(f"{'reset password'.ljust(30)}{str(len(email)).ljust(15)}{email}{username}".encode()):
+        messagebox.showerror(
+            "Reset Password Error", "Could not send reset password request, lost connection to server.")
+        sock.close()
+        return False, None
+    confirmation_code_msg = sock.receive_message()
+    if confirmation_code_msg[:30].strip() == "confirmation_code":
+        sock.send_message(
+            f"{'confirmation_code'.ljust(30)}"
+            f"{input('Please enter your confirmation code (sent to your email): ')}".encode()
+        )
+    else:
+        sock.close()
+        return False, None
+    new_password_msg = sock.receive_message()
+    if new_password_msg != f"{'new_password'.ljust(30)}".encode():
+        sock.close()
+        return False, None
+    sock.send_message(f"{'new_password'.ljust(30)}{input('Please enter your new password: ')}".encode())
+    reset_password_status = sock.receive_message()
+    if "not ok" in reset_password_status.decode():
+        sock.close()
+        return False, None
+    return True, sock
+
+
 class Communication:
     def __init__(self, email: str, password: str, server_ip_port: tuple[str, int]) -> None:
         """
@@ -151,17 +184,25 @@ class Communication:
         if root is not None:
             root.destroy()
 
-    def upload_file_(self, chat_id: str, filename: str = "", delete_file: bool = False) -> None:
-        # if filename == "":
-        #     filename = askopenfilename()
-        # ok, sock, _ = self.login(verbose=False)
-        # if not ok:
-        #     raise ValueError("email or password incorrect, could not login to upload file")
-        # TODO: upload file
-        # if delete_file:
-        #     os.remove(filename)
-        # TODO: finish
-        raise NotImplementedError
+    def upload_file_(self, chat_id: str, filepath: str = "", delete_file: bool = False) -> None:
+        if filepath == "":
+            filepath = askopenfilename()
+            if filepath == "" or not os.path.isfile(filepath):
+                return
+        ok, sock, _ = self.login(verbose=False)
+        if not ok:
+            raise ValueError("email or password incorrect, could not login to upload file")
+        with open(filepath, "rb") as f:
+            file_data = f.read()
+        file_name = filepath.split("\\")[-1]
+        request = f"{'file'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}" \
+                  f"{str(len(file_name)).ljust(15)}{file_name}".encode() + file_data
+        if not sock.send_message(request):
+            messagebox.showerror("Upload File Error", "Could not upload the file, lost connection to server.")
+            return
+        if delete_file:
+            os.remove(filepath)
+        sock.close()
 
     @staticmethod
     def send_message(chat_id: str | int, msg: str, sock: EncryptedProtocolSocket) -> bool:
@@ -180,6 +221,11 @@ class Communication:
         # TODO: finish
         raise NotImplementedError
 
+    @staticmethod
+    def new_group(other_emails: str, sock: EncryptedProtocolSocket) -> None:
+        # TODO: finish
+        raise NotImplementedError
+
     def make_call(self, chat_id: str) -> None:
         # go to 'users' file of this chat and make call to users
         # OR
@@ -192,22 +238,37 @@ class Communication:
         if path_to_picture is None:  # ask for file
             file_types = [("PNG", "*.png"), ("JPG", "*.jpg"), ("JPEG", "*.jpeg")]
             path_to_picture = askopenfilename(filetypes=file_types)
+            if path_to_picture == "" or not os.path.isfile(path_to_picture):
+                return
         if not check_size(path_to_picture):  # check image size
             messagebox.showerror("Profile Picture", "Image size is invalid,\nmust be at least 64x64.")
             return
-        # TODO: finish
-        raise NotImplementedError
+        ok, sock, _ = self.login(verbose=False)
+        if not ok:
+            raise ValueError("email or password incorrect, could not login to upload file")
+        with open(path_to_picture, "rb") as f:
+            file_data = f.read()
+        request = f"{'upload profile picture'.ljust(30)}".encode() + file_data
+        if not sock.send_message(request):
+            messagebox.showerror(
+                "Upload Profile Picture Error", "Could not upload the file, lost connection to server.")
+            return
+        sock.close()
 
-    def delete_message_for_me(self, chat_id: str, message_index: int, root: Tk | Toplevel):
+    @staticmethod
+    def delete_message_for_me(chat_id: str, message_index: int, root: Tk | Toplevel,
+                              sock: EncryptedProtocolSocket) -> None:
         # close the MessageOptions window
         root.destroy()
-        pass
-        # TODO: finish
-        raise NotImplementedError
+        request = f"{'delete message for me'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{message_index}"
+        if not sock.send_message(request.encode()):
+            messagebox.showerror("Delete Message For Me Error", "Could not delete the message.")
 
-    def delete_message_for_everyone(self, chat_id: str, message_index: int, root: Tk | Toplevel):
+    @staticmethod
+    def delete_message_for_everyone(chat_id: str, message_index: int, root: Tk | Toplevel,
+                                    sock: EncryptedProtocolSocket) -> None:
         # close the MessageOptions window
         root.destroy()
-        pass
-        # TODO: finish
-        raise NotImplementedError
+        request = f"{'delete message for everyone'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{message_index}"
+        if not sock.send_message(request.encode()):
+            messagebox.showerror("Delete Message For Me Error", "Could not delete the message.")

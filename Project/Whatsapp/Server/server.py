@@ -856,7 +856,7 @@ def reset_password(email: str, client_sock: EncryptedProtocolSocket) -> tuple[bo
     # extract password
     password = msg[30:]
     # set new password
-    email_password_database[email] = password
+    email_password_database[email] = hashlib.md5(password.encode()).hexdigest().lower()
     logging.info(f"reset password attempt successful - email: '{email}', username: '{username}'.")
     return True, "Password changed successfully."
 
@@ -1023,6 +1023,18 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
             elif cmd == "signup" and signed_up:
                 stop = True
                 break
+            elif cmd == "reset password":
+                email_len = int(msg[30: 45])
+                tmp_email = msg[45: 45 + email_len]
+                tmp_username = msg[45 + email_len:]
+                if tmp_email not in email_user_database:
+                    stop = True
+                    break
+                if email_user_database[tmp_email] != tmp_username:
+                    stop = True
+                    break
+                status, reason = reset_password(tmp_email, client_socket)
+                client_socket.send_message(request_response(cmd, "ok" if status else "not ok", reason))
             else:
                 add_exception_for_ip(client_ip_port[0])
                 stop = True
@@ -1076,22 +1088,35 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                     response = request_response(cmd, "ok" if ok else "not ok", "")
                 elif cmd == "delete for everyone":
                     request: str
-                    # delete_msg_for_everyone()
-                    pass
+                    chat_id_len = int(request[30: 45])
+                    chat_id = request[45: 45 + chat_id_len]
+                    message_index = int(request[45 + chat_id_len:])
+                    delete_msg_for_everyone(client_ip_port[0], email, chat_id, message_index)
                 elif cmd == "file":
                     request: bytes
-                    pass
+                    chat_id_len = int(request[30: 45])
+                    chat_id = request[45: 45 + chat_id_len].decode()
+                    file_name_len = int(request[45 + chat_id_len: 60 + chat_id_len])
+                    file_name = request[60 + chat_id_len: 60 + chat_id_len + file_name_len].decode()
+                    file_data = request[60 + chat_id_len + file_name_len:]
+                    send_file(client_ip_port[0], email, chat_id, file_data, file_name)
                 elif cmd == "delete for me":
                     request: str
-                    pass
+                    chat_id_len = int(request[30: 45])
+                    chat_id = request[45: 45 + chat_id_len]
+                    message_index = int(request[45 + chat_id_len:])
+                    delete_msg_for_me(client_ip_port[0], email, chat_id, message_index)
                 elif cmd == "call":
                     request: str
+                    # TODO: finish
                     pass
                 elif cmd == "add user":
                     request: str
+                    # TODO: finish
                     pass
                 elif cmd == "remove user":
                     request: str
+                    # TODO: finish
                     pass
                 elif cmd == "upload profile picture":
                     request: bytes
@@ -1107,12 +1132,11 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                     response = request_response(cmd, "ok" if status else "not ok", "")
                 elif cmd == "new chat":
                     request: str
+                    # TODO: finish
                     pass
                 elif cmd == "new group":
                     request: str
-                    pass
-                elif cmd == "reset password":
-                    request: str
+                    # TODO: finish
                     pass
                 else:
                     print(f"[Server]: '%s:%s' Logged In As '{email}-{username}' - "

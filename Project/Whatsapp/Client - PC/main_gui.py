@@ -270,7 +270,7 @@ class ChatEaseGUI(Tk):
             if self.__message_options_gui.winfo_exists():
                 self.__message_options_gui.destroy()
         self.__message_options_gui = MessageOptions(
-            self, self.__email, self.__password, self.__server_ip_port, msg,
+            self, self.__email, self.__password, self.__sock, self.__server_ip_port, msg,
             message_index, message_type, seen_by, self.__current_chat_name.chat_id
         )
 

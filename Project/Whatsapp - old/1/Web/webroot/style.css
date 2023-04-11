@@ -1,12 +1,20 @@
 body {
-    background-color: rgb(10, 13, 15);
+    background-color: #0c1216;
     font-family: Arial, Helvetica, sans-serif;
+}
+
+button:hover {
+    cursor: pointer;
+}
+
+button:active {
+    opacity: 0.5;
 }
 
 .box {
     padding-top: 3vh;
-    padding-left: 8vh;
-    padding-right: 8vh;
+    padding-left: 5vh;
+    padding-right: 5vh;
 }
 
 .grid {
@@ -35,21 +43,14 @@ body {
 }
 
 .profile-picture {
-    border: 0;
+    background-color: transparent;
     background-size: cover;
+    border: 0;
     width: 50px;
     height: 50px;
     float: left;
     border-radius: 100px;
     margin-bottom: 6px;
-}
-
-.profile-picture:hover {
-    cursor: pointer;
-}
-
-.profile-picture:active {
-    opacity: 0.5;
 }
 
 .setting-button {
@@ -62,14 +63,6 @@ body {
     height: 40px;
     float: right;
     translate: 2px 4px;
-}
-
-.setting-button:hover {
-    cursor: pointer;
-}
-
-.setting-button:active {
-    opacity: 0.5;
 }
 
 .search-bar-box {
@@ -116,6 +109,7 @@ body {
 
 .chat-picture {
     border: 0;
+    background-color: transparent;
     background-size: cover;
     width: 40px;
     height: 40px;
@@ -159,7 +153,8 @@ body {
 
 .right {
     color: white;
-    background-color: rgb(17, 27, 33);
+    background-image: url("imgs/chat_bg.png");
+    background-size: contain;
     height: 90vh;
     display: grid;
     grid-template-rows: 65px 12fr;
@@ -175,7 +170,7 @@ body {
 }
 
 .chat_status_bar_picture {
-    background-image: url("images/profile1.jpg");
+    background-image: url("images/profile1.jpg");  /* change from js */
     border: 0;
     background-size: cover;
     width: 40px;
@@ -201,30 +196,28 @@ body {
 
 .my_msg_row {
     clear: both;
-    margin-left: 50px;
+    margin-left: 1%;
     max-width: 50vh;
 }
 
 .my_msg_box {
     background-color: rgb(219, 219, 12);
+    border-radius: 300000px;
     width: fit-content;
     height: fit-content;
-    margin-left: 12px;
-    border-radius: 300000px;
 }
 
 .msg_row {
     float: right;
-    margin-right: 50px;
+    margin-right: 3%;
     max-width: 50vh;
 }
 
 .msg_box {
     background-color: rgb(202, 128, 141);
+    border-radius: 300000px;
     width: fit-content;
     height: fit-content;
-    margin-right: 12px;
-    border-radius: 300000px;
 }
 
 .msg_text_and_time {
@@ -243,6 +236,103 @@ body {
     color: black;
 }
 
+.chat_actions {
+    text-align: center;
+    background-color: #202C33;
+}
+
+.left_side_actions {
+    display: inline;
+    max-width: 150px;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+    bottom: 15%;
+}
+
+.upload_file {
+    background-image: url("imgs/upload_file.svg");
+    filter: brightness(0) invert(1);
+    background-color: transparent;
+    background-size: cover;
+    margin-right: 25px;
+    border: 0;
+    width: 50px;
+    height: 50px;
+}
+
+.emoji_drawer_btn {
+    background-image: url("imgs/emoji.png");
+    background-color: transparent;
+    background-size: cover;
+    filter: invert(1);
+    margin-left: 25px;
+    border: 0;
+    width: 50px;
+    height: 50px;
+    border-radius: 100px;
+}
+
+#drawer { 
+    background-color: #c0c0c0;
+    position: fixed;
+    bottom: 13.8%;
+    width: 75.4%;
+}
+
+.emoji-drawer {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.emoji {
+    text-align: center;
+    font-size: 24px;
+    padding: 8px;
+}
+
+.emoji:hover {
+    cursor: pointer;
+}
+
+#input_box {
+    display: inline;
+    margin-left: 15px;
+    margin-right: 15px;
+}
+
+.input_bar {
+    background-color: #2A3941;
+    color: rgb(200, 200, 200);
+    border-radius: 8px;
+    font-size: large;
+    border: 0;
+    margin: 8px;
+    width: 75%;
+    height: 50px;
+    overflow: hidden;
+    overflow-y: scroll;
+    resize: none;
+}
+
+.right_side_actions {
+    display: inline;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+    bottom: 15%;
+}
+
+.send_btn {
+    background-image: url("imgs/send_black.png");
+    background-color: transparent;
+    background-size: cover;
+    filter: invert(1);
+    border: 0;
+    width: 50px;
+    height: 50px;
+}
+
 
                     /* Scrollbar Style */
 ::-webkit-scrollbar {
@@ -251,7 +341,7 @@ body {
 
 /* Track */
 ::-webkit-scrollbar-track {
-    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+    -webkit-box-shadow: inset 0 0 6px #182c1b;
     -webkit-border-radius: 10px;
     border-radius: 10px;
 }
@@ -262,7 +352,7 @@ body {
     border-radius: 10px;
     /* background: rgb(33, 170, 33); */
     background: transparent;
-    -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5);
+    -webkit-box-shadow: inset 0 0 6px #02470e;
 }
 
 ::-webkit-scrollbar-thumb:hover {
