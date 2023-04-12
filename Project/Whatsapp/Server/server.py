@@ -5,6 +5,8 @@ Mail: omerdagry@gmail.com
 Final Date:  (dd/mm/yyyy) TODO: add date, and copy this to all files
 ###############################################
 """
+# TODO: add msg for telling the server in which chat the client is in
+# TODO: add a function to modify seen by lists of messages
 import os
 import ssl
 import time

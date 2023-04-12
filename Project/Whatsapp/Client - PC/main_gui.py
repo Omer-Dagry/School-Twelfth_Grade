@@ -215,6 +215,10 @@ class ChatEaseGUI(Tk):
         self.__home_chat.grid(row=1, column=2, sticky='news', columnspan=4)
 
         self.__chat_text = self.__home_chat
+        self.__chat_text.tag_configure("tag-left", justify="left")
+        self.__chat_text.tag_configure("tag-right", justify="right")
+        self.__chat_text.tag_configure("tag-center", justify="center")
+        self.__chat_text.tag_configure("tag-center-green", justify="center", foreground="#08c928")
 
         # --------------------------- ROW 2 ---------------------------
 
@@ -274,19 +278,27 @@ class ChatEaseGUI(Tk):
             message_index, message_type, seen_by, self.__current_chat_name.chat_id
         )
 
+    def __window_create_with_tag(self, index: Literal["end", 0],
+                                 window: Widget, side: Literal["right", "left", "center"]) -> None:
+        self.__chat_text.insert(index, "\n ", f"tag-{side}")
+        self.__chat_text.window_create(index, window=window)
+        self.__chat_text.insert(index, "\n ", f"tag-{side}")
+
     def __add_messages_to_text_chat(self, *messages_dicts: dict[
-            int, list[str, str, str, list[str], bool, list[str], datetime.datetime]]) -> None:
+            int, list[str, str, str, list[str], bool, list[str], datetime.datetime]],
+            index: Literal["end", 0] = "end") -> None:
         """ adds messages from the messages dicts passed to this function
 
         :param messages_dicts: {msg_index: [from_user, msg, msg_type, deleted_for, delete_for_all, seen by, time]}
         """
         if self.__current_chat_name.text != "Home":
             all_messages_combined = dict(ChainMap(*messages_dicts))
-            chats_id_ordered = sorted(all_messages_combined.keys(), key=lambda x: x)
+            chats_id_ordered = sorted(all_messages_combined.keys(), key=lambda x: x, reverse=index == 0)
             self.__chat_text.config(state=NORMAL)
             last_date = None
-            for chat_id in chats_id_ordered:
-                from_user, msg, msg_type, deleted_for, delete_for_all, seen_by, time = all_messages_combined[chat_id]
+            for message_index in chats_id_ordered:
+                from_user, msg, msg_type, deleted_for, delete_for_all, seen_by, time = \
+                    all_messages_combined[message_index]
                 from_user: str
                 msg: str
                 msg_type: str
@@ -294,27 +306,34 @@ class ChatEaseGUI(Tk):
                 delete_for_all: bool
                 seen_by: list[str]
                 time: datetime.datetime
-                time_formatted = time.strftime("%H:%M")
+                time_formatted = time.strftime("%H:%M")  # TODO: find a way to display the time of the message
                 side = "left" if from_user != self.__email else "right"
                 bg = "#d0ffff" if from_user != self.__email else "#ffffd0"
-                if last_date != time.date():
-                    last_date = time.date()
-                    # label = Label(self.__chat_text)
-                    # add the new date -> --------- date --------- (maybe a centered label, if possible, green)
-                if self.__email not in seen_by:
-                    # add ----------- unread messages ----------- (green)
-                    pass
+                msg_type = "mine" if from_user == self.__email else "other"
+                if last_date != time.strftime("%d-%m-%Y"):
+                    last_date = time.strftime("%d/%m/%Y")
+                    label = Label(self.__chat_text, text=f"{last_date}",
+                                  bg="green", font=("helvetica", 10), justify="left", fg="white")
+                    self.__window_create_with_tag(index, label, "center")
                 if self.__email in deleted_for:
                     continue
-                elif delete_for_all:
-                    # This message was deleted.
+                if self.__email not in seen_by:
+                    amount = chats_id_ordered[-1] - message_index
+                    self.__chat_text.insert(
+                        "\n--------------------------------------- "
+                        "%d Unread Messages "
+                        "---------------------------------------\n" % amount, "tag-center-green")
+                elif delete_for_all:  # This message was deleted.
                     label = Label(self.__chat_text, text="This message was deleted.", bg="gray", font=("helvetica", 16),
-                                  justify="left", fg="black")
-                    # label.bind("<Button-3>", lambda: )  # TODO: add message options
+                                  justify="left", fg="white")
+                    label.bind(
+                        "<Button-3>", lambda: self.__message_options(msg, message_index, msg_type, seen_by))
+                    self.__window_create_with_tag(index, label, side)
                 elif msg_type == "msg":
-                    # regular msg
-                    # TODO: add message options
-                    pass
+                    label = Label(self.__chat_text, text=msg, bg=bg, font=("helvetica", 16), justify="left", fg="white")
+                    label.bind(
+                        "<Button-3>", lambda: self.__message_options(msg, message_index, msg_type, seen_by))
+                    self.__window_create_with_tag(index, label, side)
                 elif msg_type == "file":
                     # file msg
                     # TODO: add message options
