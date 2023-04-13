@@ -170,7 +170,7 @@ button:active {
 }
 
 .chat_status_bar_picture {
-    background-image: url("images/profile1.jpg");  /* change from js */
+    background-image: url("imgs/profile.jpg");  /* change from js */
     border: 0;
     background-size: cover;
     width: 40px;
