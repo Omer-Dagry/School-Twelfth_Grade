@@ -1,0 +1,141 @@
+.right-messages {
+    margin-top: 10px;
+    overflow-y: scroll;
+}
+
+.my_msg_box {
+    padding: 1px;
+    clear: both;
+    margin-left: 1%;
+    max-width: 45%;
+    background-color: rgb(219, 219, 12);
+    border-radius: 300000px;
+    width: fit-content;
+    height: fit-content;
+}
+
+.msg_box {
+    padding: 1px;
+    clear: both;
+    float: right;
+    margin-right: 3%;
+    max-width: 45%;
+    background-color: rgb(202, 128, 141);
+    border-radius: 300000px;
+    width: fit-content;
+    height: calc(fit-content - 2px);
+}
+
+.msg_text_and_time {
+    margin: 15px;
+    min-height: fit-content;
+    min-width: fit-content;
+}
+
+.msg_text {
+    color: black;
+    font-size: large;
+}
+
+.msg_time {
+    font-size: small;
+    color: black;
+}
+
+.chat_actions {
+  margin-top: 6px;
+  text-align: center;
+  background-color: #202C33;
+}
+
+.left_side_actions {
+  display: inline;
+  max-width: 150px;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  bottom: 15%;
+}
+
+.upload_file {
+  background-image: url("../../imgs/upload_file.svg");
+  filter: brightness(0) invert(1);
+  background-color: transparent;
+  background-size: cover;
+  margin-right: 25px;
+  border: 0;
+  width: 50px;
+  height: 50px;
+}
+
+.emoji_drawer_btn {
+  background-image: url("../../imgs/emoji.png");
+  background-color: transparent;
+  background-size: cover;
+  filter: invert(1);
+  margin-left: 25px;
+  border: 0;
+  width: 50px;
+  height: 50px;
+  border-radius: 100px;
+}
+
+#drawer { 
+  background-color: #c0c0c0;
+  position: fixed;
+  bottom: 13.8%;
+  width: 75.4%;
+}
+
+.emoji-drawer {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.emoji {
+  text-align: center;
+  font-size: 24px;
+  padding: 8px;
+}
+
+.emoji:hover {
+  cursor: pointer;
+}
+
+#input_box {
+  display: inline;
+  margin-left: 15px;
+  margin-right: 15px;
+}
+
+.input_bar {
+  background-color: #2A3941;
+  color: rgb(200, 200, 200);
+  border-radius: 8px;
+  font-size: large;
+  border: 0;
+  margin: 8px;
+  width: 75%;
+  height: 50px;
+  overflow: hidden;
+  overflow-y: scroll;
+  resize: none;
+}
+
+.right_side_actions {
+  display: inline;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  bottom: 15%;
+}
+
+.send_btn {
+  background-image: url("../../imgs/send_black.png");
+  background-color: transparent;
+  background-size: cover;
+  filter: invert(1);
+  border: 0;
+  width: 50px;
+  height: 50px;
+}
