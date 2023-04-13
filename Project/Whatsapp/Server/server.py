@@ -439,7 +439,7 @@ def get_user_known_users(email: str) -> set[str]:
     return known_to_user
 
 
-def create_new_chat(user_created: str, with_user: str) -> tuple[bool, str]:
+def create_new_chat(user_created: str, with_user: str) -> tuple[bool, str]:  # TODO: handle picture for 1 on 1 chats
     """ create a new chat (one on one, not group)
     :param user_created: the email of the user that created the chat
     :param with_user: the email of the user that the chat is created with

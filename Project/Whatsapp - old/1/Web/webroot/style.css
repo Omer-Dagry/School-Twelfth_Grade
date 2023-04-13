@@ -12,9 +12,9 @@ button:active {
 }
 
 .box {
-    padding-top: 3vh;
-    padding-left: 5vh;
-    padding-right: 5vh;
+    margin-top: 5vh;
+    margin-left: 3vh;
+    margin-right: 3vh;
 }
 
 .grid {
@@ -26,8 +26,6 @@ button:active {
     color: white;
     background-color: #111B21;
     height: 90vh;
-    /* display: flex;
-    flex-direction: column; */
     display: grid;
     grid-template-rows: 65px 1fr 11fr;
 }
@@ -194,26 +192,27 @@ button:active {
     overflow-y: scroll;
 }
 
-.my_msg_row {
+.msg_row {
     clear: both;
     margin-left: 1%;
     max-width: 50vh;
 }
 
-.my_msg_box {
+.msg_box {
     background-color: rgb(219, 219, 12);
     border-radius: 300000px;
     width: fit-content;
     height: fit-content;
 }
 
-.msg_row {
+.my_msg_row {
+    clear: both;
     float: right;
     margin-right: 3%;
     max-width: 50vh;
 }
 
-.msg_box {
+.my_msg_box {
     background-color: rgb(202, 128, 141);
     border-radius: 300000px;
     width: fit-content;
@@ -224,6 +223,11 @@ button:active {
     margin: 15px;
     min-height: fit-content;
     min-width: fit-content;
+}
+
+.msg_sender {
+    font-size: smaller;
+    color: green;
 }
 
 .msg_text {
