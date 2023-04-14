@@ -168,7 +168,6 @@ button:active {
 }
 
 .chat_status_bar_picture {
-    background-image: url("imgs/profile.jpg");  /* change from js */
     border: 0;
     background-size: cover;
     width: 40px;
@@ -188,7 +187,7 @@ button:active {
 }
 
 .right-messages {
-    margin-top: 10px;
+    padding-top: 80px;
     overflow-y: scroll;
 }
 

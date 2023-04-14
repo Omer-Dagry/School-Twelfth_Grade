@@ -52,9 +52,9 @@ def get_all_chat_ids():
     #         last_chat_msgs = pickle.loads(f.read())
     #     last_msg = last_chat_msgs[max(last_chat_msgs.keys())]
     #     msg = last_msg[1]
-    #     msg_time = last_msg[-1].strftime("%d/%m/%Y %H:%M")
+    #     msg_time = last_msg[-1].strftime("%m/%d/%Y %H:%M")
     #     chat_id_last_msg_and_time[chat_id] = [chat_name, msg, msg_time, chat_type]
-    return json.dumps({"5467": ["Omer Dagry", "hi", "13/04/2023 8:34", "group"]})
+    return json.dumps({"5467": ["Omer Dagry", "hi", "04/13/2023 8:34", "group"]})
 
 
 @eel.expose
@@ -68,9 +68,9 @@ def get_more_msgs():
     # open_chat_files_lock.release()
     # return data
     return json.dumps(
-        {1: ["omerdagry@gmail.com", "1", "msg", [], False, [], datetime.datetime.now().strftime("%d/%m/%Y")],
-         2: ["omerdagry@gmail.com", "2", "msg", [], False, [], datetime.datetime.now().strftime("%d/%m/%Y")],
-         3: ["dor", "3", "msg", [], False, [], datetime.datetime.now().strftime("%d/%m/%Y")]})
+        {1: ["omerdagry@gmail.com", "1", "msg", [], False, [], datetime.datetime.now().strftime("%m/%d/%Y")],
+         2: ["omerdagry@gmail.com", "2", "msg", [], False, [], datetime.datetime.now().strftime("%m/%d/%Y")],
+         3: ["dor", "3", "msg", [], False, [], datetime.datetime.now().strftime("%m/%d/%Y")]})
 
 
 def sync() -> tuple[list[str], list[str]]:
@@ -100,7 +100,7 @@ def main():
     # d = {}
     # for i in range(4, 804):
     #     from_ = "omerdagry@gmail.com" if i % 2 == 0 else random.choice(["dor", "yuval", "ofri", "yoav", "liav"])
-    #     d[i] = [from_, str(i), "msg", [], False, [], datetime.datetime.now().strftime("%d/%m/%Y")]
+    #     d[i] = [from_, str(i), "msg", [], False, [], datetime.datetime.now().strftime("%m/%d/%Y")]
     # with open("check", "wb") as f:
     #     f.write(pickle.dumps(d))
 

@@ -48,7 +48,7 @@ function chat_box_left(chat_picture_path, chat_name, last_message,
     // save refrence to sep
     chat_box_div.sep = chat_sep;
     // add event listener
-    chat_box_div.addEventListener("click", function() { load_chat(chat_name, chat_id) });
+    chat_box_div.addEventListener("click", function() { load_chat(chat_name, chat_id, chat_type) });
 }
 
 
@@ -95,34 +95,7 @@ function message_options() {
 
 }
 
-/* Create an global msg (from yourself) because it's faster to copy it when creating a new msg */
-// msg row
-var my_msg_row = document.createElement("div");
-my_msg_row.className = "my_msg_row";
-// msg box
-var my_msg_box = document.createElement("div");
-my_msg_box.className = "my_msg_box";
-// msg text and time
-var my_text_and_time = document.createElement("div");
-my_text_and_time.className = "msg_text_and_time";
-// msg sender
-var my_msg_sender = document.createElement("div");
-my_msg_sender.className = "msg_sender";
-// my_msg_sender.innerHTML = sender;
-// msg text
-var my_msg_text = document.createElement("div");
-my_msg_text.className = "msg_text";
-// my_msg_text.innerHTML = msg;
-// msg time
-var my_msg_time = document.createElement("div");
-my_msg_time.className = "msg_time";
-// my_msg_time.innerHTML = time;
-// append all elements to msg row
-my_text_and_time.appendChild(my_msg_sender);
-my_text_and_time.appendChild(my_msg_text);
-my_text_and_time.appendChild(my_msg_time);
-my_msg_box.appendChild(my_text_and_time);
-my_msg_row.appendChild(my_msg_box);
+
 function msg_from_me(sender, msg, time, msg_index, msg_type, deleted_for, 
     deleted_for_all, seen_by, position="END") {
     // position: "END" or "START"
@@ -140,7 +113,7 @@ function msg_from_me(sender, msg, time, msg_index, msg_type, deleted_for,
         return;
     } else if (msg_type == "msg") {
         msg = handle_msg_length(msg);
-        let this_msg_row = my_msg_row.cloneNode(true);
+        let this_msg_row = window.my_msg_row.cloneNode(true);
         this_msg_row.id = 'msg_' + msg_index;
         this_msg_row.getElementsByClassName("msg_text")[0].innerHTML = msg;
         this_msg_row.getElementsByClassName("msg_time")[0].innerHTML = time;
@@ -163,34 +136,7 @@ function msg_from_me(sender, msg, time, msg_index, msg_type, deleted_for,
 
 }
 
-/* Create an global msg (from others) because it's faster to copy it when creating a new msg */
-// msg row
-var msg_row = document.createElement("div");
-msg_row.className = "msg_row";
-// msg box
-var msg_box = document.createElement("div");
-msg_box.className = "msg_box";
-// msg text and time
-var text_and_time = document.createElement("div");
-text_and_time.className = "msg_text_and_time";
-// msg sender
-var msg_sender = document.createElement("div");
-msg_sender.className = "msg_sender";
-// msg_sender.innerHTML = sender;
-// msg text
-var msg_text = document.createElement("div");
-msg_text.className = "msg_text";
-// msg_text.innerHTML = msg;
-// msg time
-var msg_time = document.createElement("div");
-msg_time.className = "msg_time";
-// msg_time.innerHTML = time;
-// append all elements to msg row
-text_and_time.appendChild(msg_sender);
-text_and_time.appendChild(msg_text);
-text_and_time.appendChild(msg_time);
-msg_box.appendChild(text_and_time);
-msg_row.appendChild(msg_box);
+
 function msg_from_others(sender, msg, time, msg_index, msg_type, deleted_for, 
     deleted_for_all, seen_by, position="END") {
     // position: "END" or "START"
@@ -199,7 +145,7 @@ function msg_from_others(sender, msg, time, msg_index, msg_type, deleted_for,
         "msg_from_others: param position must be either 'END' or 'START', got '" + position + "'"
     );
     msg = handle_msg_length(msg);
-    let this_msg_row = msg_row.cloneNode(true);
+    let this_msg_row = window.msg_row.cloneNode(true);
     this_msg_row.id = 'msg_' + msg_index;
     this_msg_row.getElementsByClassName("msg_text")[0].innerHTML = msg;
     this_msg_row.getElementsByClassName("msg_time")[0].innerHTML = time;
@@ -267,13 +213,20 @@ function toggleEmojiDrawer() {
 async function load_msgs(chat_msgs, position = "END") {
     if (username === null) await ask_for_username;
     let from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time;
-    let keys = Object.keys(chat_msgs);
+    // let keys = [].slice.call(Object.keys(chat_msgs));
+    let keys = [];
+    for (let key in chat_msgs) {
+        keys.push(key);
+    }
     // sort messages by index
-    keys.sort();
+    keys.sort(function(a, b) {
+        return parseInt(a) - parseInt(b);
+    });
     // if adding more messages from the top, start from the most recent one
     if (position === "START") keys.reverse();
-    for (let msg_index in chat_msgs) {
-        console.log(msg_index);
+    let msg_index;
+    for (let key in keys) {
+        msg_index = keys[key];
         [from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time] = chat_msgs[msg_index];
         //
         if (username in deleted_for) continue;
@@ -294,13 +247,20 @@ async function load_msgs(chat_msgs, position = "END") {
 }
 
 
-async function load_chat(chat_name, chat_id) {
+async function load_chat(chat_name, chat_id, chat_type) {
     if (chat_id == chat.chat_id) return;
+    console.log("loading chat (name: '" + chat_name + "', id: '" + chat_id + "')");
+    let chat_picture = document.getElementById("status-bar-picture");
+    if (chat_type === "group")
+        chat_picture.style.backgroundImage = 'url("' + username + "/" + chat_id + "/group_picture.png" + '")';
+    else
+        chat_picture.style.backgroundImage = 'url("' + username + "/profile_pictures/" + chat_name + "_profile_picture.png" + '")';
     last_msg_index = 0;
-    console.log(chat_name, chat_id);
     chat.chat_id = chat_id;
+    let first_msg = chat.firstChild;
     let chat_msgs = JSON.parse(await eel.get_chat_msgs(chat_id)());
-    load_msgs(chat_msgs);
+    if (chat_msgs === {}) return;  // chat is empty
+    await load_msgs(chat_msgs);
     chat.scrollTo(0, chat.scrollHeight);
 }
 
@@ -308,11 +268,15 @@ async function load_chat(chat_name, chat_id) {
 async function load_more_msgs() {
     let first_msg = chat.firstChild;
     let chat_id = chat.chat_id;
+    console.log("loading more messages (id: '" + chat_id + "')");
     let chat_msgs = JSON.parse(await eel.get_more_msgs()());
-    load_msgs(chat_msgs, "START");
+    if (chat_msgs === {}) return;  // no more messages
+    chat.scrollBy(0, 10);
+    await load_msgs(chat_msgs, "START");
     chat.onscroll = check_pos;  // re-allow loading more msgs
     chat.scrollTo(0, chat.scrollHeight);
     first_msg.scrollIntoView(true);
+    chat.scrollBy(0, -200);  // show some of the new loaded messages
 }
 
 
@@ -329,7 +293,9 @@ function update(chat_id, ...chat_msgs_list_of_dicts) {
     let from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time, msg_row, keys;
     for (let chat_msgs in chat_msgs_list_of_dicts) {
         keys = Object.keys(chat_msgs);
-        keys.sort();
+        keys.sort(function(a, b) {
+            return parseInt(a) - parseInt(b);
+        });
         for (let msg_index in chat_msgs) {
             if (msg_index > last_msg_index) break;
             [from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time] = chat_msgs[msg_index];
@@ -348,15 +314,22 @@ function get_open_chat_id() {
 
 
 async function load_chat_buttons() {
-    // {chat_id: [name, last_msg, time]}
+    // {chat_id: [chat_name, last_msg, time, chat_type]}
     let chat_ids = JSON.parse(await eel.get_all_chat_ids()());
     let chat_id, chat_name, last_message, time, chat_type;
+    // TODO: remove this
+    chat_ids = {2342: ["Liav Kolet", "holla", "04/13/2023 8:33", "1 on 1"],
+                5466: ["Omer Dagry2", "hi", "04/13/2023 8:45", "group"],
+                5467: ["Omer Dagry", "hi", "04/14/2023 8:30", "group"]};
+    let changed = false;
     for (chat_id in chat_ids) {
         [chat_name, last_message, time, chat_type] = chat_ids[chat_id];
-        if (document.getElementById(chat_id) !== null) continue;  // already exists
+        if (document.getElementById(chat_id) != null) continue;  // already exists
+        changed = true;
         chat_box_left("imgs/profile.jpg", chat_name, last_message, time, chat_id, chat_type);
     }
     setTimeout(load_chat_buttons, 10_000);  // every 10 seconds update
+    if (changed) chat_search();
 }
 
 
@@ -365,31 +338,59 @@ async function ask_for_username() {
 }
 
 
+function sort_chats_by_date(chat_buttons, chats_list, search_key) {
+    let keys, chat_button
+    chat_buttons.sort(function(a, b) {
+        return new Date(a.getElementsByClassName("chat-last-message-time")[0].innerHTML) - 
+            new Date(b.getElementsByClassName("chat-last-message-time")[0].innerHTML);
+    });
+    keys = Object.keys(chat_buttons);
+    for (let key in keys) {
+        chat_button = chat_buttons[key];
+        if (search_key == "") {
+            chat_button.style.visibility = 'visible';
+            chat_button.sep.style.visibility = 'visible';
+        } else if (chat_button.style.visibility == "hidden") continue;
+        chats_list.prepend(chat_button.sep);
+        chats_list.prepend(chat_button);
+    }
+    return;
+}
+
+
 function chat_search() {
     let search_key = document.getElementById("search_chat").value.toLowerCase();
     if (search_key == current_search_key) return;  // prevet calculation for no reason
     current_search_key = search_key;
-    let chat_buttons = document.getElementsByClassName("chat");
+    let chats_list = document.getElementById("chats-list-div");
+    let chat_buttons = [].slice.call(document.getElementsByClassName("chat"));
     let keys = Object.keys(chat_buttons);
-    let chat_button, chat_name, last_msg, last_msg_time;
+    let chat_button, chat_name, last_msg, last_msg_time, sep;
+    if  (search_key == "") {
+        sort_chats_by_date(chat_buttons, chats_list, search_key); 
+        return;
+    }
     for (let key in keys) {
         chat_button = chat_buttons[key];
         chat_name = chat_button.getElementsByClassName("chat-name")[0].innerHTML.toLowerCase();
         last_msg = chat_button.getElementsByClassName("chat-last-message")[0].innerHTML.toLowerCase();
         last_msg_time = chat_button.getElementsByClassName("chat-last-message-time")[0].innerHTML.toLowerCase();
-        if ((search_key == "group" && chat_button.chat_type == "group") || 
-            (search_key == "1 on 1" && chat_button.chat_type == "1 on 1") ||
+        if ((search_key === "group" && chat_button.chat_type === "group") || 
+            (search_key === "1 on 1" && chat_button.chat_type === "1 on 1") ||
             chat_name.includes(search_key) || 
             last_msg.includes(search_key) || 
-            last_msg_time.includes(search_key) || search_key == "") 
+            last_msg_time.includes(search_key) || search_key == chat_name) 
         {
             chat_button.style.visibility = 'visible';
             chat_button.sep.style.visibility = 'visible';
         } else {
             chat_button.style.visibility = 'hidden';
             chat_button.sep.style.visibility = 'hidden';
+            chats_list.appendChild(chat_button);
+            chats_list.appendChild(chat_button.sep);
         }
     }
+    sort_chats_by_date(chat_buttons, chats_list, search_key);
 }
 
 
@@ -406,7 +407,7 @@ function demo() {
     msg_from_me("omer", "מה קורה", "18:01", 800, "msg", [], false, [], "START");
     // reset_chat_and_status_bar();
     chat.scrollTo(0, chat.scrollHeight);
-    console.log("done");
+    console.log("demo done");
     // eel.hello("Asdfasdf")();
 }
 
