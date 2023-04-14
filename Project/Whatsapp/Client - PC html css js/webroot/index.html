@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>ChatEase</title>
+  </head>
+
+  <body>
+    <div class="box">
+      <div class="grid">
+
+        <div class="left">
+          <div class="profile-setting_box">
+            <div class="profile-setting">
+              <button class="profile-picture" id="user-profile-picture"></button>
+              <button class="setting-button"></button>
+            </div>
+          </div>
+
+          <div class="search-bar-box" id="search_bar_box">
+            <input class="search-bar" placeholder="Search" onkeyup="chat_search()" id="search_chat">
+            <hr class="search_bar_chat_list_sep" id="search_bar_sep">
+          </div>
+
+          <div class="chats-list" id="chats-list-div"></div>
+        </div>
+
+        <div class="left_right_sep"></div>
+
+        <div class="right">
+          <div class="chat_status_box">
+            <div class="chat_status_bar">
+
+              <div class="chat_status_bar_picture" id="status-bar-picture"></div>
+
+              <div class="chat_name_status_bar" id="status-bar-name"></div>
+
+              <div class="chat_status_bar_last_seen" id="status-bar-last-seen"></div>
+
+            </div>
+          </div>
+
+          <div class="right-messages" id="chat" onscroll="check_pos()"></div>
+
+          <div class="chat_actions">
+            <div class="left_side_actions">
+              <button class="upload_file"></button>
+              <button class="emoji_drawer_btn"></button>
+            </div>
+            
+            <div id="input_box">
+              <textarea class="input_bar" id="msg_input"
+                cols="50" rows="5" placeholder="Type a message"></textarea>
+            </div>
+
+            <div class="right_side_actions">
+              <button class="send_btn" id="send_msg"></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Other Files -->
+    <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="/eel.js"></script>
+    <script type="text/javascript" src="messages.js"></script>
+    <script type="text/javascript" src="client.js"></script>
+  </body>
+</html>
