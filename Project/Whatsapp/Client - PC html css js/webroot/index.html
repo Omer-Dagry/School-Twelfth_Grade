@@ -5,65 +5,76 @@
     <title>ChatEase</title>
   </head>
 
-  <body>
-    <div class="box">
-      <div class="grid">
-
-        <div class="left">
-          <div class="profile-setting_box">
-            <div class="profile-setting">
-              <button class="profile-picture" id="user-profile-picture"></button>
-              <button class="setting-button"></button>
+  <body class="disable_text_selection">
+    <!-- Box to contain the entire app -->
+    <div id="box">
+      <!-- Grid for left side (chat buttons) and right side (chat) -->
+      <div id="grid">
+        <!-- Left Side -->
+        <div id="left">
+          <!-- Profile & Settings -->
+          <div id="profile-setting_box">
+            <div id="profile-setting">
+              <button id="user-profile-picture"></button>
+              <ion-icon name="settings" id="setting-button"></ion-icon>
             </div>
           </div>
-
-          <div class="search-bar-box" id="search_bar_box">
-            <input class="search-bar" placeholder="Search" onkeyup="chat_search()" id="search_chat">
-            <hr class="search_bar_chat_list_sep" id="search_bar_sep">
+          <!-- Search Chats -->
+          <div id="search_bar_box">
+            <input placeholder="Search" onkeyup="chat_search()" id="search_chat">
+            <hr id="search_bar_chat_list_sep">
           </div>
-
-          <div class="chats-list" id="chats-list-div"></div>
+          <!-- Chats -->
+          <div id="chats_list"></div>
         </div>
-
-        <div class="left_right_sep"></div>
-
-        <div class="right">
-          <div class="chat_status_box">
-            <div class="chat_status_bar">
-
-              <div class="chat_status_bar_picture" id="status-bar-picture"></div>
-
-              <div class="chat_name_status_bar" id="status-bar-name"></div>
-
-              <div class="chat_status_bar_last_seen" id="status-bar-last-seen"></div>
-
+        <!-- Seperator between left side and right side -->
+        <div id="left_right_sep"></div>
+        <!-- Right Side -->
+        <div id="right">
+          <!-- Chat Status Bar -->
+          <div id="chat_status_box" class="disable_text_selection">
+            <div id="chat_status_bar">
+              <!-- Picture -->
+              <div id="status-bar-picture"></div>
+              <!-- Name -->
+              <div class="enable_text_selection" id="status-bar-name"></div>
+              <!-- Last Seen (only for 1 on 1 chats) -->
+              <div id="status-bar-last-seen"></div>
+              <!--  -->
+              <ion-icon name="call" id="call_btn" onclick="make_a_call()"></ion-icon>
             </div>
           </div>
-
-          <div class="right-messages" id="chat" onscroll="check_pos()"></div>
-
-          <div class="chat_actions">
-            <div class="left_side_actions">
-              <button class="upload_file"></button>
-              <button class="emoji_drawer_btn"></button>
+          <!-- The Chat itself -->
+          <div id="chat" class="enable_text_selection" onscroll="check_pos()"></div>
+          <!-- Chats Actions (e.g send msg, file & emoji) -->
+          <div id="chat_actions">
+            <div id="left_side_actions">
+              <ion-icon name="document" id="upload_file"></ion-icon>
+              <ion-icon name="happy-outline" id="emoji_drawer_btn"></ion-icon>
             </div>
             
             <div id="input_box">
-              <textarea class="input_bar" id="msg_input"
-                cols="50" rows="5" placeholder="Type a message"></textarea>
+              <textarea id="msg_input" cols="50" rows="5" placeholder="Type a message"></textarea>
             </div>
 
-            <div class="right_side_actions">
-              <button class="send_btn" id="send_msg"></button>
+            <div id="right_side_actions">
+              <ion-icon name="send-outline" id="send_msg"></ion-icon>
             </div>
           </div>
         </div>
       </div>
     </div>
-    <!-- Other Files -->
+    <!--                          Other Files (javascript & css)                        -->
     <link rel="stylesheet" href="style.css">
+    <!-- Part of eel, this file isn't in webroot, it's handled by eel -->
     <script type="text/javascript" src="/eel.js"></script>
+    <!-- Contains the 2 types of messages (faster to copy than create each time) -->
     <script type="text/javascript" src="messages.js"></script>
+    <!-- The client that connectes to the eel python program -->
     <script type="text/javascript" src="client.js"></script>
+    <!-- Disable Double & Triple Click Text Selection -->
+    <!-- <script type="text/javascript" src="selection.js"></script> -->
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
   </body>
 </html>

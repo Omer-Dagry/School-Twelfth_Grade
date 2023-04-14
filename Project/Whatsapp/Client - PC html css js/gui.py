@@ -61,7 +61,8 @@ def get_all_chat_ids() -> str:
         with open(f"webroot\\{email}\\{chat_id}\\data\\chat\\{latest_chat_msgs_file_name}", "rb") as f:
             last_chat_msgs = pickle.loads(f.read())
         last_msg = last_chat_msgs[max(last_chat_msgs.keys())]
-        msg = f"{last_msg[0]}: {last_msg[1]}"
+        msg = f"{last_msg[0].split('@')[0]}: {last_msg[1]}"
+        msg = msg if len(msg) <= 25 else msg[:25] + "..."
         msg_time = last_msg[-1] if isinstance(last_msg[-1], str) else last_msg[-1].strftime("%m/%d/%Y %H:%M")
         chat_id_last_msg_and_time[chat_id] = [chat_name, msg, msg_time, chat_type, users]
     return json.dumps(chat_id_last_msg_and_time)
@@ -98,6 +99,13 @@ def update():
                 with open(file, "rb") as f:
                     data = json.dumps(pickle.loads(f.read()))
                 eel.update(open_chat_id, data)
+
+
+@eel.expose
+def get_user_last_seen(user_email: str):
+    with open(f"webroot\\{email}\\users_status", "rb") as f:
+        users_status: dict = pickle.loads(f.read())
+    return users_status.get(user_email, "")
 
 
 def main():

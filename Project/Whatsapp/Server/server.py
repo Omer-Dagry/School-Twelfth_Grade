@@ -3,10 +3,15 @@
 Author: Omer Dagry
 Mail: omerdagry@gmail.com
 Final Date:  (dd/mm/yyyy) TODO: add date, and copy this to all files
+
+
+TODO: add a file in each chat of a pickled dict -> {email: number_of_unread_msgs}
+      each time a msg is sent increment number_of_unread_msgs for all the users
+      each time a user enters the chat set his number_of_unread_msgs to 0
 ###############################################
 """
-# TODO: add msg for telling the server in which chat the client is in
-# TODO: add a function to modify seen by lists of messages
+
+
 import os
 import ssl
 import time
@@ -62,7 +67,8 @@ email_password_file_database = FileDatabase(f"{SERVER_DATA}email_password", igno
 email_user_file_database = FileDatabase(f"{SERVER_DATA}email_username", ignore_existing=True)
 # chat_id_users_database -> {chat_id: [email, another_email], another_chat_id: [email, another_email], ...}
 chat_id_users_file_database = FileDatabase(f"{SERVER_DATA}chat_id_users", ignore_existing=True)
-# user_online_status_database -> {email: ["Online", None], email: ["Offline" / last_seen - datetime.datetime], ...}
+# user_online_status_database ->
+# {email: ["Online", number_of_live_connection], email: ["Offline" / last_seen - datetime.datetime], ...}
 user_online_status_file_database = FileDatabase(f"{SERVER_DATA}user_online_status", ignore_existing=True)
 # Sync DBs
 # {email (str): password (str)}
@@ -439,7 +445,8 @@ def get_user_known_users(email: str) -> set[str]:
     return known_to_user
 
 
-def create_new_chat(user_created: str, with_user: str) -> tuple[bool, str]:  # TODO: handle picture for 1 on 1 chats
+# TODO: handle picture for 1 on 1 chats (in sync func, send the user all the profile pictures of his known users)
+def create_new_chat(user_created: str, with_user: str) -> tuple[bool, str]:
     """ create a new chat (one on one, not group)
     :param user_created: the email of the user that created the chat
     :param with_user: the email of the user that the chat is created with
@@ -919,8 +926,15 @@ def sync(email: str, sync_all: bool = False) -> bytes:
     # make a dictionary -> {file_path: file_data}
     # also remember user_online_status_database (last seen and online)
     known_to_user = get_user_known_users(email)
-    # TODO: on the client side when receiving 'users_status' file, remember it's a file about online status
-    file_name_data: dict[str, str] = {"users_status": [user_online_status_database.get(user) for user in known_to_user]}
+    users_status = dict(((user, user_online_status_database.get(user)[1]) for user in known_to_user))
+    current_time = datetime.datetime.now()
+    for user in users_status:
+        if isinstance(users_status[user], datetime.datetime):
+            strftime = "%H:%M %m-%d-%Y" if (current_time - users_status[user]).days >= 1 else "%H:%M"
+            users_status[user] = f'Last Seen {users_status[user].strftime(strftime)}'
+        else:
+            users_status[user] = "Online"
+    file_name_data: dict[str, str] = {"users_status": users_status}
     for file in new_data:
         if os.path.isfile(file):
             #                            remove Data\\Users_Data
@@ -1000,7 +1014,7 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
             # if client sent login request
             if cmd == "login":
                 len_email = int(msg[30: 40].strip())
-                email = msg[40: 40 + len_email]
+                email = msg[40: 40 + len_email].lower()
                 password = msg[40 + len_email:]
                 if not login(email, password):
                     client_socket.send_message(
@@ -1016,7 +1030,7 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                 len_username = int(msg[: 2].strip())
                 username = msg[2: 2 + len_username]
                 len_email = int(msg[2 + len_username: 12 + len_username].strip())
-                email = msg[12 + len_username: 12 + len_username + len_email]
+                email = msg[12 + len_username: 12 + len_username + len_email].lower()
                 password = msg[12 + len_username + len_email:]
                 ok, reason = signup(username, email, password, client_socket)
                 if not ok:
@@ -1031,7 +1045,7 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                 break
             elif cmd == "reset password":
                 email_len = int(msg[30: 45])
-                tmp_email = msg[45: 45 + email_len]
+                tmp_email = msg[45: 45 + email_len].lower()
                 tmp_username = msg[45 + email_len:]
                 if tmp_email not in email_user_database:
                     stop = True
@@ -1072,7 +1086,7 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                 cmd = request[: 30].decode().strip()
                 # decode the request only if it's not a file
                 request = request if cmd in stay_encoded else request.decode()
-                # TODO call the right func to handle the client's request
+                # TODO: add user in chat X + add a function to modify seen by lists of messages (call it for these msgs)
                 response = None
                 if cmd == "sync new":
                     request: str
