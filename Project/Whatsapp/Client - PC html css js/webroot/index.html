@@ -49,8 +49,8 @@
           <!-- Chats Actions (e.g send msg, file & emoji) -->
           <div id="chat_actions">
             <div id="left_side_actions">
-              <ion-icon name="document" id="upload_file"></ion-icon>
-              <ion-icon name="happy-outline" id="emoji_drawer_btn"></ion-icon>
+              <ion-icon name="document" id="upload_file" onclick="send_file()"></ion-icon>
+              <ion-icon name="happy-outline" id="emoji_drawer_btn" onclick="toggleEmojis()"></ion-icon>
             </div>
             
             <div id="input_box">
@@ -58,7 +58,7 @@
             </div>
 
             <div id="right_side_actions">
-              <ion-icon name="send-outline" id="send_msg"></ion-icon>
+              <ion-icon name="send-outline" id="send_msg" onclick="send_message()"></ion-icon>
             </div>
           </div>
         </div>

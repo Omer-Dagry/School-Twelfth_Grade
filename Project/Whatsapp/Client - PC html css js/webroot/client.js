@@ -349,7 +349,11 @@ function handle_msg_length(msg) {
 }
 
 
-// TODO: add time when this msg time (date) is different from the last one
+/* 
+TODO: add time - 
+      when this msg time (date) is different from 
+      the last one (maybe with 'sticky' position in css)
+*/
 function add_msg(from, sender, msg, time, msg_index, msg_type, deleted_for, 
     deleted_for_all, seen_by, position="END") {
         assert(
@@ -464,6 +468,15 @@ async function ask_for_email() {
 
 async function ask_for_username() {
     username = await eel.get_username()();
+}
+
+
+                                /* Communication */
+async function send_message() {
+    let input_bar = document.getElementById("msg_input");
+    let msg = input_bar.value;
+    input_bar.value = "";  // clear input bar
+    await eel.send_message(msg)();
 }
 
 
