@@ -472,11 +472,59 @@ async function ask_for_username() {
 
 
                                 /* Communication */
+async function send_file() {
+    await eel.send_file(get_open_chat_id())();
+}
+
+
 async function send_message() {
     let input_bar = document.getElementById("msg_input");
     let msg = input_bar.value;
     input_bar.value = "";  // clear input bar
-    await eel.send_message(msg)();
+    await eel.send_message(msg, get_open_chat_id())();
+}
+
+
+async function new_chat() {
+    // let other_email = "TODO: add a button that opens an input to start new chat";
+    // await eel.new_chat(other_email)();
+}
+
+
+async function new_group() {
+    // let other_emails = ["TODO: add a button that opens an input to start new group"];
+    // let group_name = "TODO: also add an input for group name";
+    // await eel.new_group(other_emails, group_name)();
+}
+
+
+async function add_user_to_group() {
+    // await eel.add_user_to_group(other_email, get_open_chat_id());
+}
+
+
+async function remove_user_from_group() {
+    // await eel.remove_user_from_group(other_email, get_open_chat_id());
+}
+
+
+async function make_call() {
+    await eel.make_call(get_open_chat_id());
+}
+
+
+async function upload_profile_picture() {
+    await eel.upload_profile_picture()();
+}
+
+
+async function delete_message_for_me() {
+    // await eel.delete_message_for_me(chat_id, message_index);
+}
+
+
+async function delete_message_for_everyone() {
+    // await eel.delete_message_for_everyone(chat_id, message_index);
 }
 
 
