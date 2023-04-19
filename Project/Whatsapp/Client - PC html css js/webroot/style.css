@@ -115,9 +115,18 @@ button:active {
     border-color: rgb(33, 170, 33);
 }
 
-#chats_list {
+.chats_list {
     overflow-y: scroll;
-    scrollbar-color: black;
+}
+
+#create_chat_or_group {
+    position: relative;
+    left: calc(50% - 40px);
+    width: 80px;
+    margin-bottom: 20px;
+    background-color: forestgreen;
+    color: white;
+    border: 0 transparent;
 }
 
 .chat {
@@ -165,6 +174,11 @@ button:active {
     margin-right: 7px;
     font-size: small;
     margin-top: 4px;
+}
+
+.create_chat_or_group_checkbox {
+    display: block;
+    margin-right: 7px;
 }
 
 .rounded-chat-sep {

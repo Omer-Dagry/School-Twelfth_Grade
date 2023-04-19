@@ -16,7 +16,7 @@
           <div id="profile-setting_box">
             <div id="profile-setting">
               <button id="user-profile-picture" title="Profile Picture" onclick="upload_profile_picture()"></button>
-              <ion-icon name="chatbox-outline" id="StartNewChat" title="Start new chat" onclick="new_chat()"></ion-icon>
+              <ion-icon name="chatbox-outline" id="StartNewChat" title="Start new chat" onclick="toggle_chats_users()"></ion-icon>
               <!-- <ion-icon name="people-circle-outline"></ion-icon> -->
               <ion-icon name="settings" id="setting-button" title="Settings" onclick="settings()"></ion-icon>
             </div>
@@ -27,7 +27,7 @@
             <hr id="search_bar_chat_list_sep">
           </div>
           <!-- Chats -->
-          <div id="chats_list"></div>
+          <div class="chats_list"></div>
         </div>
         <!-- Seperator between left side and right side -->
         <div id="left_right_sep"></div>
@@ -80,7 +80,7 @@
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
     <script>
-      adjus
+      adjust_msgs_input_width()
     </script>
   </body>
 </html>

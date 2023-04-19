@@ -94,10 +94,10 @@ def get_more_msgs() -> str:
 
 
 @eel.expose
-def get_known_to_user() -> list[str]:
+def get_known_to_user() -> str:
     with open(f"webroot\\{email}\\known_users", "rb") as f:
         known_users: set[str] = pickle.loads(f.read())
-    return list(known_users)
+    return json.dumps(dict(((i, user_email) for i, user_email in enumerate(list(known_users)))))
 
 
 """                                              Get User Info                                                       """
@@ -298,7 +298,8 @@ if __name__ == '__main__':
         eel.init("webroot")
         eel.start("index.html", port=8080)
     finally:
-        shutil.rmtree("webroot\\omerdagry@gmail.com\\recordings")
+        if os.path.isdir("webroot\\omerdagry@gmail.com\\recordings"):
+            shutil.rmtree("webroot\\omerdagry@gmail.com\\recordings")
 
 
 # TODO: add a communication options to upload a group picture
