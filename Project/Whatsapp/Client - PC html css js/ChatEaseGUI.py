@@ -93,6 +93,13 @@ def get_more_msgs() -> str:
     return data
 
 
+@eel.expose
+def get_known_to_user() -> list[str]:
+    with open(f"webroot\\{email}\\known_users", "rb") as f:
+        known_users: set[str] = pickle.loads(f.read())
+    return list(known_users)
+
+
 """                                              Get User Info                                                       """
 
 
