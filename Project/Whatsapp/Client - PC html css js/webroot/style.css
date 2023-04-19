@@ -51,12 +51,15 @@ button:active {
 
 #profile-setting_box {
     background-color: #202C33;
+    height: 65px;
 }
 
 #profile-setting {
     margin-left: 5px;
     margin-top: 8px;
     margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: 100fr 1fr 1fr;
 }
 
 #user-profile-picture {
@@ -70,16 +73,22 @@ button:active {
     margin-bottom: 6px;
 }
 
-#setting-button {
-    background-image: url("imgs/settings.png");
+#StartNewChat {
     background-color: transparent;
     border: 0;
-    background-blend-mode: multiply;
-    background-size: cover;
+    width: 40px;
+    height: 40px;
+    margin-right: 12.5px;
+    translate: 2px 4px;
+} #StartNewChat:hover {cursor: pointer;} #StartNewChat:active {opacity: 0.7;}
+
+#setting-button {
+    background-color: transparent;
+    border: 0;
     width: 40px;
     height: 40px;
     margin-right: 10px;
-    float: right;
+    margin-left: 12.5px;
     translate: 2px 4px;
 } #setting-button:hover {cursor: pointer;} #setting-button:active {opacity: 0.7;}
 
@@ -283,7 +292,7 @@ button:active {
 
 #chat_actions {
     display: inline;
-    text-align: left;
+    text-align: center;
     /* #202C33 */
     /* background-color: rgba(32, 44, 51, 0.5); */
     max-height: 54px;
@@ -344,6 +353,16 @@ button:active {
     cursor: pointer;
 }
 
+#delete_recording {
+    background-color: transparent;
+    background-size: cover;
+    margin-right: 12.5px;
+    border: 0;
+    width: 50px;
+    height: 50px;
+    transform: translateY(-5%);
+} #delete_recording:hover {cursor: pointer;} #delete_recording:active {opacity: 0.7;}
+
 #input_box {
     display: inline;
     margin-left: 15px;
@@ -367,6 +386,7 @@ button:active {
     display: inline;
     margin-left: auto;
     margin-right: auto;
+    align-items: center;
 }
 
 #send_msg {
@@ -375,8 +395,19 @@ button:active {
     border: 0;
     width: 50px;
     height: 50px;
+    margin-left: 10px;
     transform: translateY(-5%);
 } #send_msg:hover {cursor: pointer;} #send_msg:active {opacity: 0.7;}
+
+#record_msg {
+    background-color: transparent;
+    background-size: cover;
+    border: 0;
+    width: 50px;
+    height: 50px;
+    margin-right: 10px;
+    transform: translateY(-5%);
+} #record_msg:hover {cursor: pointer;} #record_msg:active {opacity: 0.7;}
 
 
                     /* Scrollbar Style */

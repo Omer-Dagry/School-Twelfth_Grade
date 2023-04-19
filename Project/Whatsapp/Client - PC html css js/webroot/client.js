@@ -253,8 +253,8 @@ function adjust_msgs_input_width() {
     let send_btn = document.getElementById("send_msg");
     let msgs_input = document.getElementById("msg_input");
     let upload_file = document.getElementById("upload_file");
-    let width = 84;
-    while (elementInViewport(send_btn) && elementInViewport(upload_file)) {
+    let width = 45;
+    while (elementInViewport(send_btn) && elementInViewport(upload_file) && width < 78) {
         width++;
         msgs_input.style.width = `${width}%`;
     }
@@ -263,6 +263,7 @@ function adjust_msgs_input_width() {
         msgs_input.style.width = `${width}%`;
     }
     msgs_input.style.width = `${width - 1}%`;
+    console.log(width - 1);
 }
 
 
@@ -472,8 +473,9 @@ async function ask_for_username() {
 
 
                                 /* Communication */
-async function send_file() {
-    await eel.send_file(get_open_chat_id())();
+async function send_file(chat_id, file_path="") {
+    console.log(chat_id, file_path);
+    await eel.send_file(chat_id, file_path)();
 }
 
 
@@ -506,6 +508,70 @@ async function add_user_to_group() {
 async function remove_user_from_group() {
     // await eel.remove_user_from_group(other_email, get_open_chat_id());
 }
+
+
+// recordings functions
+async function start_recording() {
+    let ok = await eel.start_recording(get_open_chat_id())();
+    if (ok) {
+        let record_btn = document.getElementById("record_msg");
+        record_btn.name = "stop-outline";
+        record_btn.onclick = stop_recording;
+        record_btn.title = "Stop recording";
+    }
+}
+async function stop_recording() {
+    let ok = await eel.stop_recording()();
+    if (ok) {
+        let record_btn = document.getElementById("record_msg");
+        record_btn.name = "mic-outline";
+        record_btn.onclick = start_recording;
+        record_btn.title = "Start recording";
+    }
+}
+function restore_input() {
+    let audio = chat_actions.getElementsByTagName("audio")[0];
+    audio.getElementsByTagName("source")[0].remove();
+    audio.remove();
+    document.getElementById("delete_recording").remove();
+    chat_actions.insertBefore(input_bar_box, document.getElementById("right_side_actions"));
+    document.getElementById("send_msg").onclick = send_message;
+}
+async function delete_recording(rec_file_path) {
+    restore_input();
+    await eel.delete_recording(rec_file_path)();
+}
+function send_recording(rec_file_path, chat_id) {
+    restore_input();
+    send_file(chat_id, rec_file_path);
+}
+// eel.expose
+function display_recording_options(rec_file_path, chat_id) {
+    if (chat_actions.contains(input_bar_box)) {
+        chat_actions.removeChild(input_bar_box);
+    } else {
+        let delete_btn = document.getElementById("delete_recording");
+        delete_btn.click();
+        chat_actions.removeChild(input_bar_box);
+    }
+    let recording_options_box = document.createElement("audio");
+    recording_options_box.controls = true;
+    recording_options_box.id = "audio_player";
+    let audio_file = document.createElement("source");
+    audio_file.src = rec_file_path;
+    audio_file.id = "audio_file";
+    audio_file.type = "audio/wav";
+    recording_options_box.appendChild(audio_file);
+    chat_actions.insertBefore(recording_options_box, document.getElementById("right_side_actions"));
+    let delete_btn = document.createElement("ion-icon");
+    delete_btn.name = "trash-outline";
+    delete_btn.id = "delete_recording";
+    delete_btn.onclick = (rec_file_path) => {delete_recording(rec_file_path)};
+    chat_actions.insertBefore(delete_btn, recording_options_box);
+    document.getElementById("send_msg").onclick = function() {send_recording(rec_file_path, chat_id)};
+    console.log("555");
+}
+// end of recordings functions
 
 
 async function make_call() {
@@ -590,11 +656,25 @@ var status_bar_name = document.getElementById("status-bar-name");  // chat name
 var status_bar_picture = document.getElementById("status-bar-picture");  // chat picture
 var status_bar_last_seen = document.getElementById("status-bar-last-seen");  // chat lst seen
 var chat_actions = document.getElementById("chat_actions");  // chat actions (file, emoji, send)
+var input_bar_box = document.getElementById("input_box");
+
+var message_options_window;
+var call_options_window;
 
 // eel
 eel.expose(get_open_chat_id);
 eel.expose(update);
 eel.expose(load_chat_buttons);
+eel.expose(display_recording_options);
 eel.expose(main);
 
 main();
+
+
+/*                                    TODOS
+* need to bind function in js to html
+* need to add buttons for adding & removing users when a chat is 'group'
+* need to add an option to upload profile picture when clicking on settings
+* need to add messages options
+* need to add buttons for new chat & new group
+*/

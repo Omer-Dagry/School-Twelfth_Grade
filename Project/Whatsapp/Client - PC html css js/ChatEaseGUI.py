@@ -1,11 +1,14 @@
 import os
+import shutil
+
 import eel
+import wave
 import time
 import json
 import pickle
+import pyaudio
 import tkinter
 import threading
-
 
 from communication import Communication as Com
 from protocol_socket import EncryptedProtocolSocket
@@ -25,6 +28,7 @@ open_chat_files_lock = threading.Lock()
 open_chat_files: list[str] = []
 chat_folder: str = ""
 message_options_root: tkinter.Tk | None = None
+stop_rec: bool = True
 
 
 """                                                 Chat                                                             """
@@ -34,6 +38,8 @@ message_options_root: tkinter.Tk | None = None
 def get_all_chat_ids() -> str:
     chat_ids = [chat_id for chat_id in os.listdir(f"webroot\\{email}") if os.path.isdir(f"webroot\\{email}\\{chat_id}")]
     chat_ids.remove("profile_pictures")
+    if "recordings" in chat_ids:
+        chat_ids.remove("recordings")
     #       [chat_id, [chat_name, last_message, time, chat_type (group or the email of the user the chat is with)]
     chat_id_last_msg_and_time: dict[str, list[str, str, str, str]] = {}
     for chat_id in chat_ids:
@@ -129,13 +135,15 @@ def update(com: Com, sync_sock: EncryptedProtocolSocket, first_time_sync_all: bo
 
 
 @eel.expose
-def send_file(chat_id: str) -> None:
-    communication.upload_file(chat_id)
+def send_file(chat_id: str, file_path: str) -> None:
+    file_path = f"webroot\\{file_path}"
+    if file_path == "webroot\\" or os.path.isfile(file_path):
+        communication.upload_file(chat_id, filename=file_path)
 
 
 @eel.expose
 def send_message(message: str, chat_id: str) -> bool:
-    return communication.send_message(chat_id, message, sock)
+    return communication.send_message(chat_id, message, sock) if chat_id != "" else False
 
 
 @eel.expose
@@ -160,7 +168,7 @@ def remove_user_from_group(other_email: str, chat_id: str) -> bool:
 
 @eel.expose
 def make_call(chat_id: str) -> bool:
-    return communication.make_call(chat_id)
+    return communication.make_call(chat_id) if chat_id != "" else False
 
 
 @eel.expose
@@ -176,6 +184,72 @@ def delete_message_for_me(chat_id: str, message_index: int):
 @eel.expose
 def delete_message_for_everyone(chat_id: str, message_index: int):
     return communication.delete_message_for_everyone(chat_id, message_index, message_options_root, sock)
+
+
+"""                                           Recording                                                              """
+
+
+@eel.expose
+def start_recording(chat_id: str) -> bool:
+    global stop_rec
+    if stop_rec:
+        stop_rec = False
+        recording_thread = threading.Thread(target=record_audio, args=(chat_id,), daemon=True)
+        recording_thread.start()
+        return True
+    return False
+
+
+def record_audio(chat_id: str) -> None:
+    global stop_rec
+    skip = False
+    os.makedirs("webroot\\omerdagry@gmail.com\\recordings", exist_ok=True)  # TODO: change to {email}
+    # TODO: change to {email}
+    num = max([int(num.split(".")[0]) for num in os.listdir("webroot\\omerdagry@gmail.com\\recordings")] + [0])
+    recording_file_path = f"webroot\\omerdagry@gmail.com\\recordings\\{num + 1}.wav"
+    try:
+        audio = pyaudio.PyAudio()
+        stream = audio.open(format=pyaudio.paInt16, channels=1, rate=44100, input=True, frames_per_buffer=1024)
+        frames = []
+        while not stop_rec:
+            data = stream.read(1024)
+            frames.append(data)
+        stream.stop_stream()
+        stream.close()
+        audio.terminate()
+        with open(recording_file_path, "wb") as f:
+            sound_file = wave.open(f, "wb")
+            sound_file.setnchannels(1)
+            sound_file.setsampwidth(audio.get_sample_size(pyaudio.paInt16))
+            sound_file.setframerate(44100)
+            sound_file.writeframes(b''.join(frames))
+            sound_file.close()
+    except Exception as e:  # in case there is no microphone
+        # TODO: display error message
+        skip = True
+    finally:
+        # TODO: disable recording button until RecordingOptions is closed
+        stop_rec = True
+    if not skip:
+        time.sleep(1)
+        eel.display_recording_options(recording_file_path[8:], chat_id)
+        print("done")
+
+
+@eel.expose
+def stop_recording() -> bool:
+    global stop_rec
+    if not stop_rec:
+        stop_rec = True
+        time.sleep(2)
+        return True
+    return False
+
+
+@eel.expose
+def delete_recording(recording_file_path: str):
+    if os.path.isfile(f"webroot\\{recording_file_path}"):
+        os.remove(f"webroot\\{recording_file_path}")
 
 
 """                                 Connect To Server & Start GUI & Sync                                             """
@@ -199,19 +273,25 @@ def start(user_email: str, user_username: str, user_password: str,
     while not first_sync_done:
         time.sleep(0.1)
     # Launch GUI
-    eel.init("webroot")
-    eel.start("index.html", port=8080)
-
-    # # ---------------------------------------------------------------
-    # d = {}
-    # for i in range(4, 804):
-    #     from_ = "omerdagry@gmail.com" if i % 2 == 0 else random.choice(["dor", "yuval", "ofri", "yoav", "liav"])
-    #     d[i] = [from_, str(i), "msg", [], False, [], datetime.datetime.now().strftime("%m/%d/%Y")]
-    # with open("check", "wb") as f:
-    #     f.write(pickle.dumps(d))
+    try:
+        eel.init("webroot")
+        eel.start("index.html", port=8080)
+    finally:
+        shutil.rmtree(f"webroot\\{email}\\recordings")
 
 
 if __name__ == '__main__':
     # start("omerdagry@gmail.com", "Omer Dagry", "", ("127.0.0.1", 8820), True)
-    eel.init("webroot")
-    eel.start("index.html", port=8080)
+
+    # --------------------------------------
+
+    email = "omerdagry@gmail.com"
+    username = "Omer Dagry"
+    try:
+        eel.init("webroot")
+        eel.start("index.html", port=8080)
+    finally:
+        shutil.rmtree("webroot\\omerdagry@gmail.com\\recordings")
+
+
+# TODO: add a communication options to upload a group picture

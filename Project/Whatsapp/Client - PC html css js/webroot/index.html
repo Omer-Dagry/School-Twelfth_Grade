@@ -15,8 +15,10 @@
           <!-- Profile & Settings -->
           <div id="profile-setting_box">
             <div id="profile-setting">
-              <button id="user-profile-picture"></button>
-              <ion-icon name="settings" id="setting-button"></ion-icon>
+              <button id="user-profile-picture" title="Prifile Picture"></button>
+              <ion-icon name="chatbox-outline" id="StartNewChat" title="Start new chat" onclick="new_chat()"></ion-icon>
+              <!-- <ion-icon name="people-circle-outline"></ion-icon> -->
+              <ion-icon name="settings" id="setting-button" title="Settings" onclick="settings()"></ion-icon>
             </div>
           </div>
           <!-- Search Chats -->
@@ -41,7 +43,7 @@
               <!-- Last Seen (only for 1 on 1 chats) -->
               <div id="status-bar-last-seen"></div>
               <!--  -->
-              <ion-icon name="call" id="call_btn" onclick="make_a_call()"></ion-icon>
+              <ion-icon name="call" id="call_btn" onclick="make_a_call()" title="Start a call"></ion-icon>
             </div>
           </div>
           <!-- The Chat itself -->
@@ -49,8 +51,8 @@
           <!-- Chats Actions (e.g send msg, file & emoji) -->
           <div id="chat_actions">
             <div id="left_side_actions">
-              <ion-icon name="document" id="upload_file" onclick="send_file()"></ion-icon>
-              <ion-icon name="happy-outline" id="emoji_drawer_btn" onclick="toggleEmojis()"></ion-icon>
+              <ion-icon name="document" id="upload_file" onclick="send_file()" title="Upload File"></ion-icon>
+              <ion-icon name="happy-outline" id="emoji_drawer_btn" onclick="toggleEmojis()" title="Emoji"></ion-icon>
             </div>
             
             <div id="input_box">
@@ -58,7 +60,8 @@
             </div>
 
             <div id="right_side_actions">
-              <ion-icon name="send-outline" id="send_msg" onclick="send_message()"></ion-icon>
+              <ion-icon name="mic-outline" id="record_msg" onclick="start_recording()" title="Start recording"></ion-icon>
+              <ion-icon name="send-outline" id="send_msg" onclick="send_message()" title="Send"></ion-icon>
             </div>
           </div>
         </div>
@@ -76,5 +79,8 @@
     <!-- <script type="text/javascript" src="selection.js"></script> -->
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <script>
+      adjus
+    </script>
   </body>
 </html>
