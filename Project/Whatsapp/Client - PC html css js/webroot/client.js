@@ -50,21 +50,23 @@ function get_last_checked_user() {
         user = children[index];
         if (!user.getElementsByClassName("create_chat_or_group_checkbox")[0].checked) return user;
     }
-    return children[children.length - 2];
+    return null;
 }
 function check_user(other_email, user_box_div) {
     let checkbox = document.getElementById(other_email);
-    checkbox.checked = !checkbox.checked;
     if (users_list.childElementCount > 1) {
-        if (checkbox.checked) {
+        if (!checkbox.checked) {
             users_list.prepend(user_box_div.sep);
             users_list.prepend(user_box_div);
         } else {
-            users_list.insertBefore(user_box_div.sep, get_last_checked_user());
+            let before_element = get_last_checked_user();
+            if (before_element == null) users_list.appendChild(user_box_div.sep);
+            else users_list.insertBefore(user_box_div.sep, before_element);
             users_list.insertBefore(user_box_div, user_box_div.sep);
         }
         users_list.prepend(create_new_chat_or_group);
     }
+    checkbox.checked = !checkbox.checked;
 }
 
 // sort chats
@@ -599,11 +601,12 @@ function new_group_or_chat() {
     else if (checked_users.length == 1) new_chat(checked_users[0]);
     else {
         // get group name, can't start with spaces, can't be "" and can't contain only spaces
-        let foo = "";
-        while (foo == null || foo == "" || !foo.replace(/\s/g, '').length || foo[0] == " ") {
-            foo = prompt('Please Enter Group Name: ');
+        let group_name = "";
+        while (group_name != null && (group_name == "" || 
+               !group_name.replace(/\s/g, '').length || group_name[0] == " ")) {
+            group_name = prompt('Please Enter Group Name: ');
         }
-        new_group(checked_users, group_name);
+        if (group_name != null) new_group(checked_users, group_name);
     }
     toggle_chats_users();
 }
