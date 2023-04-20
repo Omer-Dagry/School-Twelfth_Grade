@@ -84,7 +84,7 @@ def get_chat_msgs(chat_id: str) -> str:
 @eel.expose
 def get_more_msgs() -> str:
     open_chat_files_lock.acquire()
-    if chat_folder + "\\0" not in open_chat_files:
+    if chat_folder + "\\0" not in open_chat_files:  # no more chat files to load
         with open(chat_folder + f"\\{int(min(open_chat_files)) - 1}") as f:
             data = json.dumps(pickle.loads(f.read()))
     else:
@@ -124,9 +124,9 @@ def update(com: Com, sync_sock: EncryptedProtocolSocket, first_time_sync_all: bo
         new_data, modified_files, deleted_files = com.sync(sync_sock, sync_all if first_time_sync_all else sync_new)
         try:
             open_chat_id = eel.get_open_chat_id()
-        except AttributeError:  # as e:  # Gui haven't loaded up yet
+        except AttributeError:  # as e:  # GUI haven't loaded up yet
             # print(*traceback.format_exception(e), sep="")
-            open_chat_id = None
+            continue
         if new_data and any(open_chat_id == file_path.split("\\")[0] for file_path in modified_files + deleted_files):
             for file in modified_files:
                 with open(file, "rb") as f:
@@ -257,6 +257,20 @@ def stop_recording() -> bool:
 def delete_recording(recording_file_path: str):
     if os.path.isfile(f"webroot\\{recording_file_path}"):
         os.remove(f"webroot\\{recording_file_path}")
+
+
+"""                                           Other Functions                                                        """
+
+
+@eel.expose
+def start_file(file_path: str) -> bool:
+    if os.path.isfile(file_path):
+        os.startfile(file_path)
+        return True
+    elif os.path.isfile(f"web_root\\{file_path}"):
+        os.startfile(f"web_root\\{file_path}")
+        return True
+    return False
 
 
 """                                 Connect To Server & Start GUI & Sync                                             """

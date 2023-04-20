@@ -2,18 +2,12 @@
 function assert(condition, message) {
     if (!condition) throw "Assertion failed - " + message;
 }
-
-
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
-
-
 function isOverflown(element) {
     return element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth;
 }
-
-
 function elementInViewport(el) {
     var top = el.offsetTop;
     var left = el.offsetLeft;
@@ -36,6 +30,135 @@ function elementInViewport(el) {
 
 
                                 /* Chat Buttons */
+// new chat/group
+function get_all_checked_users_emails() {
+    let checked_users = [];
+    let children = [].slice.call(users_list.getElementsByClassName("chat"));
+    let user;
+    for (let index in children) {
+        user = children[index];
+        if (user.getElementsByClassName("create_chat_or_group_checkbox")[0].checked){
+            checked_users.push(user.getElementsByClassName("chat-name")[0].innerHTML)
+        }
+    }
+    return checked_users;
+}
+function get_last_checked_user() {
+    let children = [].slice.call(users_list.getElementsByClassName("chat"));
+    let user;
+    for (let index in children) {
+        user = children[index];
+        if (!user.getElementsByClassName("create_chat_or_group_checkbox")[0].checked) return user;
+    }
+    return children[children.length - 2];
+}
+function check_user(other_email, user_box_div) {
+    let checkbox = document.getElementById(other_email);
+    checkbox.checked = !checkbox.checked;
+    if (users_list.childElementCount > 1) {
+        if (checkbox.checked) {
+            users_list.prepend(user_box_div.sep);
+            users_list.prepend(user_box_div);
+        } else {
+            users_list.insertBefore(user_box_div.sep, get_last_checked_user());
+            users_list.insertBefore(user_box_div, user_box_div.sep);
+        }
+        users_list.prepend(create_new_chat_or_group);
+    }
+}
+
+// sort chats
+function sort_chats_by_date(chat_buttons, search_key) {
+    let keys, chat_button
+    chat_buttons.sort(function(a, b) {
+        return new Date(a.getElementsByClassName("chat-last-message-time")[0].innerHTML) - 
+            new Date(b.getElementsByClassName("chat-last-message-time")[0].innerHTML);
+    });
+    keys = Object.keys(chat_buttons);
+    for (let key in keys) {
+        chat_button = chat_buttons[key];
+        if (search_key == "") {
+            chat_button.style.visibility = 'visible';
+            chat_button.sep.style.visibility = 'visible';
+        } else if (chat_button.style.visibility == "hidden") continue;
+        chats_list.prepend(chat_button.sep);
+        chats_list.prepend(chat_button);
+    }
+    return;
+}
+
+// search (in chats/users)
+function chat_search() {
+    let search_key = document.getElementById("search_chat").value.toLowerCase();
+    if (search_key == current_search_key) return;  // prevet calculation for no reason
+    current_search_key = search_key;
+    let chat_buttons = [].slice.call(document.getElementsByClassName("chat"));
+    let keys = Object.keys(chat_buttons);
+    let chat_button, chat_name, last_msg, last_msg_time;
+    if  (search_key == "") {
+        sort_chats_by_date(chat_buttons, search_key); 
+        return;
+    }
+    for (let key in keys) {
+        chat_button = chat_buttons[key];
+        chat_name = chat_button.getElementsByClassName("chat-name")[0].innerHTML.toLowerCase();
+        last_msg = chat_button.getElementsByClassName("chat-last-message")[0].innerHTML.toLowerCase();
+        last_msg_time = chat_button.getElementsByClassName("chat-last-message-time")[0].innerHTML.toLowerCase();
+        if ((search_key === "group" && chat_button.chat_type === "group") || 
+            (search_key === "1 on 1" && chat_button.chat_type === "1 on 1") ||
+            chat_name.includes(search_key) || 
+            last_msg.includes(search_key) || 
+            last_msg_time.includes(search_key) || search_key == chat_name) 
+        {
+            chat_button.style.visibility = 'visible';
+            chat_button.sep.style.visibility = 'visible';
+        } else {
+            chat_button.style.visibility = 'hidden';
+            chat_button.sep.style.visibility = 'hidden';
+            chats_list.appendChild(chat_button);
+            chats_list.appendChild(chat_button.sep);
+        }
+    }
+    sort_chats_by_date(chat_buttons, search_key);
+}
+function user_search() {
+    let search_key = document.getElementById("search_chat").value.toLowerCase();
+    if (search_key == current_search_key) return;  // prevet calculation for no reason
+    current_search_key = search_key;
+    let users_buttons = [].slice.call(document.getElementsByClassName("chat"));
+    let keys = Object.keys(users_buttons);
+    let users_button, chat_name, last_msg, last_msg_time;
+    if  (search_key == "") {
+        for (let key in keys) {
+            users_button = users_buttons[key];
+            chat_button.style.visibility = 'visible';
+            chat_button.sep.style.visibility = 'visible';
+        }
+        return;
+    }
+    for (let key in keys) {
+        users_button = users_buttons[key];
+        chat_name = users_button.getElementsByClassName("chat-name")[0].innerHTML.toLowerCase();
+        if ((search_key === "group" && users_button.chat_type === "group") || 
+            (search_key === "1 on 1" && users_button.chat_type === "1 on 1") ||
+            chat_name.includes(search_key) || search_key == chat_name) 
+        {
+            users_button.style.visibility = 'visible';
+            users_button.sep.style.visibility = 'visible';
+        } else {
+            users_button.style.visibility = 'hidden';
+            users_button.sep.style.visibility = 'hidden';
+            users_list.appendChild(users_button);
+            users_list.appendChild(users_button.sep);
+        }
+    }
+}
+function search() {
+    if (left_side.contains(chats_list)) chat_search();
+    else user_search();
+}
+
+// load chats/user buttons & toggle chats and users
 function chat_box_left(chat_picture_path, chat_name, last_message, 
     last_message_time, chat_id, chat_type, users) {
     // the div of the entire chat box
@@ -77,133 +200,38 @@ function chat_box_left(chat_picture_path, chat_name, last_message,
     // add event listener
     chat_box_div.addEventListener("click", function() { load_chat(chat_name, chat_id, chat_type, users) });
 }
-
-
-// new chat/group
-function get_all_checked_users_emails() {
-    let checked_users = [];
-    let children = [].slice.call(users_list.getElementsByClassName("chat"));
-    let user;
-    for (let index in children) {
-        user = children[index];
-        if (user.getElementsByClassName("create_chat_or_group_checkbox")[0].checked){
-            checked_users.push(user.getElementsByClassName("chat-name")[0].innerHTML)
-        }
-    }
-    return checked_users;
-}
-function get_last_checked_user() {
-    let children = [].slice.call(users_list.getElementsByClassName("chat"));
-    let user;
-    for (let index in children) {
-        user = children[index];
-        if (!user.getElementsByClassName("create_chat_or_group_checkbox")[0].checked) return user;
-    }
-    return children[children.length - 2];
-}
-function check_user(other_email, user_box_div) {
-    let checkbox = document.getElementById(other_email);
-    checkbox.checked = !checkbox.checked;
-    if (users_list.childElementCount > 1) {
-        if (checkbox.checked) {
-            users_list.prepend(user_box_div.sep);
-            users_list.prepend(user_box_div);
-        } else {
-            users_list.insertBefore(user_box_div.sep, get_last_checked_user());
-            users_list.insertBefore(user_box_div, user_box_div.sep);
-        }
-        users_list.prepend(create_new_chat_or_group);
-    }
-}
 function user_box_left(user_picture_path, other_email) {
-        // the div of the entire user box
-        let user_box_div = document.createElement("div");
-        user_box_div.className = "chat";
-        // user picture div
-        let user_picture_div = document.createElement("div");
-        user_picture_div.className = "chat-picture";
-        user_picture_div.style.backgroundImage = user_picture_path;
-        // user email div
-        let user_email_div = document.createElement("div");
-        user_email_div.className = "chat-name";
-        user_email_div.innerHTML = other_email;
-        // checkbox (add to chat/group or not)
-        let checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.id = other_email;
-        checkbox.className = "create_chat_or_group_checkbox";
-        // append all elements to chat box
-        user_box_div.appendChild(user_picture_div);
-        user_box_div.appendChild(user_email_div);
-        user_box_div.appendChild(checkbox);
-        // user sep
-        let user_sep = document.createElement("hr");
-        user_sep.className = "rounded-chat-sep";
-        // append user box to users list
-        users_list.appendChild(user_box_div);
-        users_list.appendChild(user_sep);
-        // save refrence to sep
-        user_box_div.sep = user_sep;
-        // add event listener
-        user_box_div.addEventListener("click", function() { check_user(other_email, user_box_div) });
+    // the div of the entire user box
+    let user_box_div = document.createElement("div");
+    user_box_div.className = "chat";
+    // user picture div
+    let user_picture_div = document.createElement("div");
+    user_picture_div.className = "chat-picture";
+    user_picture_div.style.backgroundImage = user_picture_path;
+    // user email div
+    let user_email_div = document.createElement("div");
+    user_email_div.className = "chat-name";
+    user_email_div.innerHTML = other_email;
+    // checkbox (add to chat/group or not)
+    let checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.id = other_email;
+    checkbox.className = "create_chat_or_group_checkbox";
+    // append all elements to chat box
+    user_box_div.appendChild(user_picture_div);
+    user_box_div.appendChild(user_email_div);
+    user_box_div.appendChild(checkbox);
+    // user sep
+    let user_sep = document.createElement("hr");
+    user_sep.className = "rounded-chat-sep";
+    // append user box to users list
+    users_list.appendChild(user_box_div);
+    users_list.appendChild(user_sep);
+    // save refrence to sep
+    user_box_div.sep = user_sep;
+    // add event listener
+    user_box_div.addEventListener("click", function() { check_user(other_email, user_box_div) });
 }
-
-
-function sort_chats_by_date(chat_buttons, search_key) {
-    let keys, chat_button
-    chat_buttons.sort(function(a, b) {
-        return new Date(a.getElementsByClassName("chat-last-message-time")[0].innerHTML) - 
-            new Date(b.getElementsByClassName("chat-last-message-time")[0].innerHTML);
-    });
-    keys = Object.keys(chat_buttons);
-    for (let key in keys) {
-        chat_button = chat_buttons[key];
-        if (search_key == "") {
-            chat_button.style.visibility = 'visible';
-            chat_button.sep.style.visibility = 'visible';
-        } else if (chat_button.style.visibility == "hidden") continue;
-        chats_list.prepend(chat_button.sep);
-        chats_list.prepend(chat_button);
-    }
-    return;
-}
-
-
-function chat_search() {
-    let search_key = document.getElementById("search_chat").value.toLowerCase();
-    if (search_key == current_search_key) return;  // prevet calculation for no reason
-    current_search_key = search_key;
-    let chat_buttons = [].slice.call(document.getElementsByClassName("chat"));
-    let keys = Object.keys(chat_buttons);
-    let chat_button, chat_name, last_msg, last_msg_time, sep;
-    if  (search_key == "") {
-        sort_chats_by_date(chat_buttons, search_key); 
-        return;
-    }
-    for (let key in keys) {
-        chat_button = chat_buttons[key];
-        chat_name = chat_button.getElementsByClassName("chat-name")[0].innerHTML.toLowerCase();
-        last_msg = chat_button.getElementsByClassName("chat-last-message")[0].innerHTML.toLowerCase();
-        last_msg_time = chat_button.getElementsByClassName("chat-last-message-time")[0].innerHTML.toLowerCase();
-        if ((search_key === "group" && chat_button.chat_type === "group") || 
-            (search_key === "1 on 1" && chat_button.chat_type === "1 on 1") ||
-            chat_name.includes(search_key) || 
-            last_msg.includes(search_key) || 
-            last_msg_time.includes(search_key) || search_key == chat_name) 
-        {
-            chat_button.style.visibility = 'visible';
-            chat_button.sep.style.visibility = 'visible';
-        } else {
-            chat_button.style.visibility = 'hidden';
-            chat_button.sep.style.visibility = 'hidden';
-            chats_list.appendChild(chat_button);
-            chats_list.appendChild(chat_button.sep);
-        }
-    }
-    sort_chats_by_date(chat_buttons, search_key);
-}
-
-
 async function load_chat_buttons() {
     let changed = false;
     if (document.contains(chats_list)) {
@@ -228,8 +256,6 @@ async function load_chat_buttons() {
     setTimeout(load_chat_buttons, 2_000);  // every 2 seconds update
     if (document.contains(chats_list) && changed) chat_search();
 }
-
-
 async function load_users_buttons() {
     users_list.innerHTML = "";
     users_list.appendChild(create_new_chat_or_group);
@@ -255,7 +281,7 @@ function toggle_chats_users() {
 
 
                                     /* Chat */
-
+// chat visibility & reset chat when switching between chats
 function reset_chat_and_status_bar() {
     // reset elements
     chat.innerHTML = "";
@@ -263,8 +289,6 @@ function reset_chat_and_status_bar() {
     status_bar_name.innerHTML = "";
     status_bar_last_seen.innerHTML = "";
 }
-
-
 function change_chat_visibility(visibility) {
     if (visibility === "hidden") {
         chat.style.visibility = "hidden";
@@ -279,7 +303,40 @@ function change_chat_visibility(visibility) {
     }
 }
 
-
+// load messages (initial load, load when reaching the top of the chat, update - for changed msgs)
+async function load_msgs(chat_msgs, position = "END") {
+    let from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time;
+    let keys = [];
+    for (let key in chat_msgs) {
+        keys.push(key);
+    }
+    // sort messages by index
+    keys.sort(function(a, b) {
+        return parseInt(a) - parseInt(b);
+    });
+    // if adding more messages from the top, start from the most recent one
+    if (position === "START") keys.reverse();
+    let msg_index;
+    for (let key in keys) {
+        msg_index = keys[key];
+        [from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time] = chat_msgs[msg_index];
+        //
+        if (deleted_for.includes(email)) continue;
+        if (from_user === email) {
+            msg_from_me(
+                from_user, msg, time, msg_index, msg_type, deleted_for, 
+                deleted_for_all, seen_by, position
+            );
+        }
+        else {
+            msg_from_others(
+                from_user, msg, time, msg_index, msg_type, deleted_for, 
+                deleted_for_all, seen_by, position
+            ); 
+        }
+        if (last_msg_index < msg_index) last_msg_index = msg_index;
+    }
+}
 async function load_chat(chat_name, chat_id, chat_type, users) {
     if (chat_id == chat.chat_id) {
         change_chat_visibility(chat.style.visibility == "visible" ? "hidden" : "visible");
@@ -306,44 +363,6 @@ async function load_chat(chat_name, chat_id, chat_type, users) {
     status_bar_name.innerHTML = chat_name;
     chat.scrollTo(0, chat.scrollHeight);
 }
-
-
-async function load_msgs(chat_msgs, position = "END") {
-    let from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time;
-    // let keys = [].slice.call(Object.keys(chat_msgs));
-    let keys = [];
-    for (let key in chat_msgs) {
-        keys.push(key);
-    }
-    // sort messages by index
-    keys.sort(function(a, b) {
-        return parseInt(a) - parseInt(b);
-    });
-    // if adding more messages from the top, start from the most recent one
-    if (position === "START") keys.reverse();
-    let msg_index;
-    for (let key in keys) {
-        msg_index = keys[key];
-        [from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time] = chat_msgs[msg_index];
-        //
-        if (email in deleted_for) continue;
-        if (from_user === email) {
-            msg_from_me(
-                from_user, msg, time, msg_index, msg_type, deleted_for, 
-                deleted_for_all, seen_by, position
-            );
-        }
-        else {
-            msg_from_others(
-                from_user, msg, time, msg_index, msg_type, deleted_for, 
-                deleted_for_all, seen_by, position
-            ); 
-        }
-        if (last_msg_index < msg_index) last_msg_index = msg_index;
-    }
-}
-
-
 async function load_more_msgs() {
     let first_msg = chat.firstChild;
     let chat_id = chat.chat_id;
@@ -357,15 +376,35 @@ async function load_more_msgs() {
     first_msg.scrollIntoView(true);
     chat.scrollBy(0, -200);  // show some of the new loaded messages
 }
-
-
 function check_pos() {
     if (chat.scrollTop == 0) {
         load_more_msgs();
         chat.onscroll = null;  // disable until finished loading all new msgs
     }
 }
-
+// eel.expose
+function update(chat_id, ...chat_msgs_list_of_dicts) {
+    if (chat_id !== chat.chat_id) return null;
+    let from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time, msg_row, keys;
+    let new_messages = {};
+    for (let chat_msgs in chat_msgs_list_of_dicts) {
+        keys = Object.keys(chat_msgs);
+        keys.sort(function(a, b) {
+            return parseInt(a) - parseInt(b);
+        });
+        for (let msg_index in chat_msgs) {
+            [from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time] = chat_msgs[msg_index];
+            if (msg_index > last_msg_index) {  // new messages
+                new_messages[msg_index] = [from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time]
+            }
+            // old message that has been changed
+            // TODO: check if deleted and change color
+            msg_row = document.getElementById(`msg_${msg_index}`);
+            msg_row.getElementsByClassName("msg_text")[0].innerHTML = msg;
+        }
+    }
+    load_msgs(new_messages);
+}
 
 function adjust_msgs_input_width() {
     let send_btn = document.getElementById("send_msg");
@@ -381,30 +420,7 @@ function adjust_msgs_input_width() {
         msgs_input.style.width = `${width}%`;
     }
     msgs_input.style.width = `${width - 1}%`;
-    console.log(width - 1);
 }
-
-
-// eel.expose
-function update(chat_id, ...chat_msgs_list_of_dicts) {
-    if (chat_id !== chat.chat_id) return null;
-    let from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time, msg_row, keys;
-    for (let chat_msgs in chat_msgs_list_of_dicts) {
-        keys = Object.keys(chat_msgs);
-        keys.sort(function(a, b) {
-            return parseInt(a) - parseInt(b);
-        });
-        for (let msg_index in chat_msgs) {
-            if (msg_index > last_msg_index) break;
-            [from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time] = chat_msgs[msg_index];
-            //
-            // check if deleted and change color
-            msg_row = document.getElementById(`msg_${msg_index}`);
-            msg_row.getElementsByClassName("msg_text")[0].innerHTML = msg;
-        }
-    }
-}
-
 
 // eel.expose
 function get_open_chat_id() {
@@ -417,7 +433,6 @@ function get_open_chat_id() {
 function message_options() {
 
 }
-
 function handle_msg_length(msg) {
     let max_chars = 55;
     if (msg.length < max_chars) return msg;
@@ -459,7 +474,7 @@ function add_msg(from, sender, msg, time, msg_index, msg_type, deleted_for,
         sender = sender.slice(0, sender.length - 1).join("@") + ":";
         if (deleted_for_all) {
             // This message was deleted.
-        } else if (email in deleted_for) {
+        } else if (deleted_for.includes(email)) {
             return;
         } else if (msg_type == "msg") {
             msg = handle_msg_length(msg);
@@ -484,15 +499,11 @@ function add_msg(from, sender, msg, time, msg_index, msg_type, deleted_for,
             */
         }
 }
-
-
 function msg_from_me(sender, msg, time, msg_index, msg_type, deleted_for, 
     deleted_for_all, seen_by, position="END") {
     add_msg("me", sender, msg, time, msg_index, msg_type, deleted_for, 
     deleted_for_all, seen_by, position="END");
 }
-
-
 function msg_from_others(sender, msg, time, msg_index, msg_type, deleted_for, 
     deleted_for_all, seen_by, position="END") {
     add_msg("others", sender, msg, time, msg_index, msg_type, deleted_for, 
@@ -563,41 +574,38 @@ async function ask_for_username() {
 
 
                                 /* Communication */
+// send message/file
 async function send_file(chat_id, file_path="") {
-    console.log(chat_id, file_path);
     await eel.send_file(chat_id, file_path)();
 }
-
-
 async function send_message() {
     let input_bar = document.getElementById("msg_input");
     let msg = input_bar.value;
     input_bar.value = "";  // clear input bar
     await eel.send_message(msg, get_open_chat_id())();
 }
-
-
+// new chat/group
+async function new_chat(other_email) {
+    console.log(`new chat ${other_email}`)
+    await eel.new_chat(other_email)();
+}
+async function new_group(other_emails, group_name) {
+    console.log(`new group ${other_emails}`)
+    await eel.new_group(other_emails, group_name)();
+}
 function new_group_or_chat() {
     let checked_users = get_all_checked_users_emails();
     if (checked_users.length == 0) ;
     else if (checked_users.length == 1) new_chat(checked_users[0]);
-    else new_group(checked_users);
+    else {
+        // get group name, can't start with spaces, can't be "" and can't contain only spaces
+        let foo = "";
+        while (foo == null || foo == "" || !foo.replace(/\s/g, '').length || foo[0] == " ") {
+            foo = prompt('Please Enter Group Name: ');
+        }
+        new_group(checked_users, group_name);
+    }
     toggle_chats_users();
-}
-
-
-async function new_chat(other_email) {
-    console.log(`new chat ${other_email}`)
-    // let other_email = "TODO: add a button that opens an input to start new chat";
-    // await eel.new_chat(other_email)();
-}
-
-
-async function new_group(other_emails) {
-    console.log(`new group ${other_emails}`)
-    // let other_emails = ["TODO: add a button that opens an input to start new group"];
-    // let group_name = "TODO: also add an input for group name";
-    // await eel.new_group(other_emails, group_name)();
 }
 
 
@@ -670,7 +678,6 @@ function display_recording_options(rec_file_path, chat_id) {
     delete_btn.onclick = (rec_file_path) => {delete_recording(rec_file_path)};
     chat_actions.insertBefore(delete_btn, recording_options_box);
     document.getElementById("send_msg").onclick = function() {send_recording(rec_file_path, chat_id)};
-    console.log("555");
 }
 // end of recordings functions
 
@@ -692,24 +699,6 @@ async function delete_message_for_me() {
 
 async function delete_message_for_everyone() {
     // await eel.delete_message_for_everyone(chat_id, message_index);
-}
-
-
-function demo() {
-    console.log("demo");
-    // create all chat boxes
-    for (let i = 1; i < 200; i ++) chat_box_left('imgs/profile.jpg', `test${i}`, "holla", "10:43", i);
-    for (let i = 1; i < 800; i++) {
-        msg_from_me("omer", "aoiushdfoiahsdfoijasdopifjasopdifjasl;dk1234567890uw3n4yct9o7823y4trc908weymcopgfiuweyr", 
-        "18:05", i, "msg", [], false, [], "START");
-        msg_from_others("someone", "aoiushdfoiahsdfoijasdopifjasopdifjasl;dk12345678909m3cy9t723htf79weuhrfgiuwer", 
-        "18:05", i, "msg", [], false, [], "START");
-    }
-    msg_from_me("omer", "מה קורה", "18:01", 800, "msg", [], false, [], "START");
-    // reset_chat_and_status_bar();
-    chat.scrollTo(0, chat.scrollHeight);
-    console.log("demo done");
-    // eel.hello("Asdfasdf")();
 }
 
 
@@ -781,7 +770,5 @@ main();
 /*                                    TODOS
 * need to bind function in js to html
 * need to add buttons for adding & removing users when a chat is 'group'
-* need to add an option to upload profile picture when clicking on settings
 * need to add messages options
-* need to add buttons for new chat & new group
 */
