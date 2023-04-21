@@ -76,7 +76,7 @@ class SyncDatabase:
     def safe_set(self, key: Hashable, val: Any) -> bool:
         """ add key: val, only if key is not already in database """
         self.__acquire_all()
-        if key not in self.__database:
+        if key in self.__database:
             result = False
         else:
             result = True

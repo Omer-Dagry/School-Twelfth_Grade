@@ -164,6 +164,34 @@ button:active {
     background-color: forestgreen;
     color: white;
     border: 0 transparent;
+    animation: 1s slideInTop;
+    transition: all .2s ease-in-out;
+}
+
+#non_familiar_user_search_input {
+    margin-left: 10px;
+    margin-bottom: 20px;
+    width: 60%;
+    font-size: 20;
+    height: 20px;
+    border-radius: 8px;
+    background-color: #202C33;
+    border-color: transparent;
+    color: rgb(200, 200, 200);
+    animation: 1s slideInLeft;
+    transition: all .2s ease-in-out;
+}
+
+#non_familiar_user_search_btn {
+    float: right;
+    width: 80px;
+    margin-top: 2.5px;
+    margin-right: 20px;
+    background-color: forestgreen;
+    color: white;
+    border: 0 transparent;
+    animation: 1s slideInRight;
+    transition: all .2s ease-in-out;
 }
 
 .chat {
@@ -298,32 +326,37 @@ button:active {
     overflow-y: scroll;
 }
 
-.msg_row {
+.clear {
+    border: none;
     clear: both;
+}
+
+.msg_row {
     margin-left: 1%;
-    max-width: 50vh;
+    max-width: 55vh;
+    margin-bottom: 15px;
 }
 
 .msg_box {
     /* background-color: rgb(219, 219, 12); */
     background-color: #202C33;
-    border-radius: 30000000000px;
+    border-radius: 8px;
     padding: 2px;
     width: fit-content;
     height: fit-content;
 }
 
 .my_msg_row {
-    clear: both;
     float: right;
     margin-right: 3%;
-    max-width: 50vh;
+    max-width: 55vh;
+    margin-bottom: 15px;
 }
 
 .my_msg_box {
     /* background-color: rgb(202, 128, 141); */
     background-color: #095B4A;
-    border-radius: 30000000000px;
+    border-radius: 8px;
     padding: 2px;
     width: fit-content;
     height: fit-content;
@@ -337,16 +370,32 @@ button:active {
     min-width: fit-content;
 }
 
+.msg_sender_picture {
+    border: 0;
+    background-size: cover;
+    width: 20px;
+    height: 20px;
+    border-radius: 20px;
+    margin-bottom: 5px;
+    margin-right: 10px;
+    float: left;
+    display: inline;
+}
+
 .msg_sender {
     font-size: smaller;
     color: white;
     padding-bottom: 4px;
+    margin-bottom: 10px;
 }
 
 .msg_text {
-    color: white;
     font-size: large;
     padding: 1px;
+}
+
+.my_msg_row .msg_data .msg_sender {
+    color: #3285b4;
 }
 
 #chat_actions {

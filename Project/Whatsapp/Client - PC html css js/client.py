@@ -10,6 +10,8 @@ import time
 import socket
 import hashlib
 import logging
+import traceback
+
 import ChatEaseGUI
 
 from typing import *
@@ -127,37 +129,28 @@ def login_signup(server_ip_port: tuple[str, int]) -> tuple[bool, EncryptedProtoc
             return True, sock
 
 
-def sync_(gui, sync_sock: EncryptedProtocolSocket, first_time_all: bool = False,
-          time_between: int = 0.2) -> None:
-    # TODO: make communication.sync return the modified/new files
-    global password
-    if first_time_all:
-        communication.sync(sync_sock, "all")
-    while True:
-        new_data = communication.sync(sync_sock)
-        if new_data:
-            gui.update()
-        time.sleep(time_between)
-
-
 def main():
     # TODO: create a GUI to login and signup (also add option to sync all once or just sync new)
     first_time_sync_all = True
-    global username, password
+    global username, password, communication
     try:
         # signup and then login / login (asks for username and password and logs in the socket)
         ok, sock = login_signup((SERVER_IP, SERVER_PORT))
         if ok:
+            if communication is None:  # if user signed up
+                communication = Com(email, password, SERVER_IP_PORT)
             # got username and password, login the sync socket as well
             ok2, sync_sock, username = communication.login(verbose=False)
             ok &= ok2
             if username is not None and password is not None and ok:
-                ChatEaseGUI.start(email, username, password, SERVER_IP_PORT, first_time_sync_all)
-    except (ConnectionError, socket.error):
+                ChatEaseGUI.start(email, username, password, SERVER_IP_PORT, first_time_sync_all, sock, sync_sock)
+    except (ConnectionError, socket.error) as e:
         if "sock" in locals():
             sock.close()
         if "sync_sock" in locals():
             sync_sock.close()
+        print(traceback.format_exception(e))
+    print("bye")
 
 
 if __name__ == '__main__':

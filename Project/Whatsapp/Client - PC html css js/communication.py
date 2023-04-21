@@ -15,6 +15,10 @@ REMOVE = "remove"
 SYNC_MODES = ["new", "all"]
 
 
+def showerror(title: str | None, message: str | None, **options) -> None:
+    Thread(target=messagebox.showerror, args=(title, message,), kwargs=options).start()
+
+
 def signup(username: str, email: str, password: str, server_ip_port: tuple[str, int], verbose: bool = True,
            sock: EncryptedProtocolSocket | None = None, login_after: bool = True) \
         -> tuple[bool, None | EncryptedProtocolSocket]:
@@ -34,17 +38,22 @@ def signup(username: str, email: str, password: str, server_ip_port: tuple[str, 
     if sock is None:
         sock = EncryptedProtocolSocket()
         sock.connect(server_ip_port)
-    sock.send_message(signup_msg)
-    confirmation_code_msg = sock.receive_message()
-    if confirmation_code_msg[:30].strip() == "confirmation_code":
-        sock.send_message(
-            f"{'confirmation_code'.ljust(30)}"
-            f"{input('Please enter your confirmation code (sent to your email): ')}".encode()
-        )
+    if not sock.send_message(signup_msg):
+        showerror("Signup Error", "Could not send signup request, lost connection to server.")
+        sock.close()
+        return False, None
+    confirmation_code_msg = sock.receive_message().decode()
+    if confirmation_code_msg.strip() == "confirmation_code":
+        if not sock.send_message(
+                f"{'confirmation_code'.ljust(30)}"
+                f"{input('Please enter your confirmation code (sent to your email): ')}".encode()):
+            showerror("Signup Error", "Could not send signup confirmation code, lost connection to server.")
+            sock.close()
+            return False, None
     else:
         return False, None
     # signup (length 30)   status (length 6)   reason
-    response = sock.receive_message()
+    response = sock.receive_message().decode()
     if response[:30].strip() not in ["login", "signup"]:
         return False, None
     response = response[30:]
@@ -71,7 +80,7 @@ def reset_password(username: str, email: str, server_ip_port: tuple[str, int]
     sock = EncryptedProtocolSocket()
     sock.connect(server_ip_port)
     if not sock.send_message(f"{'reset password'.ljust(30)}{str(len(email)).ljust(15)}{email}{username}".encode()):
-        messagebox.showerror(
+        showerror(
             "Reset Password Error", "Could not send reset password request, lost connection to server.")
         sock.close()
         return False, None
@@ -119,9 +128,12 @@ class Communication:
         if sock is None:
             sock = EncryptedProtocolSocket()
             sock.connect(self.__server_ip_port)
-        sock.send_message(login_msg)
+        if not sock.send_message(login_msg):
+            showerror("Login Error", "Could not send login request, lost connection to server.")
+            sock.close()
+            return False, None, ""
         # login (length 30)   status (length 6)   reason
-        response = sock.receive_message()
+        response = sock.receive_message().decode()
         if response[:30].strip() not in ["login", "signup"]:
             return False, None, ""
         response = response[30:]
@@ -145,7 +157,10 @@ class Communication:
         """
         if mode not in SYNC_MODES:
             raise ValueError(f"param 'mode' should be either 'new' or 'all', got '{mode}'")
-        sock.send_message(f"sync {mode}".ljust(30).encode())
+        if not sock.send_message(f"sync {mode}".ljust(30).encode()):
+            showerror("Sync Error", "Could not send sync request, lost connection to server.")
+            sock.close()
+            return False, [], []
         response = sock.receive_message()
         #                         cmd                  {}             str       bytes
         # response -> f"{'sync new/all'.ljust(30)}{empty-dict/dict[file_name, file_data]}"
@@ -159,15 +174,23 @@ class Communication:
             deleted_files_path: list[str | os.PathLike] = []
             modified_files_path: list[str | os.PathLike] = []
             for file_path, file_data in files_dict.items():
-                file_path = f"{self.__email}\\{file_path}"
+                if file_path.startswith(self.__email):
+                    file_path = f"webroot\\{file_path}"
+                else:
+                    file_path = f"webroot\\{self.__email}\\{file_path}"
                 # if it's a not remove message
                 # a remove message will be after a request of a client
                 # to delete message for everyone, if the message is a file
                 # in order to delete the file on the clients side
                 if file_data != REMOVE:
                     modified_files_path.append(file_path)
-                    with open(file_path, "wb") as f:
-                        f.write(file_data)
+                    for _ in range(2):
+                        try:
+                            with open(file_path, "wb") as f:
+                                f.write(file_data)
+                            break
+                        except FileNotFoundError:
+                            os.makedirs("\\".join(file_path.split("\\")[:-1]))
                 elif os.path.isfile(file_path):  # a file was deleted in a chat
                     deleted_files_path.append(file_path)
                     os.remove(file_path)
@@ -198,7 +221,7 @@ class Communication:
         request = f"{'file'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}" \
                   f"{str(len(file_name)).ljust(15)}{file_name}".encode() + file_data
         if not sock.send_message(request):
-            messagebox.showerror("Failed to upload file", "Could not upload the file, lost connection to server.")
+            showerror("Failed to upload file", "Could not upload the file, lost connection to server.")
             return
         if delete_file:
             os.remove(filepath)
@@ -209,11 +232,23 @@ class Communication:
         chat_id = str(chat_id)
         request = f"{'msg'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{msg}".encode()
         if not sock.send_message(request):
-            messagebox.showerror("Failed to send message", f"Could not send the message, lost connection to server.")
+            showerror("Failed to send message", f"Could not send the message, lost connection to server.")
             return False
         status_msg = sock.receive_message().decode()
-        if status_msg != f"{'msg'.ljust(30)}{'ok'.ljust(6)}":
-            messagebox.showerror("Failed to send message", f"Could not send the message, server error.")
+        if "not ok" in status_msg:
+            showerror("Failed to send message", f"Could not send the message, server error.")
+            return False
+        return True
+
+    @staticmethod
+    def familiarize_user_with(other_email: str, sock: EncryptedProtocolSocket) -> bool:
+        request = f"{'familiarize user with'.ljust(30)}{other_email}".encode()
+        if not sock.send_message(request):
+            showerror(f"Failed to familiarize user", "lost connection to server.")
+            return False
+        response = sock.receive_message()
+        if "not ok" in response.decode():
+            # showerror(f"Failed to familiarize user", response.split(b"not ok")[1].decode())
             return False
         return True
 
@@ -221,11 +256,11 @@ class Communication:
     def new_chat(other_email: str, sock: EncryptedProtocolSocket) -> bool:
         request = f"{'new chat'.ljust(30)}{other_email}".encode()
         if not sock.send_message(request):
-            messagebox.showerror(f"Failed to create new chat with '{other_email}'", "lost connection to server.")
+            showerror(f"Failed to create new chat with '{other_email}'", "lost connection to server.")
             return False
         response = sock.receive_message()
         if "not ok" in response.decode():
-            messagebox.showerror(f"Failed to create new chat with '{other_email}'", "server error.")
+            showerror(f"Failed to create new chat with '{other_email}'", "server error.")
             return False
         return True
 
@@ -233,11 +268,11 @@ class Communication:
     def new_group(other_emails: list[str], group_name: str, sock: EncryptedProtocolSocket) -> tuple[bool, str]:
         request = f"{'new chat'.ljust(30)}{group_name}".encode() + pickle.dumps(other_emails)
         if not sock.send_message(request):
-            messagebox.showerror(f"Failed to create new group", "lost connection to server.")
+            showerror(f"Failed to create new group", "lost connection to server.")
             return False, ""
         response = sock.receive_message().decode()
         if "not ok" in response:
-            messagebox.showerror(f"Failed to create new group", "server error.")
+            showerror(f"Failed to create new group", "server error.")
             return False, ""
         chat_id = response.split("ok")[-1].strip()
         return True, chat_id
@@ -246,11 +281,11 @@ class Communication:
     def add_user_to_group(other_email: str, chat_id: str, sock: EncryptedProtocolSocket) -> bool:
         request = f"{'add user'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{other_email}".encode()
         if not sock.send_message(request):
-            messagebox.showerror(f"Failed to add '{other_email}' to group", "lost connection to server.")
+            showerror(f"Failed to add '{other_email}' to group", "lost connection to server.")
             return False
         status_msg = sock.receive_message()
         if "not ok" in status_msg.decode():
-            messagebox.showerror(f"Failed to add '{other_email}' to group", "server error.")
+            showerror(f"Failed to add '{other_email}' to group", "server error.")
             return False
         return True
 
@@ -258,11 +293,11 @@ class Communication:
     def remove_user_from_group(other_email: str, chat_id: str, sock: EncryptedProtocolSocket) -> bool:
         request = f"{'remove user'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{other_email}".encode()
         if not sock.send_message(request):
-            messagebox.showerror(f"Failed to remove '{other_email}' from group", "lost connection to server.")
+            showerror(f"Failed to remove '{other_email}' from group", "lost connection to server.")
             return False
         status_msg = sock.receive_message()
         if "not ok" in status_msg.decode():
-            messagebox.showerror(f"Failed to remove '{other_email}' from group", "server error.")
+            showerror(f"Failed to remove '{other_email}' from group", "server error.")
             return False
         return True
 
@@ -281,7 +316,7 @@ class Communication:
             if path_to_picture == "" or not os.path.isfile(path_to_picture):
                 return False
         if not check_size(path_to_picture):  # check image size
-            messagebox.showerror("Profile Picture", "Image size is invalid,\nmust be at least 64x64.")
+            showerror("Profile Picture", "Image size is invalid,\nmust be at least 64x64.")
             return False
         ok, sock, _ = self.login(verbose=False)
         if not ok:
@@ -290,8 +325,30 @@ class Communication:
             file_data = f.read()
         request = f"{'upload profile picture'.ljust(30)}".encode() + file_data
         if not sock.send_message(request):
-            messagebox.showerror(
+            showerror(
                 "Upload Profile Picture Error", "Could not upload the file, lost connection to server.")
+            return False
+        sock.close()
+        return True
+
+    def upload_group_picture(self, chat_id: str, path_to_picture: os.PathLike | str = None) -> bool:
+        if path_to_picture is None:  # ask for file
+            file_types = [("PNG", "*.png"), ("JPG", "*.jpg"), ("JPEG", "*.jpeg")]
+            path_to_picture = askopenfilename(filetypes=file_types)
+            if path_to_picture == "" or not os.path.isfile(path_to_picture):
+                return False
+        if not check_size(path_to_picture):  # check image size
+            showerror("Group Picture", "Image size is invalid,\nmust be at least 64x64.")
+            return False
+        ok, sock, _ = self.login(verbose=False)
+        if not ok:
+            raise ValueError("email or password incorrect, could not login to upload file")
+        with open(path_to_picture, "rb") as f:
+            file_data = f.read()
+        request = f"{'upload group picture'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}".encode() + file_data
+        if not sock.send_message(request):
+            showerror(
+                "Upload Group Picture Error", "Could not upload the file, lost connection to server.")
             return False
         sock.close()
         return True
@@ -303,7 +360,7 @@ class Communication:
         root.destroy()
         request = f"{'delete message for me'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{message_index}"
         if not sock.send_message(request.encode()):
-            messagebox.showerror("Delete Message For Me Error", "Could not delete the message.")
+            showerror("Delete Message For Me Error", "Could not delete the message.")
             return False
         return True
 
@@ -314,6 +371,6 @@ class Communication:
         root.destroy()
         request = f"{'delete message for everyone'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{message_index}"
         if not sock.send_message(request.encode()):
-            messagebox.showerror("Delete Message For Me Error", "Could not delete the message.")
+            showerror("Delete Message For Me Error", "Could not delete the message.")
             return False
         return True

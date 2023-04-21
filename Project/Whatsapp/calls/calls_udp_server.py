@@ -4,7 +4,7 @@ import traceback
 
 
 HOST = 'localhost'
-PORT = 8820
+PORT = 8822
 CHUNK = 1024 * 2
 BUFFER_SIZE = CHUNK * 4
 

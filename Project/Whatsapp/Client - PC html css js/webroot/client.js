@@ -64,6 +64,7 @@ function check_user(other_email, user_box_div) {
             else users_list.insertBefore(user_box_div.sep, before_element);
             users_list.insertBefore(user_box_div, user_box_div.sep);
         }
+        users_list.prepend(search_for_non_familiar_user);
         users_list.prepend(create_new_chat_or_group);
     }
     checkbox.checked = !checkbox.checked;
@@ -133,8 +134,8 @@ function user_search() {
     if  (search_key == "") {
         for (let key in keys) {
             users_button = users_buttons[key];
-            chat_button.style.visibility = 'visible';
-            chat_button.sep.style.visibility = 'visible';
+            users_button.style.visibility = 'visible';
+            users_button.sep.style.visibility = 'visible';
         }
         return;
     }
@@ -156,7 +157,7 @@ function user_search() {
     }
 }
 function search() {
-    if (left_side.contains(chats_list)) chat_search();
+    if (document.getElementById("left").contains(chats_list)) chat_search();
     else user_search();
 }
 
@@ -261,6 +262,7 @@ async function load_chat_buttons() {
 async function load_users_buttons() {
     users_list.innerHTML = "";
     users_list.appendChild(create_new_chat_or_group);
+    users_list.appendChild(search_for_non_familiar_user);
     let known_to_user = JSON.parse(await eel.get_known_to_user()());
     let other_email;
     for (let index in known_to_user) {
@@ -336,7 +338,7 @@ async function load_msgs(chat_msgs, position = "END") {
                 deleted_for_all, seen_by, position
             ); 
         }
-        if (last_msg_index < msg_index) last_msg_index = msg_index;
+        if (parseInt(last_msg_index) < parseInt(msg_index)) last_msg_index = parseInt(msg_index);
     }
 }
 async function load_chat(chat_name, chat_id, chat_type, users) {
@@ -350,12 +352,14 @@ async function load_chat(chat_name, chat_id, chat_type, users) {
     if (chat_type === "group") {
         status_bar_picture.style.backgroundImage = `url("${email}/${chat_id}/group_picture.png")`;
         status_bar_last_seen.innerHTML = "";
+        status_bar_picture.onclick = function () { upload_group_picture(chat_id) };
     }
     else {
         if (users[0] != email) other_user_email = users[0];
         else other_user_email = users[1];
-        status_bar_picture.style.backgroundImage = `url("${email}/profile_pictures/${other_user_email}_profile_picture.png")`;;
+        status_bar_picture.style.backgroundImage = `url("${email}/profile_pictures/${other_user_email}_profile_picture.png")`;
         status_bar_last_seen.innerHTML = await eel.get_user_last_seen(other_user_email)();
+        status_bar_picture.onclick = null;
     }
     last_msg_index = 0;
     chat.chat_id = chat_id;
@@ -385,24 +389,22 @@ function check_pos() {
     }
 }
 // eel.expose
-function update(chat_id, ...chat_msgs_list_of_dicts) {
+function update(chat_id, chat_msgs) {
     if (chat_id !== chat.chat_id) return null;
+    chat_msgs = JSON.parse(chat_msgs);
     let from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time, msg_row, keys;
     let new_messages = {};
-    for (let chat_msgs in chat_msgs_list_of_dicts) {
-        keys = Object.keys(chat_msgs);
-        keys.sort(function(a, b) {
-            return parseInt(a) - parseInt(b);
-        });
-        for (let msg_index in chat_msgs) {
-            [from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time] = chat_msgs[msg_index];
-            if (msg_index > last_msg_index) {  // new messages
-                new_messages[msg_index] = [from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time]
-            }
-            // old message that has been changed
-            // TODO: check if deleted and change color
-            msg_row = document.getElementById(`msg_${msg_index}`);
-            msg_row.getElementsByClassName("msg_text")[0].innerHTML = msg;
+    for (let msg_index in chat_msgs) {
+        [from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time] = chat_msgs[msg_index];
+        if (parseInt(msg_index) > parseInt(last_msg_index)) {  // new messages
+            new_messages[msg_index] = [from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time];
+            continue;
+        }
+        // old message that has been changed
+        // TODO: check if deleted and change color
+        msg_row = document.getElementById(`msg_${msg_index}`);
+        if (msg_row.innerHTML != handle_msg_length(msg)) {
+            msg_row.getElementsByClassName("msg_text")[0].innerHTML = handle_msg_length(msg);
         }
     }
     load_msgs(new_messages);
@@ -436,7 +438,7 @@ function message_options() {
 
 }
 function handle_msg_length(msg) {
-    let max_chars = 55;
+    let max_chars = 65;
     if (msg.length < max_chars) return msg;
     let row_length = 0;
     let i = 0;
@@ -453,7 +455,7 @@ function handle_msg_length(msg) {
         row_length += 1;
         i++;
     }
-    return msg;
+    return msg + "\n\n";
 }
 
 
@@ -472,6 +474,7 @@ function add_msg(from, sender, msg, time, msg_index, msg_type, deleted_for,
             msg_type == "msg" || msg_type == "file" || msg_type == "remove" || msg_type == "add",
             `msg_from_me: param msg_type must be either 'msg' or 'file' or 'remove' or 'add', got '${msg_type}'`
         );
+        let full_sender = sender;
         sender = sender.split("@");
         sender = sender.slice(0, sender.length - 1).join("@") + ":";
         if (deleted_for_all) {
@@ -483,11 +486,21 @@ function add_msg(from, sender, msg, time, msg_index, msg_type, deleted_for,
             let this_msg_row = from == "me" ? window.my_msg_row.cloneNode(true) : window.msg_row.cloneNode(true);
             this_msg_row.id = `msg_${msg_index}`;
             this_msg_row.getElementsByClassName("msg_text")[0].innerHTML = msg;
-            // this_msg_row.getElementsByClassName("msg_time")[0].innerHTML = time;
-            this_msg_row.getElementsByClassName("msg_sender")[0].innerHTML = sender;
+            // msg_picture.style.backgroundImage = `url("${email}/${email}_profile_picture.png")`;
+            if (full_sender !== email) {
+                this_msg_row.getElementsByClassName("msg_sender")[0].innerHTML = sender;
+                let msg_picture = this_msg_row.getElementsByClassName("msg_sender_picture")[0];
+                msg_picture.style.backgroundImage = `url("${email}/profile_pictures/${full_sender}_profile_picture.png")`;
+            }
             // append msg row to chat
-            if (position === "END") chat.appendChild(this_msg_row);
-            else chat.prepend(this_msg_row);
+            if (position === "END") {
+                chat.appendChild(this_msg_row);
+                chat.appendChild(window.clear.cloneNode(true));
+            }
+            else {
+                chat.prepend(window.clear.cloneNode(true));
+                chat.prepend(this_msg_row);
+            }
             // add event listener
             // msg_row.addEventListener("click", function() {func_name(msg_index, seen_by)}) // left click
         } else if (msg_type == "file") {
@@ -584,8 +597,24 @@ async function send_message() {
     let input_bar = document.getElementById("msg_input");
     let msg = input_bar.value;
     input_bar.value = "";  // clear input bar
-    await eel.send_message(msg, get_open_chat_id())();
+    let ok = await eel.send_message(msg, get_open_chat_id())();
+    if (!ok && input_bar.value === "") input_bar.value = msg;
 }
+
+async function familiarize_user_with() {
+    let user_search_input = document.getElementById("non_familiar_user_search_input");
+    let other_email = user_search_input.value;
+    user_search_input.value = "";
+    if (other_email != "" && other_email.includes("@") && 
+        other_email.length > 2 && other_email.includes(".") &&
+        !other_email.includes(" ")
+        ) {
+        exists = await eel.familiarize_user_with(other_email)();
+        await sleep(2000);
+        if (exists) { toggle_chats_users(); toggle_chats_users(); }
+    } else alert("Invalid user, user is an email, needs to have '@' & '.' and can't contain spaces.")
+}
+
 // new chat/group
 async function new_chat(other_email) {
     console.log(`new chat ${other_email}`)
@@ -684,26 +713,34 @@ function display_recording_options(rec_file_path, chat_id) {
 }
 // end of recordings functions
 
-
 async function make_call() {
     await eel.make_call(get_open_chat_id());
 }
-
 
 async function upload_profile_picture() {
     await eel.upload_profile_picture()();
 }
 
+async function upload_group_picture(chat_id) {
+    await eel.upload_group_picture(chat_id)();
+}
 
 async function delete_message_for_me() {
     // await eel.delete_message_for_me(chat_id, message_index);
 }
 
-
 async function delete_message_for_everyone() {
     // await eel.delete_message_for_everyone(chat_id, message_index);
 }
 
+
+                                    /* Main Setup */
+
+
+// eel.expose
+function close_window() {
+    window.close();
+}
 
 // eel.expose
 async function main() {
@@ -732,6 +769,8 @@ async function main() {
 
     // Event listeners
     window.addEventListener("resize", adjust_msgs_input_width);
+    window.addEventListener("beforeunload", function () { eel.close_program()(); })
+    await eel.restart_sync()();
 
     // main finish log
     console.log("main setup finished successfully");
@@ -757,6 +796,17 @@ var create_new_chat_or_group = document.createElement("button");
 create_new_chat_or_group.id = "create_chat_or_group";
 create_new_chat_or_group.onclick = new_group_or_chat;
 create_new_chat_or_group.innerHTML = "Create";
+var search_for_non_familiar_user = document.createElement("div");
+search_for_non_familiar_user.id = "search_for_non_familiar_user";
+let non_familiar_user_search_input = document.createElement("input");
+non_familiar_user_search_input.id = "non_familiar_user_search_input";
+non_familiar_user_search_input.placeholder = "Search for other users";
+search_for_non_familiar_user.appendChild(non_familiar_user_search_input);
+let non_familiar_user_search_btn = document.createElement("button");
+non_familiar_user_search_btn.id = "non_familiar_user_search_btn";
+non_familiar_user_search_btn.innerHTML = "Search";
+non_familiar_user_search_btn.onclick = familiarize_user_with;
+search_for_non_familiar_user.appendChild(non_familiar_user_search_btn);
 
 var message_options_window;
 var call_options_window;
@@ -765,6 +815,7 @@ var call_options_window;
 eel.expose(get_open_chat_id);
 eel.expose(update);
 eel.expose(display_recording_options);
+eel.expose(close_window);
 eel.expose(main);
 
 main();

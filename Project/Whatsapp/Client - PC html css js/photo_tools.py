@@ -31,3 +31,7 @@ def check_size(path: os.PathLike | str) -> bool:
     if img.size[0] >= 64 <= img.size[1]:
         return True
     return False
+
+
+if __name__ == '__main__':
+    pass
