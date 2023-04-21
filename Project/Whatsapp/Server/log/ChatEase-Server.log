@@ -1,0 +1,644 @@
+INFO | 2023-04-21 02:25:21,112 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 02:25:34,179 | MainProcess | [Server]: New Connection From: '127.0.0.1:52140'
+INFO | 2023-04-21 02:25:34,925 | MainProcess | [Server]: Client '127.0.0.1:52140' disconnected.
+INFO | 2023-04-21 02:25:52,350 | MainProcess | [Server]: New Connection From: '127.0.0.1:52157'
+INFO | 2023-04-21 02:25:53,607 | MainProcess | sent email to omerdagry@gmail.com
+INFO | 2023-04-21 02:26:21,707 | MainProcess | signup attempt successful - email: 'omerdagry@gmail.com', username: 'Omer Dagry'
+INFO | 2023-04-21 02:26:22,257 | MainProcess | [Server]: '127.0.0.1:52157' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 02:26:22,274 | MainProcess | [Server]: New Connection From: '127.0.0.1:52189'
+INFO | 2023-04-21 02:26:22,425 | MainProcess | [Server]: '127.0.0.1:52189' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 02:26:22,527 | MainProcess | [Server]: Client '127.0.0.1:52189' disconnected.
+INFO | 2023-04-21 02:26:22,549 | MainProcess | [Server]: Client '127.0.0.1:52157' disconnected.
+INFO | 2023-04-21 02:27:03,934 | MainProcess | [Server]: New Connection From: '127.0.0.1:52222'
+INFO | 2023-04-21 02:27:04,126 | MainProcess | [Server]: '127.0.0.1:52222' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 02:27:04,437 | MainProcess | [Server]: New Connection From: '127.0.0.1:52223'
+INFO | 2023-04-21 02:27:04,957 | MainProcess | [Server]: '127.0.0.1:52223' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 02:28:43,051 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 02:28:53,984 | MainProcess | [Server]: New Connection From: '127.0.0.1:52335'
+INFO | 2023-04-21 02:28:54,175 | MainProcess | [Server]: '127.0.0.1:52335' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 02:28:54,486 | MainProcess | [Server]: New Connection From: '127.0.0.1:52336'
+INFO | 2023-04-21 02:28:55,080 | MainProcess | [Server]: '127.0.0.1:52336' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 02:31:03,968 | MainProcess | [Server]: Client '127.0.0.1:52335' disconnected.
+INFO | 2023-04-21 02:33:50,851 | MainProcess | [Server]: New Connection From: '127.0.0.1:52606'
+INFO | 2023-04-21 02:33:51,306 | MainProcess | [Server]: '127.0.0.1:52606' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 02:33:51,353 | MainProcess | [Server]: New Connection From: '127.0.0.1:52609'
+INFO | 2023-04-21 02:33:52,104 | MainProcess | [Server]: '127.0.0.1:52609' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 02:37:11,751 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 02:37:15,808 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 02:37:33,860 | MainProcess | [Server]: New Connection From: '127.0.0.1:52812'
+INFO | 2023-04-21 02:37:34,545 | MainProcess | [Server]: '127.0.0.1:52812' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 02:37:34,561 | MainProcess | [Server]: New Connection From: '127.0.0.1:52813'
+INFO | 2023-04-21 02:37:34,596 | MainProcess | [Server]: '127.0.0.1:52813' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 02:42:33,254 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 02:42:48,171 | MainProcess | [Server]: New Connection From: '127.0.0.1:53097'
+INFO | 2023-04-21 02:42:48,277 | MainProcess | [Server]: '127.0.0.1:53097' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 02:42:48,674 | MainProcess | [Server]: New Connection From: '127.0.0.1:53098'
+INFO | 2023-04-21 02:42:48,924 | MainProcess | [Server]: '127.0.0.1:53098' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 02:55:24,054 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 02:55:38,931 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 02:56:20,573 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 02:58:40,596 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 02:59:01,184 | MainProcess | [Server]: New Connection From: '127.0.0.1:53990'
+INFO | 2023-04-21 02:59:01,514 | MainProcess | [Server]: Client '127.0.0.1:53990' disconnected.
+INFO | 2023-04-21 03:00:18,711 | MainProcess | [Server]: New Connection From: '127.0.0.1:54059'
+INFO | 2023-04-21 03:00:19,191 | MainProcess | [Server]: '127.0.0.1:54059' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:00:19,214 | MainProcess | [Server]: New Connection From: '127.0.0.1:54060'
+INFO | 2023-04-21 03:00:19,582 | MainProcess | [Server]: '127.0.0.1:54060' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:02:08,302 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 03:02:21,367 | MainProcess | [Server]: New Connection From: '127.0.0.1:54182'
+INFO | 2023-04-21 03:02:22,178 | MainProcess | [Server]: '127.0.0.1:54182' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:02:22,196 | MainProcess | [Server]: New Connection From: '127.0.0.1:54185'
+INFO | 2023-04-21 03:02:22,898 | MainProcess | [Server]: '127.0.0.1:54185' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:03:15,383 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 03:03:21,087 | MainProcess | [Server]: New Connection From: '127.0.0.1:54249'
+INFO | 2023-04-21 03:03:21,792 | MainProcess | [Server]: '127.0.0.1:54249' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:03:21,809 | MainProcess | [Server]: New Connection From: '127.0.0.1:54255'
+INFO | 2023-04-21 03:03:21,959 | MainProcess | [Server]: '127.0.0.1:54255' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:08:04,713 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 03:08:24,566 | MainProcess | [Server]: New Connection From: '127.0.0.1:54533'
+INFO | 2023-04-21 03:08:24,914 | MainProcess | [Server]: '127.0.0.1:54533' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:08:25,068 | MainProcess | [Server]: New Connection From: '127.0.0.1:54534'
+INFO | 2023-04-21 03:08:25,444 | MainProcess | [Server]: '127.0.0.1:54534' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:08:25,545 | MainProcess | [Server]: Client '127.0.0.1:54534' disconnected.
+INFO | 2023-04-21 03:08:25,564 | MainProcess | [Server]: Client '127.0.0.1:54533' disconnected.
+INFO | 2023-04-21 03:10:36,740 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 03:10:52,765 | MainProcess | [Server]: New Connection From: '127.0.0.1:54661'
+INFO | 2023-04-21 03:10:53,443 | MainProcess | [Server]: '127.0.0.1:54661' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:10:53,459 | MainProcess | [Server]: New Connection From: '127.0.0.1:54662'
+INFO | 2023-04-21 03:10:54,298 | MainProcess | [Server]: '127.0.0.1:54662' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:10:54,399 | MainProcess | [Server]: Client '127.0.0.1:54662' disconnected.
+INFO | 2023-04-21 03:10:54,418 | MainProcess | [Server]: Client '127.0.0.1:54661' disconnected.
+INFO | 2023-04-21 03:13:57,093 | MainProcess | [Server]: New Connection From: '127.0.0.1:54795'
+INFO | 2023-04-21 03:13:57,710 | MainProcess | [Server]: '127.0.0.1:54795' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:13:57,727 | MainProcess | [Server]: New Connection From: '127.0.0.1:54796'
+INFO | 2023-04-21 03:13:57,851 | MainProcess | [Server]: '127.0.0.1:54796' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:14:10,839 | MainProcess | [Server]: Client '127.0.0.1:54795' disconnected.
+INFO | 2023-04-21 03:14:10,839 | MainProcess | [Server]: Client '127.0.0.1:54796' disconnected.
+INFO | 2023-04-21 03:14:18,386 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 03:15:47,083 | MainProcess | [Server]: New Connection From: '127.0.0.1:54855'
+INFO | 2023-04-21 03:15:47,325 | MainProcess | [Server]: '127.0.0.1:54855' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:15:47,586 | MainProcess | [Server]: New Connection From: '127.0.0.1:54856'
+INFO | 2023-04-21 03:15:47,646 | MainProcess | [Server]: '127.0.0.1:54856' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:16:39,939 | MainProcess | [Server]: New Connection From: '127.0.0.1:54888'
+INFO | 2023-04-21 03:16:41,313 | MainProcess | sent email to omerdagry12345@gmail.com
+INFO | 2023-04-21 03:16:48,128 | MainProcess | signup attempt successful - email: 'omerdagry12345@gmail.com', username: 'Omer12345'
+INFO | 2023-04-21 03:16:48,626 | MainProcess | [Server]: '127.0.0.1:54888' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+INFO | 2023-04-21 03:16:48,644 | MainProcess | [Server]: New Connection From: '127.0.0.1:54894'
+INFO | 2023-04-21 03:16:49,560 | MainProcess | [Server]: '127.0.0.1:54894' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+INFO | 2023-04-21 03:16:49,796 | MainProcess | [Server]: Client '127.0.0.1:54888' disconnected.
+INFO | 2023-04-21 03:16:49,796 | MainProcess | [Server]: Client '127.0.0.1:54894' disconnected.
+INFO | 2023-04-21 03:20:40,108 | MainProcess | [Server]: New Connection From: '127.0.0.1:55020'
+INFO | 2023-04-21 03:20:40,570 | MainProcess | [Server]: '127.0.0.1:55020' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+INFO | 2023-04-21 03:20:40,610 | MainProcess | [Server]: New Connection From: '127.0.0.1:55021'
+INFO | 2023-04-21 03:20:41,190 | MainProcess | [Server]: '127.0.0.1:55021' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+INFO | 2023-04-21 03:21:07,866 | MainProcess | [Server]: Client '127.0.0.1:55021' disconnected.
+INFO | 2023-04-21 03:21:07,866 | MainProcess | [Server]: Client '127.0.0.1:55020' disconnected.
+INFO | 2023-04-21 03:21:31,795 | MainProcess | [Server]: New Connection From: '127.0.0.1:55064'
+INFO | 2023-04-21 03:21:32,530 | MainProcess | [Server]: '127.0.0.1:55064' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+INFO | 2023-04-21 03:21:32,546 | MainProcess | [Server]: New Connection From: '127.0.0.1:55066'
+INFO | 2023-04-21 03:21:32,863 | MainProcess | [Server]: '127.0.0.1:55066' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+INFO | 2023-04-21 03:23:07,205 | MainProcess | [Server]: Client '127.0.0.1:55064' disconnected.
+INFO | 2023-04-21 03:23:07,205 | MainProcess | [Server]: Client '127.0.0.1:55066' disconnected.
+INFO | 2023-04-21 03:27:03,513 | MainProcess | [Server]: New Connection From: '127.0.0.1:55257'
+INFO | 2023-04-21 03:27:03,966 | MainProcess | [Server]: '127.0.0.1:55257' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+INFO | 2023-04-21 03:27:04,016 | MainProcess | [Server]: New Connection From: '127.0.0.1:55258'
+INFO | 2023-04-21 03:27:04,364 | MainProcess | [Server]: '127.0.0.1:55258' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+INFO | 2023-04-21 03:27:04,615 | MainProcess | [Server]: Client '127.0.0.1:55257' disconnected.
+INFO | 2023-04-21 03:27:04,616 | MainProcess | [Server]: Client '127.0.0.1:55258' disconnected.
+INFO | 2023-04-21 03:28:12,881 | MainProcess | [Server]: New Connection From: '127.0.0.1:55287'
+INFO | 2023-04-21 03:28:12,918 | MainProcess | [Server]: '127.0.0.1:55287' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+INFO | 2023-04-21 03:28:13,384 | MainProcess | [Server]: New Connection From: '127.0.0.1:55289'
+INFO | 2023-04-21 03:28:13,634 | MainProcess | [Server]: '127.0.0.1:55289' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+INFO | 2023-04-21 03:28:13,885 | MainProcess | [Server]: Client '127.0.0.1:55289' disconnected.
+INFO | 2023-04-21 03:28:13,885 | MainProcess | [Server]: Client '127.0.0.1:55287' disconnected.
+INFO | 2023-04-21 03:28:41,038 | MainProcess | [Server]: Client '127.0.0.1:54855' disconnected.
+INFO | 2023-04-21 03:28:41,038 | MainProcess | [Server]: Client '127.0.0.1:54856' disconnected.
+INFO | 2023-04-21 03:30:15,145 | MainProcess | [Server]: New Connection From: '127.0.0.1:55369'
+INFO | 2023-04-21 03:30:15,687 | MainProcess | [Server]: '127.0.0.1:55369' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:30:15,704 | MainProcess | [Server]: New Connection From: '127.0.0.1:55370'
+INFO | 2023-04-21 03:30:16,081 | MainProcess | [Server]: '127.0.0.1:55370' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:31:04,783 | MainProcess | [Server]: Client '127.0.0.1:55369' disconnected.
+INFO | 2023-04-21 03:31:04,783 | MainProcess | [Server]: Client '127.0.0.1:55370' disconnected.
+INFO | 2023-04-21 03:31:15,000 | MainProcess | [Server]: New Connection From: '127.0.0.1:55423'
+INFO | 2023-04-21 03:31:15,057 | MainProcess | [Server]: '127.0.0.1:55423' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:31:15,502 | MainProcess | [Server]: New Connection From: '127.0.0.1:55424'
+INFO | 2023-04-21 03:31:16,269 | MainProcess | [Server]: '127.0.0.1:55424' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:31:35,087 | MainProcess | [Server]: New Connection From: '127.0.0.1:55447'
+INFO | 2023-04-21 03:31:35,677 | MainProcess | [Server]: '127.0.0.1:55447' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+INFO | 2023-04-21 03:31:35,695 | MainProcess | [Server]: New Connection From: '127.0.0.1:55448'
+INFO | 2023-04-21 03:31:36,225 | MainProcess | [Server]: '127.0.0.1:55448' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+INFO | 2023-04-21 03:33:34,269 | MainProcess | [Server]: Client '127.0.0.1:55424' disconnected.
+INFO | 2023-04-21 03:33:34,269 | MainProcess | [Server]: Client '127.0.0.1:55423' disconnected.
+INFO | 2023-04-21 03:33:35,231 | MainProcess | [Server]: Client '127.0.0.1:55447' disconnected.
+INFO | 2023-04-21 03:33:35,231 | MainProcess | [Server]: Client '127.0.0.1:55448' disconnected.
+INFO | 2023-04-21 03:33:49,592 | MainProcess | [Server]: New Connection From: '127.0.0.1:55529'
+INFO | 2023-04-21 03:33:50,371 | MainProcess | [Server]: '127.0.0.1:55529' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:33:50,389 | MainProcess | [Server]: New Connection From: '127.0.0.1:55531'
+INFO | 2023-04-21 03:33:50,494 | MainProcess | [Server]: '127.0.0.1:55531' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:34:01,615 | MainProcess | [Server]: New Connection From: '127.0.0.1:55547'
+INFO | 2023-04-21 03:34:02,148 | MainProcess | [Server]: '127.0.0.1:55547' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+INFO | 2023-04-21 03:34:02,165 | MainProcess | [Server]: New Connection From: '127.0.0.1:55548'
+INFO | 2023-04-21 03:34:02,390 | MainProcess | [Server]: '127.0.0.1:55548' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+DEBUG | 2023-04-21 03:34:17,534 | MainProcess | [Server]: added the exception that was received while handling '127.0.0.1' to the list of exceptions
+WARNING | 2023-04-21 03:34:17,538 | MainProcess | [Server]: error while handling '127.0.0.1:55547' ('Omer12345'): ['Traceback (most recent call last):\n', '  File "D:\\Projects\\In Work or Frequently Used\\School-Twelfth_Grade\\Project\\Whatsapp\\Server\\server.py", line 1191, in handle_client\n    other_email = response[30:]\n                  ~~~~~~~~^^^^^\n', "TypeError: 'NoneType' object is not subscriptable\n"]
+INFO | 2023-04-21 03:34:17,538 | MainProcess | [Server]: Client '127.0.0.1:55547' disconnected.
+INFO | 2023-04-21 03:34:56,581 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 03:35:09,672 | MainProcess | [Server]: New Connection From: '127.0.0.1:55594'
+INFO | 2023-04-21 03:35:09,986 | MainProcess | [Server]: '127.0.0.1:55594' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:35:10,174 | MainProcess | [Server]: New Connection From: '127.0.0.1:55595'
+INFO | 2023-04-21 03:35:10,917 | MainProcess | [Server]: '127.0.0.1:55595' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:35:21,183 | MainProcess | [Server]: New Connection From: '127.0.0.1:55611'
+INFO | 2023-04-21 03:35:22,003 | MainProcess | [Server]: '127.0.0.1:55611' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+INFO | 2023-04-21 03:35:22,020 | MainProcess | [Server]: New Connection From: '127.0.0.1:55612'
+INFO | 2023-04-21 03:35:22,583 | MainProcess | [Server]: '127.0.0.1:55612' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+INFO | 2023-04-21 03:37:53,138 | MainProcess | [Server]: Client '127.0.0.1:55612' disconnected.
+INFO | 2023-04-21 03:37:53,138 | MainProcess | [Server]: Client '127.0.0.1:55611' disconnected.
+INFO | 2023-04-21 03:37:54,332 | MainProcess | [Server]: Client '127.0.0.1:55595' disconnected.
+INFO | 2023-04-21 03:37:54,332 | MainProcess | [Server]: Client '127.0.0.1:55594' disconnected.
+INFO | 2023-04-21 03:40:03,268 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 03:40:21,322 | MainProcess | [Server]: New Connection From: '127.0.0.1:55793'
+INFO | 2023-04-21 03:40:22,068 | MainProcess | [Server]: '127.0.0.1:55793' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:40:22,086 | MainProcess | [Server]: New Connection From: '127.0.0.1:55795'
+INFO | 2023-04-21 03:40:22,267 | MainProcess | [Server]: '127.0.0.1:55795' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:40:22,367 | MainProcess | [Server]: Client '127.0.0.1:55795' disconnected.
+INFO | 2023-04-21 03:40:22,390 | MainProcess | [Server]: Client '127.0.0.1:55793' disconnected.
+INFO | 2023-04-21 03:43:15,781 | MainProcess | [Server]: New Connection From: '127.0.0.1:55872'
+INFO | 2023-04-21 03:43:15,840 | MainProcess | [Server]: '127.0.0.1:55872' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:43:16,284 | MainProcess | [Server]: New Connection From: '127.0.0.1:55875'
+INFO | 2023-04-21 03:43:16,590 | MainProcess | [Server]: '127.0.0.1:55875' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:43:30,670 | MainProcess | [Server]: New Connection From: '127.0.0.1:55894'
+INFO | 2023-04-21 03:43:30,987 | MainProcess | [Server]: '127.0.0.1:55894' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+INFO | 2023-04-21 03:43:31,173 | MainProcess | [Server]: New Connection From: '127.0.0.1:55895'
+INFO | 2023-04-21 03:43:32,028 | MainProcess | [Server]: '127.0.0.1:55895' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+INFO | 2023-04-21 03:52:25,523 | MainProcess | [Server]: Client '127.0.0.1:55875' disconnected.
+INFO | 2023-04-21 03:52:25,523 | MainProcess | [Server]: Client '127.0.0.1:55872' disconnected.
+INFO | 2023-04-21 03:52:29,629 | MainProcess | [Server]: Client '127.0.0.1:55894' disconnected.
+INFO | 2023-04-21 03:52:29,629 | MainProcess | [Server]: Client '127.0.0.1:55895' disconnected.
+INFO | 2023-04-21 03:55:30,261 | MainProcess | [Server]: New Connection From: '127.0.0.1:56299'
+INFO | 2023-04-21 03:55:30,455 | MainProcess | [Server]: '127.0.0.1:56299' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:55:30,763 | MainProcess | [Server]: New Connection From: '127.0.0.1:56300'
+INFO | 2023-04-21 03:55:31,693 | MainProcess | [Server]: '127.0.0.1:56300' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 03:55:44,940 | MainProcess | [Server]: New Connection From: '127.0.0.1:56316'
+INFO | 2023-04-21 03:55:45,570 | MainProcess | [Server]: '127.0.0.1:56316' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+INFO | 2023-04-21 03:55:45,587 | MainProcess | [Server]: New Connection From: '127.0.0.1:56317'
+INFO | 2023-04-21 03:55:46,526 | MainProcess | [Server]: '127.0.0.1:56317' logged in as 'omerdagry12345@gmail.com - Omer12345'.
+DEBUG | 2023-04-21 03:56:20,104 | MainProcess | [Server]: added the exception that was received while handling '127.0.0.1' to the list of exceptions
+WARNING | 2023-04-21 03:56:20,109 | MainProcess | [Server]: error while handling '127.0.0.1:56316' ('Omer12345'): ['Traceback (most recent call last):\n', '  File "D:\\Projects\\In Work or Frequently Used\\School-Twelfth_Grade\\Project\\Whatsapp\\Server\\server.py", line 1201, in handle_client\n    other_user = response[30:]\n                 ~~~~~~~~^^^^^\n', "TypeError: 'NoneType' object is not subscriptable\n"]
+INFO | 2023-04-21 03:56:20,109 | MainProcess | [Server]: Client '127.0.0.1:56316' disconnected.
+INFO | 2023-04-21 03:58:08,959 | MainProcess | [Server]: Client '127.0.0.1:56299' disconnected.
+INFO | 2023-04-21 03:58:08,959 | MainProcess | [Server]: Client '127.0.0.1:56300' disconnected.
+INFO | 2023-04-21 03:58:10,323 | MainProcess | [Server]: Client '127.0.0.1:56317' disconnected.
+INFO | 2023-04-21 17:37:18,308 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 17:37:34,341 | MainProcess | [Server]: New Connection From: '127.0.0.1:59525'
+INFO | 2023-04-21 17:37:35,009 | MainProcess | [Server]: '127.0.0.1:59525' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 17:37:35,028 | MainProcess | [Server]: New Connection From: '127.0.0.1:59526'
+INFO | 2023-04-21 17:37:35,469 | MainProcess | [Server]: '127.0.0.1:59526' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 17:43:11,946 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 17:43:30,004 | MainProcess | [Server]: New Connection From: '127.0.0.1:59766'
+INFO | 2023-04-21 17:43:30,079 | MainProcess | [Server]: Client '127.0.0.1:59766' disconnected.
+INFO | 2023-04-21 17:43:51,203 | MainProcess | [Server]: New Connection From: '127.0.0.1:59777'
+INFO | 2023-04-21 17:43:52,146 | MainProcess | [Server]: '127.0.0.1:59777' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 17:43:52,163 | MainProcess | [Server]: New Connection From: '127.0.0.1:59778'
+INFO | 2023-04-21 17:43:53,058 | MainProcess | [Server]: '127.0.0.1:59778' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+DEBUG | 2023-04-21 17:43:59,301 | MainProcess | [Server]: added the exception that was received while handling '127.0.0.1' to the list of exceptions
+WARNING | 2023-04-21 17:43:59,306 | MainProcess | [Server]: error while handling '127.0.0.1:59777' ('Omer Dagry'): ['Traceback (most recent call last):\n', '  File "D:\\Projects\\In Work or Frequently Used\\School-Twelfth_Grade\\Project\\Whatsapp\\Server\\server.py", line 1202, in handle_client\n    print(email, other_email)\n          ^^^^^\n', "UnboundLocalError: cannot access local variable 'other_email' where it is not associated with a value\n"]
+INFO | 2023-04-21 17:43:59,306 | MainProcess | [Server]: Client '127.0.0.1:59777' disconnected.
+INFO | 2023-04-21 17:44:26,969 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 17:44:50,056 | MainProcess | [Server]: New Connection From: '127.0.0.1:59821'
+INFO | 2023-04-21 17:44:50,695 | MainProcess | [Server]: '127.0.0.1:59821' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 17:44:50,712 | MainProcess | [Server]: New Connection From: '127.0.0.1:59822'
+INFO | 2023-04-21 17:44:51,350 | MainProcess | [Server]: '127.0.0.1:59822' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 17:46:24,594 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 17:46:33,437 | MainProcess | [Server]: New Connection From: '127.0.0.1:59893'
+INFO | 2023-04-21 17:46:33,701 | MainProcess | [Server]: '127.0.0.1:59893' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 17:46:33,940 | MainProcess | [Server]: New Connection From: '127.0.0.1:59894'
+INFO | 2023-04-21 17:46:34,703 | MainProcess | [Server]: '127.0.0.1:59894' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 17:47:17,267 | MainProcess | [Server]: Client '127.0.0.1:59894' disconnected.
+INFO | 2023-04-21 17:48:28,005 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 17:48:41,549 | MainProcess | [Server]: New Connection From: '127.0.0.1:59987'
+INFO | 2023-04-21 17:48:42,095 | MainProcess | [Server]: '127.0.0.1:59987' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 17:48:42,113 | MainProcess | [Server]: New Connection From: '127.0.0.1:59988'
+INFO | 2023-04-21 17:48:42,955 | MainProcess | [Server]: '127.0.0.1:59988' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 17:59:46,806 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 17:59:57,367 | MainProcess | [Server]: New Connection From: '127.0.0.1:60416'
+INFO | 2023-04-21 17:59:57,533 | MainProcess | [Server]: '127.0.0.1:60416' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 17:59:57,870 | MainProcess | [Server]: New Connection From: '127.0.0.1:60417'
+INFO | 2023-04-21 17:59:58,217 | MainProcess | [Server]: '127.0.0.1:60417' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 18:02:55,799 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 18:03:09,041 | MainProcess | [Server]: New Connection From: '127.0.0.1:60559'
+INFO | 2023-04-21 18:03:09,269 | MainProcess | [Server]: '127.0.0.1:60559' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 18:03:09,544 | MainProcess | [Server]: New Connection From: '127.0.0.1:60560'
+INFO | 2023-04-21 18:03:09,693 | MainProcess | [Server]: '127.0.0.1:60560' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 18:03:36,716 | MainProcess | [Server]: Client '127.0.0.1:60560' disconnected.
+INFO | 2023-04-21 18:05:37,304 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 18:05:54,110 | MainProcess | [Server]: New Connection From: '127.0.0.1:60655'
+INFO | 2023-04-21 18:05:54,988 | MainProcess | [Server]: '127.0.0.1:60655' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 18:05:55,006 | MainProcess | [Server]: New Connection From: '127.0.0.1:60656'
+INFO | 2023-04-21 18:05:55,848 | MainProcess | [Server]: '127.0.0.1:60656' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 18:08:13,571 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 18:08:20,543 | MainProcess | [Server]: New Connection From: '127.0.0.1:60749'
+INFO | 2023-04-21 18:08:21,035 | MainProcess | [Server]: '127.0.0.1:60749' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 18:08:21,053 | MainProcess | [Server]: New Connection From: '127.0.0.1:60750'
+INFO | 2023-04-21 18:08:21,336 | MainProcess | [Server]: '127.0.0.1:60750' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 18:10:08,578 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 18:10:32,373 | MainProcess | [Server]: New Connection From: '127.0.0.1:60827'
+INFO | 2023-04-21 18:10:32,751 | MainProcess | [Server]: '127.0.0.1:60827' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 18:10:32,876 | MainProcess | [Server]: New Connection From: '127.0.0.1:60828'
+INFO | 2023-04-21 18:10:33,052 | MainProcess | [Server]: '127.0.0.1:60828' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 18:12:29,358 | MainProcess | [Server]: Client '127.0.0.1:60827' disconnected.
+INFO | 2023-04-21 18:12:29,358 | MainProcess | [Server]: Client '127.0.0.1:60828' disconnected.
+INFO | 2023-04-21 18:18:26,133 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 18:18:36,668 | MainProcess | [Server]: New Connection From: '127.0.0.1:61208'
+INFO | 2023-04-21 18:18:36,726 | MainProcess | [Server]: Client '127.0.0.1:61208' disconnected.
+INFO | 2023-04-21 18:18:54,730 | MainProcess | [Server]: New Connection From: '127.0.0.1:61223'
+INFO | 2023-04-21 18:18:56,414 | MainProcess | sent email to omerdagry@gmail.com
+INFO | 2023-04-21 18:19:02,208 | MainProcess | signup attempt successful - email: 'omerdagry@gmail.com', username: 'Omer Dagry'
+INFO | 2023-04-21 18:19:03,146 | MainProcess | [Server]: '127.0.0.1:61223' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 18:19:03,163 | MainProcess | [Server]: New Connection From: '127.0.0.1:61232'
+INFO | 2023-04-21 18:19:03,304 | MainProcess | [Server]: '127.0.0.1:61232' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 18:19:30,370 | MainProcess | [Server]: New Connection From: '127.0.0.1:61265'
+INFO | 2023-04-21 18:19:31,678 | MainProcess | sent email to omerdagry12345@gmail.com
+INFO | 2023-04-21 18:19:37,977 | MainProcess | signup attempt successful - email: 'omerdagry12345@gmail.com', username: 'Omer2'
+INFO | 2023-04-21 18:19:38,081 | MainProcess | [Server]: '127.0.0.1:61265' logged in as 'omerdagry12345@gmail.com - Omer2'.
+INFO | 2023-04-21 18:19:38,399 | MainProcess | [Server]: New Connection From: '127.0.0.1:61267'
+INFO | 2023-04-21 18:19:38,724 | MainProcess | [Server]: '127.0.0.1:61267' logged in as 'omerdagry12345@gmail.com - Omer2'.
+INFO | 2023-04-21 18:21:25,778 | MainProcess | [Server]: Client '127.0.0.1:61223' disconnected.
+INFO | 2023-04-21 18:21:25,778 | MainProcess | [Server]: Client '127.0.0.1:61232' disconnected.
+INFO | 2023-04-21 18:21:26,571 | MainProcess | [Server]: Client '127.0.0.1:61265' disconnected.
+INFO | 2023-04-21 18:21:26,571 | MainProcess | [Server]: Client '127.0.0.1:61267' disconnected.
+INFO | 2023-04-21 18:24:56,246 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 18:25:40,231 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 18:25:51,603 | MainProcess | [Server]: New Connection From: '127.0.0.1:61587'
+INFO | 2023-04-21 18:25:51,697 | MainProcess | [Server]: '127.0.0.1:61587' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 18:25:52,105 | MainProcess | [Server]: New Connection From: '127.0.0.1:61588'
+INFO | 2023-04-21 18:25:52,541 | MainProcess | [Server]: '127.0.0.1:61588' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 18:26:12,672 | MainProcess | [Server]: New Connection From: '127.0.0.1:61612'
+INFO | 2023-04-21 18:26:13,205 | MainProcess | [Server]: '127.0.0.1:61612' logged in as 'omerdagry12345@gmail.com - Omer2'.
+INFO | 2023-04-21 18:26:13,221 | MainProcess | [Server]: New Connection From: '127.0.0.1:61613'
+INFO | 2023-04-21 18:26:13,551 | MainProcess | [Server]: '127.0.0.1:61613' logged in as 'omerdagry12345@gmail.com - Omer2'.
+INFO | 2023-04-21 18:28:54,575 | MainProcess | [Server]: Client '127.0.0.1:61612' disconnected.
+INFO | 2023-04-21 18:28:54,576 | MainProcess | [Server]: Client '127.0.0.1:61613' disconnected.
+INFO | 2023-04-21 18:28:55,535 | MainProcess | [Server]: Client '127.0.0.1:61587' disconnected.
+INFO | 2023-04-21 18:28:55,535 | MainProcess | [Server]: Client '127.0.0.1:61588' disconnected.
+INFO | 2023-04-21 18:35:38,836 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 18:35:53,834 | MainProcess | [Server]: New Connection From: '127.0.0.1:62051'
+INFO | 2023-04-21 18:35:54,369 | MainProcess | [Server]: '127.0.0.1:62051' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 18:35:54,386 | MainProcess | [Server]: New Connection From: '127.0.0.1:62052'
+INFO | 2023-04-21 18:35:55,158 | MainProcess | [Server]: '127.0.0.1:62052' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 18:36:26,625 | MainProcess | [Server]: New Connection From: '127.0.0.1:62085'
+INFO | 2023-04-21 18:36:26,989 | MainProcess | [Server]: '127.0.0.1:62085' logged in as 'omerdagry12345@gmail.com - Omer2'.
+INFO | 2023-04-21 18:36:27,128 | MainProcess | [Server]: New Connection From: '127.0.0.1:62086'
+INFO | 2023-04-21 18:36:27,438 | MainProcess | [Server]: '127.0.0.1:62086' logged in as 'omerdagry12345@gmail.com - Omer2'.
+INFO | 2023-04-21 18:46:00,199 | MainProcess | [Server]: Client '127.0.0.1:62085' disconnected.
+INFO | 2023-04-21 18:46:00,200 | MainProcess | [Server]: Client '127.0.0.1:62086' disconnected.
+INFO | 2023-04-21 18:46:01,352 | MainProcess | [Server]: Client '127.0.0.1:62051' disconnected.
+INFO | 2023-04-21 18:46:01,353 | MainProcess | [Server]: Client '127.0.0.1:62052' disconnected.
+INFO | 2023-04-21 18:46:13,917 | MainProcess | [Server]: New Connection From: '127.0.0.1:62540'
+INFO | 2023-04-21 18:46:14,522 | MainProcess | [Server]: '127.0.0.1:62540' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 18:46:14,540 | MainProcess | [Server]: New Connection From: '127.0.0.1:62541'
+INFO | 2023-04-21 18:46:15,251 | MainProcess | [Server]: '127.0.0.1:62541' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 19:03:30,225 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 19:03:41,884 | MainProcess | [Server]: New Connection From: '127.0.0.1:63361'
+INFO | 2023-04-21 19:03:42,017 | MainProcess | [Server]: '127.0.0.1:63361' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 19:03:42,386 | MainProcess | [Server]: New Connection From: '127.0.0.1:63362'
+INFO | 2023-04-21 19:03:42,874 | MainProcess | [Server]: '127.0.0.1:63362' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 19:03:47,897 | MainProcess | [Server]: New Connection From: '127.0.0.1:63374'
+INFO | 2023-04-21 19:03:48,604 | MainProcess | [Server]: '127.0.0.1:63374' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 19:03:48,605 | MainProcess | [Server]: Client '127.0.0.1:63374' disconnected.
+INFO | 2023-04-21 19:03:54,817 | MainProcess | [Server]: Client '127.0.0.1:63361' disconnected.
+INFO | 2023-04-21 19:03:54,818 | MainProcess | [Server]: Client '127.0.0.1:63362' disconnected.
+INFO | 2023-04-21 19:08:56,595 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 19:09:10,883 | MainProcess | [Server]: New Connection From: '127.0.0.1:63621'
+INFO | 2023-04-21 19:09:11,582 | MainProcess | [Server]: '127.0.0.1:63621' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 19:09:11,600 | MainProcess | [Server]: New Connection From: '127.0.0.1:63627'
+INFO | 2023-04-21 19:09:12,247 | MainProcess | [Server]: '127.0.0.1:63627' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 19:29:10,426 | MainProcess | [Server]: Client '127.0.0.1:63627' disconnected.
+INFO | 2023-04-21 19:29:10,426 | MainProcess | [Server]: Client '127.0.0.1:63621' disconnected.
+INFO | 2023-04-21 19:30:47,508 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 19:31:01,326 | MainProcess | [Server]: New Connection From: '127.0.0.1:64957'
+INFO | 2023-04-21 19:31:01,334 | MainProcess | [Server]: '127.0.0.1:64957' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 19:31:01,829 | MainProcess | [Server]: New Connection From: '127.0.0.1:64958'
+INFO | 2023-04-21 19:31:02,776 | MainProcess | [Server]: '127.0.0.1:64958' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 19:32:38,445 | MainProcess | [Server]: Client '127.0.0.1:64957' disconnected.
+INFO | 2023-04-21 19:32:38,445 | MainProcess | [Server]: Client '127.0.0.1:64958' disconnected.
+INFO | 2023-04-21 19:38:58,568 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 19:39:26,656 | MainProcess | [Server]: New Connection From: '127.0.0.1:65352'
+INFO | 2023-04-21 19:39:27,466 | MainProcess | [Server]: '127.0.0.1:65352' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 19:39:27,485 | MainProcess | [Server]: New Connection From: '127.0.0.1:65353'
+INFO | 2023-04-21 19:39:27,552 | MainProcess | [Server]: '127.0.0.1:65353' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 19:43:11,871 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 19:43:29,923 | MainProcess | [Server]: New Connection From: '127.0.0.1:49163'
+INFO | 2023-04-21 19:43:30,128 | MainProcess | [Server]: '127.0.0.1:49163' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 19:43:30,426 | MainProcess | [Server]: New Connection From: '127.0.0.1:49164'
+INFO | 2023-04-21 19:43:30,956 | MainProcess | [Server]: '127.0.0.1:49164' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:29:15,935 | MainProcess | [Server]: Client '127.0.0.1:49163' disconnected.
+INFO | 2023-04-21 20:29:15,935 | MainProcess | [Server]: Client '127.0.0.1:49164' disconnected.
+INFO | 2023-04-21 20:31:12,820 | MainProcess | [Server]: New Connection From: '127.0.0.1:52483'
+INFO | 2023-04-21 20:31:13,671 | MainProcess | [Server]: '127.0.0.1:52483' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:31:13,689 | MainProcess | [Server]: New Connection From: '127.0.0.1:52484'
+INFO | 2023-04-21 20:31:14,544 | MainProcess | [Server]: '127.0.0.1:52484' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:31:19,139 | MainProcess | [Server]: Client '127.0.0.1:52483' disconnected.
+INFO | 2023-04-21 20:31:19,139 | MainProcess | [Server]: Client '127.0.0.1:52484' disconnected.
+INFO | 2023-04-21 20:31:39,609 | MainProcess | [Server]: New Connection From: '127.0.0.1:52515'
+INFO | 2023-04-21 20:31:40,005 | MainProcess | [Server]: '127.0.0.1:52515' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:31:40,112 | MainProcess | [Server]: New Connection From: '127.0.0.1:52516'
+INFO | 2023-04-21 20:31:40,358 | MainProcess | [Server]: '127.0.0.1:52516' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:35:42,914 | MainProcess | [Server]: Client '127.0.0.1:52515' disconnected.
+INFO | 2023-04-21 20:35:42,915 | MainProcess | [Server]: Client '127.0.0.1:52516' disconnected.
+INFO | 2023-04-21 20:36:57,798 | MainProcess | [Server]: New Connection From: '127.0.0.1:52745'
+INFO | 2023-04-21 20:36:57,832 | MainProcess | [Server]: '127.0.0.1:52745' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:36:58,300 | MainProcess | [Server]: New Connection From: '127.0.0.1:52746'
+INFO | 2023-04-21 20:36:59,002 | MainProcess | [Server]: '127.0.0.1:52746' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:37:44,155 | MainProcess | [Server]: Client '127.0.0.1:52746' disconnected.
+INFO | 2023-04-21 20:37:44,156 | MainProcess | [Server]: Client '127.0.0.1:52745' disconnected.
+INFO | 2023-04-21 20:37:50,973 | MainProcess | [Server]: New Connection From: '127.0.0.1:52792'
+INFO | 2023-04-21 20:37:51,521 | MainProcess | [Server]: '127.0.0.1:52792' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:37:51,538 | MainProcess | [Server]: New Connection From: '127.0.0.1:52793'
+INFO | 2023-04-21 20:37:51,902 | MainProcess | [Server]: '127.0.0.1:52793' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:39:24,800 | MainProcess | Server is up !! (PORT = 8820)
+INFO | 2023-04-21 20:39:34,349 | MainProcess | [Server]: New Connection From: '127.0.0.1:52869'
+INFO | 2023-04-21 20:39:35,060 | MainProcess | [Server]: '127.0.0.1:52869' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:39:35,077 | MainProcess | [Server]: New Connection From: '127.0.0.1:52870'
+INFO | 2023-04-21 20:39:35,593 | MainProcess | [Server]: '127.0.0.1:52870' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:42:39,313 | MainProcess | [Server]: Client '127.0.0.1:52869' disconnected.
+INFO | 2023-04-21 20:42:39,313 | MainProcess | [Server]: Client '127.0.0.1:52870' disconnected.
+INFO | 2023-04-21 20:42:51,830 | MainProcess | [Server]: New Connection From: '127.0.0.1:53097'
+INFO | 2023-04-21 20:42:51,881 | MainProcess | [Server]: '127.0.0.1:53097' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:42:52,333 | MainProcess | [Server]: New Connection From: '127.0.0.1:53098'
+INFO | 2023-04-21 20:42:53,149 | MainProcess | [Server]: '127.0.0.1:53098' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:44:04,265 | MainProcess | [Server]: Client '127.0.0.1:53097' disconnected.
+INFO | 2023-04-21 20:44:04,268 | MainProcess | [Server]: Client '127.0.0.1:53098' disconnected.
+INFO | 2023-04-21 20:45:32,251 | MainProcess | [Server]: New Connection From: '127.0.0.1:53211'
+INFO | 2023-04-21 20:45:32,380 | MainProcess | [Server]: '127.0.0.1:53211' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:45:32,755 | MainProcess | [Server]: New Connection From: '127.0.0.1:53212'
+INFO | 2023-04-21 20:45:33,663 | MainProcess | [Server]: '127.0.0.1:53212' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:46:04,625 | MainProcess | [Server]: Client '127.0.0.1:53211' disconnected.
+INFO | 2023-04-21 20:46:04,625 | MainProcess | [Server]: Client '127.0.0.1:53212' disconnected.
+INFO | 2023-04-21 20:47:08,108 | MainProcess | [Server]: New Connection From: '127.0.0.1:53289'
+INFO | 2023-04-21 20:47:08,486 | MainProcess | [Server]: '127.0.0.1:53289' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:47:08,610 | MainProcess | [Server]: New Connection From: '127.0.0.1:53291'
+INFO | 2023-04-21 20:47:08,969 | MainProcess | [Server]: '127.0.0.1:53291' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:48:10,263 | MainProcess | [Server]: Client '127.0.0.1:53289' disconnected.
+INFO | 2023-04-21 20:48:10,263 | MainProcess | [Server]: Client '127.0.0.1:53291' disconnected.
+INFO | 2023-04-21 20:48:45,220 | MainProcess | [Server]: New Connection From: '127.0.0.1:53377'
+INFO | 2023-04-21 20:48:45,889 | MainProcess | [Server]: '127.0.0.1:53377' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:48:45,906 | MainProcess | [Server]: New Connection From: '127.0.0.1:53378'
+INFO | 2023-04-21 20:48:46,131 | MainProcess | [Server]: '127.0.0.1:53378' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:49:25,536 | MainProcess | [Server]: Client '127.0.0.1:53378' disconnected.
+INFO | 2023-04-21 20:49:25,537 | MainProcess | [Server]: Client '127.0.0.1:53377' disconnected.
+INFO | 2023-04-21 20:49:37,474 | MainProcess | [Server]: New Connection From: '127.0.0.1:53428'
+INFO | 2023-04-21 20:49:37,679 | MainProcess | [Server]: '127.0.0.1:53428' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:49:37,977 | MainProcess | [Server]: New Connection From: '127.0.0.1:53431'
+INFO | 2023-04-21 20:49:38,509 | MainProcess | [Server]: '127.0.0.1:53431' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:50:31,627 | MainProcess | [Server]: Client '127.0.0.1:53428' disconnected.
+INFO | 2023-04-21 20:50:31,628 | MainProcess | [Server]: Client '127.0.0.1:53431' disconnected.
+INFO | 2023-04-21 20:51:25,115 | MainProcess | [Server]: New Connection From: '127.0.0.1:53531'
+INFO | 2023-04-21 20:51:25,295 | MainProcess | [Server]: '127.0.0.1:53531' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:51:25,617 | MainProcess | [Server]: New Connection From: '127.0.0.1:53532'
+INFO | 2023-04-21 20:51:25,712 | MainProcess | [Server]: '127.0.0.1:53532' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:51:48,736 | MainProcess | [Server]: Client '127.0.0.1:53531' disconnected.
+INFO | 2023-04-21 20:51:48,736 | MainProcess | [Server]: Client '127.0.0.1:53532' disconnected.
+INFO | 2023-04-21 20:53:58,211 | MainProcess | [Server]: New Connection From: '127.0.0.1:53662'
+INFO | 2023-04-21 20:53:58,978 | MainProcess | [Server]: '127.0.0.1:53662' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:53:58,995 | MainProcess | [Server]: New Connection From: '127.0.0.1:53664'
+INFO | 2023-04-21 20:53:59,593 | MainProcess | [Server]: '127.0.0.1:53664' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:56:07,683 | MainProcess | [Server]: Client '127.0.0.1:53662' disconnected.
+INFO | 2023-04-21 20:56:07,683 | MainProcess | [Server]: Client '127.0.0.1:53664' disconnected.
+INFO | 2023-04-21 20:59:07,884 | MainProcess | [Server]: New Connection From: '127.0.0.1:53914'
+INFO | 2023-04-21 20:59:08,372 | MainProcess | [Server]: '127.0.0.1:53914' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 20:59:08,391 | MainProcess | [Server]: New Connection From: '127.0.0.1:53919'
+INFO | 2023-04-21 20:59:08,640 | MainProcess | [Server]: '127.0.0.1:53919' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 21:02:35,307 | MainProcess | [Server]: Client '127.0.0.1:53914' disconnected.
+INFO | 2023-04-21 21:02:35,308 | MainProcess | [Server]: Client '127.0.0.1:53919' disconnected.
+INFO | 2023-04-21 21:44:52,766 | MainProcess | [Server]: New Connection From: '127.0.0.1:56883'
+INFO | 2023-04-21 21:44:52,848 | MainProcess | [Server]: '127.0.0.1:56883' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 21:44:53,268 | MainProcess | [Server]: New Connection From: '127.0.0.1:56884'
+INFO | 2023-04-21 21:44:54,000 | MainProcess | [Server]: '127.0.0.1:56884' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 21:45:57,763 | MainProcess | [Server]: Client '127.0.0.1:56884' disconnected.
+INFO | 2023-04-21 21:45:57,763 | MainProcess | [Server]: Client '127.0.0.1:56883' disconnected.
+INFO | 2023-04-21 21:52:47,812 | MainProcess | [Server]: New Connection From: '127.0.0.1:57513'
+INFO | 2023-04-21 21:52:47,883 | MainProcess | [Server]: '127.0.0.1:57513' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 21:52:48,315 | MainProcess | [Server]: New Connection From: '127.0.0.1:57514'
+INFO | 2023-04-21 21:52:48,928 | MainProcess | [Server]: '127.0.0.1:57514' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 21:53:40,703 | MainProcess | [Server]: Client '127.0.0.1:57513' disconnected.
+INFO | 2023-04-21 21:53:40,704 | MainProcess | [Server]: Client '127.0.0.1:57514' disconnected.
+INFO | 2023-04-21 22:05:36,445 | MainProcess | [Server]: New Connection From: '127.0.0.1:58827'
+INFO | 2023-04-21 22:05:36,985 | MainProcess | [Server]: '127.0.0.1:58827' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:05:37,002 | MainProcess | [Server]: New Connection From: '127.0.0.1:58829'
+INFO | 2023-04-21 22:05:37,045 | MainProcess | [Server]: '127.0.0.1:58829' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:08:14,655 | MainProcess | [Server]: Client '127.0.0.1:58829' disconnected.
+INFO | 2023-04-21 22:08:14,655 | MainProcess | [Server]: Client '127.0.0.1:58827' disconnected.
+INFO | 2023-04-21 22:08:23,987 | MainProcess | [Server]: New Connection From: '127.0.0.1:59083'
+INFO | 2023-04-21 22:08:24,034 | MainProcess | [Server]: '127.0.0.1:59083' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:08:24,490 | MainProcess | [Server]: New Connection From: '127.0.0.1:59084'
+INFO | 2023-04-21 22:08:24,787 | MainProcess | [Server]: '127.0.0.1:59084' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:11:14,309 | MainProcess | [Server]: Client '127.0.0.1:59084' disconnected.
+INFO | 2023-04-21 22:11:14,309 | MainProcess | [Server]: Client '127.0.0.1:59083' disconnected.
+INFO | 2023-04-21 22:11:23,828 | MainProcess | [Server]: New Connection From: '127.0.0.1:59372'
+INFO | 2023-04-21 22:11:24,370 | MainProcess | [Server]: '127.0.0.1:59372' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:11:24,388 | MainProcess | [Server]: New Connection From: '127.0.0.1:59374'
+INFO | 2023-04-21 22:11:25,066 | MainProcess | [Server]: '127.0.0.1:59374' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:13:02,007 | MainProcess | [Server]: Client '127.0.0.1:59372' disconnected.
+INFO | 2023-04-21 22:13:02,007 | MainProcess | [Server]: Client '127.0.0.1:59374' disconnected.
+INFO | 2023-04-21 22:13:20,301 | MainProcess | [Server]: New Connection From: '127.0.0.1:59559'
+INFO | 2023-04-21 22:13:20,375 | MainProcess | [Server]: '127.0.0.1:59559' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:13:20,804 | MainProcess | [Server]: New Connection From: '127.0.0.1:59560'
+INFO | 2023-04-21 22:13:21,680 | MainProcess | [Server]: '127.0.0.1:59560' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:14:41,799 | MainProcess | [Server]: Client '127.0.0.1:59559' disconnected.
+INFO | 2023-04-21 22:14:41,800 | MainProcess | [Server]: Client '127.0.0.1:59560' disconnected.
+INFO | 2023-04-21 22:14:51,657 | MainProcess | [Server]: New Connection From: '127.0.0.1:59698'
+INFO | 2023-04-21 22:14:52,475 | MainProcess | [Server]: '127.0.0.1:59698' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:14:52,492 | MainProcess | [Server]: New Connection From: '127.0.0.1:59699'
+INFO | 2023-04-21 22:14:52,978 | MainProcess | [Server]: '127.0.0.1:59699' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:16:55,248 | MainProcess | [Server]: Client '127.0.0.1:59698' disconnected.
+INFO | 2023-04-21 22:16:55,248 | MainProcess | [Server]: Client '127.0.0.1:59699' disconnected.
+INFO | 2023-04-21 22:17:10,222 | MainProcess | [Server]: New Connection From: '127.0.0.1:59905'
+INFO | 2023-04-21 22:17:10,315 | MainProcess | [Server]: '127.0.0.1:59905' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:17:10,723 | MainProcess | [Server]: New Connection From: '127.0.0.1:59906'
+INFO | 2023-04-21 22:17:10,876 | MainProcess | [Server]: '127.0.0.1:59906' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:17:39,479 | MainProcess | [Server]: Client '127.0.0.1:59906' disconnected.
+INFO | 2023-04-21 22:17:39,483 | MainProcess | [Server]: Client '127.0.0.1:59905' disconnected.
+INFO | 2023-04-21 22:17:50,762 | MainProcess | [Server]: New Connection From: '127.0.0.1:59963'
+INFO | 2023-04-21 22:17:51,570 | MainProcess | [Server]: '127.0.0.1:59963' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:17:51,590 | MainProcess | [Server]: New Connection From: '127.0.0.1:59967'
+INFO | 2023-04-21 22:17:52,147 | MainProcess | [Server]: '127.0.0.1:59967' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:19:26,971 | MainProcess | [Server]: Client '127.0.0.1:59963' disconnected.
+INFO | 2023-04-21 22:19:26,971 | MainProcess | [Server]: Client '127.0.0.1:59967' disconnected.
+INFO | 2023-04-21 22:25:48,151 | MainProcess | [Server]: New Connection From: '127.0.0.1:60540'
+INFO | 2023-04-21 22:25:48,391 | MainProcess | [Server]: '127.0.0.1:60540' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:25:48,654 | MainProcess | [Server]: New Connection From: '127.0.0.1:60541'
+INFO | 2023-04-21 22:25:49,576 | MainProcess | [Server]: '127.0.0.1:60541' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:29:45,532 | MainProcess | [Server]: Client '127.0.0.1:60540' disconnected.
+INFO | 2023-04-21 22:29:45,532 | MainProcess | [Server]: Client '127.0.0.1:60541' disconnected.
+INFO | 2023-04-21 22:29:55,033 | MainProcess | [Server]: New Connection From: '127.0.0.1:60925'
+INFO | 2023-04-21 22:29:55,067 | MainProcess | [Server]: '127.0.0.1:60925' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:29:55,536 | MainProcess | [Server]: New Connection From: '127.0.0.1:60926'
+INFO | 2023-04-21 22:29:55,575 | MainProcess | [Server]: '127.0.0.1:60926' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:31:11,027 | MainProcess | [Server]: Client '127.0.0.1:60925' disconnected.
+INFO | 2023-04-21 22:31:11,027 | MainProcess | [Server]: Client '127.0.0.1:60926' disconnected.
+INFO | 2023-04-21 22:32:44,149 | MainProcess | [Server]: New Connection From: '127.0.0.1:61186'
+INFO | 2023-04-21 22:32:45,086 | MainProcess | [Server]: '127.0.0.1:61186' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:32:45,103 | MainProcess | [Server]: New Connection From: '127.0.0.1:61187'
+INFO | 2023-04-21 22:32:45,561 | MainProcess | [Server]: '127.0.0.1:61187' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:37:05,323 | MainProcess | [Server]: Client '127.0.0.1:61186' disconnected.
+INFO | 2023-04-21 22:37:05,323 | MainProcess | [Server]: Client '127.0.0.1:61187' disconnected.
+INFO | 2023-04-21 22:37:17,366 | MainProcess | [Server]: New Connection From: '127.0.0.1:61596'
+INFO | 2023-04-21 22:37:17,438 | MainProcess | [Server]: '127.0.0.1:61596' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:37:17,869 | MainProcess | [Server]: New Connection From: '127.0.0.1:61597'
+INFO | 2023-04-21 22:37:18,541 | MainProcess | [Server]: '127.0.0.1:61597' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:42:21,594 | MainProcess | [Server]: Client '127.0.0.1:61597' disconnected.
+INFO | 2023-04-21 22:42:21,594 | MainProcess | [Server]: Client '127.0.0.1:61596' disconnected.
+INFO | 2023-04-21 22:42:32,278 | MainProcess | [Server]: New Connection From: '127.0.0.1:62091'
+INFO | 2023-04-21 22:42:32,608 | MainProcess | [Server]: '127.0.0.1:62091' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:42:32,781 | MainProcess | [Server]: New Connection From: '127.0.0.1:62093'
+INFO | 2023-04-21 22:42:33,177 | MainProcess | [Server]: '127.0.0.1:62093' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:44:26,581 | MainProcess | [Server]: Client '127.0.0.1:62091' disconnected.
+INFO | 2023-04-21 22:44:26,581 | MainProcess | [Server]: Client '127.0.0.1:62093' disconnected.
+INFO | 2023-04-21 22:44:46,247 | MainProcess | [Server]: New Connection From: '127.0.0.1:62269'
+INFO | 2023-04-21 22:44:46,634 | MainProcess | [Server]: '127.0.0.1:62269' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:44:46,750 | MainProcess | [Server]: New Connection From: '127.0.0.1:62270'
+INFO | 2023-04-21 22:44:47,695 | MainProcess | [Server]: '127.0.0.1:62270' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:47:27,739 | MainProcess | [Server]: Client '127.0.0.1:62270' disconnected.
+INFO | 2023-04-21 22:47:27,784 | MainProcess | [Server]: Client '127.0.0.1:62269' disconnected.
+INFO | 2023-04-21 22:47:38,705 | MainProcess | [Server]: New Connection From: '127.0.0.1:62468'
+INFO | 2023-04-21 22:47:39,494 | MainProcess | [Server]: '127.0.0.1:62468' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:47:39,510 | MainProcess | [Server]: New Connection From: '127.0.0.1:62469'
+INFO | 2023-04-21 22:47:39,933 | MainProcess | [Server]: '127.0.0.1:62469' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:50:51,259 | MainProcess | [Server]: Client '127.0.0.1:62468' disconnected.
+INFO | 2023-04-21 22:50:51,259 | MainProcess | [Server]: Client '127.0.0.1:62469' disconnected.
+INFO | 2023-04-21 22:51:18,214 | MainProcess | [Server]: New Connection From: '127.0.0.1:62751'
+INFO | 2023-04-21 22:51:18,533 | MainProcess | [Server]: '127.0.0.1:62751' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:51:18,716 | MainProcess | [Server]: New Connection From: '127.0.0.1:62752'
+INFO | 2023-04-21 22:51:18,934 | MainProcess | [Server]: '127.0.0.1:62752' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 22:53:22,318 | MainProcess | [Server]: Client '127.0.0.1:62752' disconnected.
+INFO | 2023-04-21 22:53:22,319 | MainProcess | [Server]: Client '127.0.0.1:62751' disconnected.
+INFO | 2023-04-21 23:03:59,329 | MainProcess | [Server]: New Connection From: '127.0.0.1:63641'
+INFO | 2023-04-21 23:04:00,172 | MainProcess | [Server]: '127.0.0.1:63641' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:04:00,188 | MainProcess | [Server]: New Connection From: '127.0.0.1:63642'
+INFO | 2023-04-21 23:04:01,050 | MainProcess | [Server]: '127.0.0.1:63642' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:04:01,196 | MainProcess | [Server]: Client '127.0.0.1:63641' disconnected.
+INFO | 2023-04-21 23:04:01,196 | MainProcess | [Server]: Client '127.0.0.1:63642' disconnected.
+INFO | 2023-04-21 23:04:26,496 | MainProcess | [Server]: New Connection From: '127.0.0.1:63675'
+INFO | 2023-04-21 23:04:26,812 | MainProcess | [Server]: '127.0.0.1:63675' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:04:26,999 | MainProcess | [Server]: New Connection From: '127.0.0.1:63676'
+INFO | 2023-04-21 23:04:27,834 | MainProcess | [Server]: '127.0.0.1:63676' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:05:07,859 | MainProcess | [Server]: Client '127.0.0.1:63675' disconnected.
+INFO | 2023-04-21 23:05:07,859 | MainProcess | [Server]: Client '127.0.0.1:63676' disconnected.
+INFO | 2023-04-21 23:06:09,407 | MainProcess | [Server]: New Connection From: '127.0.0.1:63827'
+INFO | 2023-04-21 23:06:10,350 | MainProcess | [Server]: '127.0.0.1:63827' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:06:10,367 | MainProcess | [Server]: New Connection From: '127.0.0.1:63828'
+INFO | 2023-04-21 23:06:10,398 | MainProcess | [Server]: '127.0.0.1:63828' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:14:28,156 | MainProcess | [Server]: Client '127.0.0.1:63827' disconnected.
+INFO | 2023-04-21 23:14:28,156 | MainProcess | [Server]: Client '127.0.0.1:63828' disconnected.
+INFO | 2023-04-21 23:15:38,966 | MainProcess | [Server]: New Connection From: '127.0.0.1:64448'
+INFO | 2023-04-21 23:15:39,777 | MainProcess | [Server]: '127.0.0.1:64448' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:15:39,793 | MainProcess | [Server]: New Connection From: '127.0.0.1:64450'
+INFO | 2023-04-21 23:15:40,163 | MainProcess | [Server]: '127.0.0.1:64450' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:16:47,552 | MainProcess | [Server]: Client '127.0.0.1:64448' disconnected.
+INFO | 2023-04-21 23:16:47,552 | MainProcess | [Server]: Client '127.0.0.1:64450' disconnected.
+INFO | 2023-04-21 23:18:18,302 | MainProcess | [Server]: New Connection From: '127.0.0.1:64657'
+INFO | 2023-04-21 23:18:19,061 | MainProcess | [Server]: '127.0.0.1:64657' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:18:19,078 | MainProcess | [Server]: New Connection From: '127.0.0.1:64658'
+INFO | 2023-04-21 23:18:19,141 | MainProcess | [Server]: '127.0.0.1:64658' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:18:41,823 | MainProcess | [Server]: Client '127.0.0.1:64657' disconnected.
+INFO | 2023-04-21 23:18:41,824 | MainProcess | [Server]: Client '127.0.0.1:64658' disconnected.
+INFO | 2023-04-21 23:19:36,547 | MainProcess | [Server]: New Connection From: '127.0.0.1:64752'
+INFO | 2023-04-21 23:19:37,428 | MainProcess | [Server]: '127.0.0.1:64752' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:19:37,446 | MainProcess | [Server]: New Connection From: '127.0.0.1:64754'
+INFO | 2023-04-21 23:19:38,317 | MainProcess | [Server]: '127.0.0.1:64754' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:20:04,317 | MainProcess | [Server]: Client '127.0.0.1:64752' disconnected.
+INFO | 2023-04-21 23:20:04,318 | MainProcess | [Server]: Client '127.0.0.1:64754' disconnected.
+INFO | 2023-04-21 23:22:07,556 | MainProcess | [Server]: New Connection From: '127.0.0.1:64951'
+INFO | 2023-04-21 23:22:08,430 | MainProcess | [Server]: '127.0.0.1:64951' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:22:08,446 | MainProcess | [Server]: New Connection From: '127.0.0.1:64953'
+INFO | 2023-04-21 23:22:08,523 | MainProcess | [Server]: '127.0.0.1:64953' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:22:31,368 | MainProcess | [Server]: Client '127.0.0.1:64953' disconnected.
+INFO | 2023-04-21 23:22:31,369 | MainProcess | [Server]: Client '127.0.0.1:64951' disconnected.
+INFO | 2023-04-21 23:27:15,325 | MainProcess | [Server]: New Connection From: '127.0.0.1:65317'
+INFO | 2023-04-21 23:27:15,815 | MainProcess | [Server]: '127.0.0.1:65317' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:27:15,833 | MainProcess | [Server]: New Connection From: '127.0.0.1:65319'
+INFO | 2023-04-21 23:27:16,333 | MainProcess | [Server]: '127.0.0.1:65319' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:27:31,323 | MainProcess | [Server]: Client '127.0.0.1:65317' disconnected.
+INFO | 2023-04-21 23:27:31,323 | MainProcess | [Server]: Client '127.0.0.1:65319' disconnected.
+INFO | 2023-04-21 23:37:02,026 | MainProcess | [Server]: New Connection From: '127.0.0.1:49617'
+INFO | 2023-04-21 23:37:02,988 | MainProcess | [Server]: '127.0.0.1:49617' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:37:03,006 | MainProcess | [Server]: New Connection From: '127.0.0.1:49618'
+INFO | 2023-04-21 23:37:03,584 | MainProcess | [Server]: '127.0.0.1:49618' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:37:23,455 | MainProcess | [Server]: Client '127.0.0.1:49618' disconnected.
+INFO | 2023-04-21 23:37:23,455 | MainProcess | [Server]: Client '127.0.0.1:49617' disconnected.
+INFO | 2023-04-21 23:42:12,075 | MainProcess | [Server]: New Connection From: '127.0.0.1:50159'
+INFO | 2023-04-21 23:42:12,653 | MainProcess | [Server]: '127.0.0.1:50159' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:42:12,672 | MainProcess | [Server]: New Connection From: '127.0.0.1:50160'
+INFO | 2023-04-21 23:42:12,748 | MainProcess | [Server]: '127.0.0.1:50160' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-21 23:44:01,553 | MainProcess | [Server]: New Connection From: '127.0.0.1:50537'
+INFO | 2023-04-21 23:44:01,916 | MainProcess | [Server]: '127.0.0.1:50537' logged in as 'omerdagry12345@gmail.com - Omer2'.
+INFO | 2023-04-21 23:44:02,055 | MainProcess | [Server]: New Connection From: '127.0.0.1:50538'
+INFO | 2023-04-21 23:44:02,389 | MainProcess | [Server]: '127.0.0.1:50538' logged in as 'omerdagry12345@gmail.com - Omer2'.
+INFO | 2023-04-22 00:04:21,954 | MainProcess | [Server]: Client '127.0.0.1:50159' disconnected.
+INFO | 2023-04-22 00:04:21,955 | MainProcess | [Server]: Client '127.0.0.1:50160' disconnected.
+INFO | 2023-04-22 00:04:23,255 | MainProcess | [Server]: Client '127.0.0.1:50538' disconnected.
+INFO | 2023-04-22 00:04:23,255 | MainProcess | [Server]: Client '127.0.0.1:50537' disconnected.
+INFO | 2023-04-22 00:04:34,593 | MainProcess | [Server]: New Connection From: '127.0.0.1:52577'
+INFO | 2023-04-22 00:04:34,908 | MainProcess | [Server]: '127.0.0.1:52577' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-22 00:04:35,096 | MainProcess | [Server]: New Connection From: '127.0.0.1:52578'
+INFO | 2023-04-22 00:04:36,072 | MainProcess | [Server]: '127.0.0.1:52578' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-22 00:05:18,231 | MainProcess | [Server]: New Connection From: '127.0.0.1:52643'
+INFO | 2023-04-22 00:05:18,988 | MainProcess | [Server]: '127.0.0.1:52643' logged in as 'omerdagry12345@gmail.com - Omer2'.
+INFO | 2023-04-22 00:05:19,008 | MainProcess | [Server]: New Connection From: '127.0.0.1:52644'
+INFO | 2023-04-22 00:05:19,540 | MainProcess | [Server]: '127.0.0.1:52644' logged in as 'omerdagry12345@gmail.com - Omer2'.
+INFO | 2023-04-22 00:31:09,809 | MainProcess | [Server]: Client '127.0.0.1:52643' disconnected.
+INFO | 2023-04-22 00:31:09,810 | MainProcess | [Server]: Client '127.0.0.1:52644' disconnected.
+INFO | 2023-04-22 00:31:11,003 | MainProcess | [Server]: Client '127.0.0.1:52577' disconnected.
+INFO | 2023-04-22 00:31:11,003 | MainProcess | [Server]: Client '127.0.0.1:52578' disconnected.
+INFO | 2023-04-22 01:05:00,086 | MainProcess | [Server]: New Connection From: '127.0.0.1:56720'
+INFO | 2023-04-22 01:05:00,528 | MainProcess | [Server]: '127.0.0.1:56720' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-22 01:05:00,589 | MainProcess | [Server]: New Connection From: '127.0.0.1:56721'
+INFO | 2023-04-22 01:05:00,995 | MainProcess | [Server]: '127.0.0.1:56721' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-22 01:05:11,882 | MainProcess | [Server]: New Connection From: '127.0.0.1:56756'
+INFO | 2023-04-22 01:05:12,765 | MainProcess | [Server]: '127.0.0.1:56756' logged in as 'omerdagry12345@gmail.com - Omer2'.
+INFO | 2023-04-22 01:05:12,783 | MainProcess | [Server]: New Connection From: '127.0.0.1:56763'
+INFO | 2023-04-22 01:05:13,682 | MainProcess | [Server]: '127.0.0.1:56763' logged in as 'omerdagry12345@gmail.com - Omer2'.
+INFO | 2023-04-22 01:20:02,356 | MainProcess | [Server]: Client '127.0.0.1:56720' disconnected.
+INFO | 2023-04-22 01:20:02,357 | MainProcess | [Server]: Client '127.0.0.1:56721' disconnected.
+INFO | 2023-04-22 01:20:15,444 | MainProcess | [Server]: New Connection From: '127.0.0.1:57839'
+INFO | 2023-04-22 01:20:15,808 | MainProcess | [Server]: '127.0.0.1:57839' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-22 01:20:15,946 | MainProcess | [Server]: New Connection From: '127.0.0.1:57840'
+INFO | 2023-04-22 01:20:16,847 | MainProcess | [Server]: '127.0.0.1:57840' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-22 01:20:26,977 | MainProcess | [Server]: Client '127.0.0.1:57839' disconnected.
+INFO | 2023-04-22 01:20:26,978 | MainProcess | [Server]: Client '127.0.0.1:57840' disconnected.
+INFO | 2023-04-22 01:20:32,445 | MainProcess | [Server]: Client '127.0.0.1:56756' disconnected.
+INFO | 2023-04-22 01:20:32,446 | MainProcess | [Server]: Client '127.0.0.1:56763' disconnected.
+INFO | 2023-04-22 01:20:49,111 | MainProcess | [Server]: New Connection From: '127.0.0.1:57892'
+INFO | 2023-04-22 01:20:49,865 | MainProcess | [Server]: '127.0.0.1:57892' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-22 01:20:49,882 | MainProcess | [Server]: New Connection From: '127.0.0.1:57894'
+INFO | 2023-04-22 01:20:50,137 | MainProcess | [Server]: '127.0.0.1:57894' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-22 01:20:58,890 | MainProcess | [Server]: New Connection From: '127.0.0.1:57914'
+INFO | 2023-04-22 01:20:59,823 | MainProcess | [Server]: '127.0.0.1:57914' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-22 01:20:59,840 | MainProcess | [Server]: New Connection From: '127.0.0.1:57918'
+INFO | 2023-04-22 01:20:59,872 | MainProcess | [Server]: '127.0.0.1:57918' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-22 01:21:41,748 | MainProcess | [Server]: Client '127.0.0.1:57914' disconnected.
+INFO | 2023-04-22 01:21:41,748 | MainProcess | [Server]: Client '127.0.0.1:57918' disconnected.
+INFO | 2023-04-22 01:21:58,175 | MainProcess | [Server]: New Connection From: '127.0.0.1:57996'
+INFO | 2023-04-22 01:21:58,213 | MainProcess | [Server]: '127.0.0.1:57996' logged in as 'omerdagry12345@gmail.com - Omer2'.
+INFO | 2023-04-22 01:21:58,677 | MainProcess | [Server]: New Connection From: '127.0.0.1:57998'
+INFO | 2023-04-22 01:21:59,600 | MainProcess | [Server]: '127.0.0.1:57998' logged in as 'omerdagry12345@gmail.com - Omer2'.
+DEBUG | 2023-04-22 01:28:15,779 | MainProcess | [Server]: added the exception that was received while handling '127.0.0.1' to the list of exceptions
+WARNING | 2023-04-22 01:28:15,817 | MainProcess | [Server]: error while handling '127.0.0.1:57894' ('Omer Dagry'): ['Traceback (most recent call last):\n', '  File "D:\\Projects\\In Work or Frequently Used\\School-Twelfth_Grade\\Project\\Whatsapp\\Server\\server.py", line 1130, in handle_client\n    break\n          \n', '  File "D:\\Projects\\In Work or Frequently Used\\School-Twelfth_Grade\\Project\\Whatsapp\\Server\\protocol_socket.py", line 115, in receive_message\n    received = self.__encrypted_sock.recv(30 - len(data_length))\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n', '  File "C:\\Users\\omerd\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\ssl.py", line 1263, in recv\n    return self.read(buflen)\n           ^^^^^^^^^^^^^^^^^\n', '  File "C:\\Users\\omerd\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\ssl.py", line 1136, in read\n    return self._sslobj.read(len)\n           ^^^^^^^^^^^^^^^^^^^^^^\n', 'ssl.SSLError: [SSL: DECRYPTION_FAILED_OR_BAD_RECORD_MAC] decryption failed or bad record mac (_ssl.c:2546)\n']
+INFO | 2023-04-22 01:28:15,817 | MainProcess | [Server]: Client '127.0.0.1:57894' disconnected.
+INFO | 2023-04-22 01:36:09,398 | MainProcess | [Server]: Client '127.0.0.1:57892' disconnected.
+INFO | 2023-04-22 01:36:43,065 | MainProcess | [Server]: New Connection From: '127.0.0.1:59070'
+INFO | 2023-04-22 01:36:44,035 | MainProcess | [Server]: '127.0.0.1:59070' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-22 01:36:44,053 | MainProcess | [Server]: New Connection From: '127.0.0.1:59073'
+INFO | 2023-04-22 01:36:44,282 | MainProcess | [Server]: '127.0.0.1:59073' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+DEBUG | 2023-04-22 01:47:29,407 | MainProcess | [Server]: added the exception that was received while handling '127.0.0.1' to the list of exceptions
+WARNING | 2023-04-22 01:47:29,409 | MainProcess | [Server]: error while handling '127.0.0.1:59073' ('Omer Dagry'): ['Traceback (most recent call last):\n', '  File "D:\\Projects\\In Work or Frequently Used\\School-Twelfth_Grade\\Project\\Whatsapp\\Server\\server.py", line 1130, in handle_client\n    break\n          \n', '  File "D:\\Projects\\In Work or Frequently Used\\School-Twelfth_Grade\\Project\\Whatsapp\\Server\\protocol_socket.py", line 115, in receive_message\n    received = self.__encrypted_sock.recv(30 - len(data_length))\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n', '  File "C:\\Users\\omerd\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\ssl.py", line 1263, in recv\n    return self.read(buflen)\n           ^^^^^^^^^^^^^^^^^\n', '  File "C:\\Users\\omerd\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\ssl.py", line 1136, in read\n    return self._sslobj.read(len)\n           ^^^^^^^^^^^^^^^^^^^^^^\n', 'ssl.SSLError: [SSL: TLSV1_ALERT_PROTOCOL_VERSION] tlsv1 alert protocol version (_ssl.c:2546)\n']
+INFO | 2023-04-22 01:47:29,409 | MainProcess | [Server]: Client '127.0.0.1:59073' disconnected.
+INFO | 2023-04-22 01:48:18,774 | MainProcess | [Server]: Client '127.0.0.1:59070' disconnected.
+INFO | 2023-04-22 01:48:39,603 | MainProcess | [Server]: New Connection From: '127.0.0.1:59790'
+INFO | 2023-04-22 01:48:40,221 | MainProcess | [Server]: '127.0.0.1:59790' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-22 01:48:40,239 | MainProcess | [Server]: New Connection From: '127.0.0.1:59792'
+INFO | 2023-04-22 01:48:40,902 | MainProcess | [Server]: '127.0.0.1:59792' logged in as 'omerdagry@gmail.com - Omer Dagry'.
+INFO | 2023-04-22 02:03:42,953 | MainProcess | [Server]: Client '127.0.0.1:57996' disconnected.
+INFO | 2023-04-22 02:03:42,953 | MainProcess | [Server]: Client '127.0.0.1:57998' disconnected.
+INFO | 2023-04-22 02:03:44,325 | MainProcess | [Server]: Client '127.0.0.1:59790' disconnected.
+INFO | 2023-04-22 02:03:44,326 | MainProcess | [Server]: Client '127.0.0.1:59792' disconnected.

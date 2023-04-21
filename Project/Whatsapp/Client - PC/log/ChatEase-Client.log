@@ -1,0 +1,4 @@
+INFO | 2023-04-21 19:06:46,571 | MainProcess | MainThread | [ChatEaseGUI]: initializing GUI
+INFO | 2023-04-21 19:06:46,658 | MainProcess | MainThread | [ChatEaseGUI]: setup
+INFO | 2023-04-21 19:06:47,323 | MainProcess | MainThread | [ChatEaseGUI]: setup done
+INFO | 2023-04-21 19:07:14,429 | MainProcess | MainThread | Program ended with no exceptions
