@@ -16,6 +16,7 @@ SYNC_MODES = ["new", "all"]
 
 
 def showerror(title: str | None, message: str | None, **options) -> None:
+    print(f"Show error: {title = }: {message = }")
     Thread(target=messagebox.showerror, args=(title, message,), kwargs=options).start()
 
 
@@ -209,15 +210,19 @@ class Communication:
 
     def upload_file_(self, chat_id: str, filepath: str = "", delete_file: bool = False) -> None:
         if filepath == "":
-            filepath = askopenfilename()
-            if filepath == "" or not os.path.isfile(filepath):
+            root = Tk()
+            root.attributes('-topmost', True)  # Display the dialog in the foreground.
+            root.iconify()  # Hide the little window.
+            filepath = askopenfilename(parent=root)
+            root.destroy()
+            if filepath == "" or filepath is None or not os.path.isfile(filepath):
                 return
         ok, sock, _ = self.login(verbose=False)
         if not ok:
             raise ValueError("email or password incorrect, could not login to upload file")
         with open(filepath, "rb") as f:
             file_data = f.read()
-        file_name = filepath.split("\\")[-1]
+        file_name = filepath.split("/")[-1]
         request = f"{'file'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}" \
                   f"{str(len(file_name)).ljust(15)}{file_name}".encode() + file_data
         if not sock.send_message(request):
@@ -312,8 +317,12 @@ class Communication:
     def upload_profile_picture(self, path_to_picture: os.PathLike | str = None) -> bool:
         if path_to_picture is None:  # ask for file
             file_types = [("PNG", "*.png"), ("JPG", "*.jpg"), ("JPEG", "*.jpeg")]
+            root = Tk()
+            root.attributes('-topmost', True)  # Display the dialog in the foreground.
+            root.iconify()  # Hide the little window.
             path_to_picture = askopenfilename(filetypes=file_types)
-            if path_to_picture == "" or not os.path.isfile(path_to_picture):
+            root.destroy()
+            if path_to_picture == "" or path_to_picture is None or not os.path.isfile(path_to_picture):
                 return False
         if not check_size(path_to_picture):  # check image size
             showerror("Profile Picture", "Image size is invalid,\nmust be at least 64x64.")
@@ -334,8 +343,12 @@ class Communication:
     def upload_group_picture(self, chat_id: str, path_to_picture: os.PathLike | str = None) -> bool:
         if path_to_picture is None:  # ask for file
             file_types = [("PNG", "*.png"), ("JPG", "*.jpg"), ("JPEG", "*.jpeg")]
+            root = Tk()
+            root.attributes('-topmost', True)  # Display the dialog in the foreground.
+            root.iconify()  # Hide the little window.
             path_to_picture = askopenfilename(filetypes=file_types)
-            if path_to_picture == "" or not os.path.isfile(path_to_picture):
+            root.destroy()
+            if path_to_picture == "" or path_to_picture is None or not os.path.isfile(path_to_picture):
                 return False
         if not check_size(path_to_picture):  # check image size
             showerror("Group Picture", "Image size is invalid,\nmust be at least 64x64.")

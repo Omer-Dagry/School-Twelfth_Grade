@@ -588,7 +588,7 @@ def send_msg(ip: str, from_user: str, chat_id: str, msg: str,
     :param add_message: a message that will say 'x added y' and will be displayed different
     """
     # 3 types: regular msg / file msg (if it's a file) / remove msg (if someone removed someone)
-    msg_type = "msg" if not file_msg and not remove_msg else \
+    msg_type = "msg" if not file_msg and not remove_msg and not remove_msg and not add_message else \
         "file" if file_msg else "remove" if remove_msg else "add" if add_message else None
     if msg_type is None:
         return False
@@ -661,7 +661,8 @@ def send_file(ip: str, from_user: str, chat_id: str, file_data: bytes, file_name
         # save the file
         with open(location + new_file_name, "wb") as file:
             file.write(file_data)
-        if send_msg(ip, from_user, chat_id, new_file_name, file_msg=True):
+        #                                                       remove USERS_DATA
+        if send_msg(ip, from_user, chat_id, "\\".join((location + new_file_name).split("\\")[2:]), file_msg=True):
             add_new_data_to(users_in_chat, location + new_file_name)
             return True
         else:
@@ -669,6 +670,8 @@ def send_file(ip: str, from_user: str, chat_id: str, file_data: bytes, file_name
             return False
     except Exception as e:
         add_exception_for_ip(ip)
+        print(f"received while handling '{ip}' exception: "
+              f"{traceback.format_exception(e)} (user: '{from_user}', func: 'send_file')")
         logging.warning(f"received while handling '{ip}' exception: "
                         f"{traceback.format_exception(e)} (user: '{from_user}', func: 'send_file')")
         return False
@@ -955,7 +958,7 @@ def sync(email: str, sync_all: bool = False) -> bytes:
     current_time = datetime.datetime.now()
     for user in users_status:
         if isinstance(users_status[user], datetime.datetime):
-            strftime = "%H:%M %m-%d-%Y" if (current_time - users_status[user]).days >= 1 else "%H:%M"
+            strftime = "%H:%M %m/%d/%Y" if (current_time - users_status[user]).days >= 1 else "%H:%M"
             users_status[user] = f'Last Seen {users_status[user].strftime(strftime)}'
         else:
             users_status[user] = "Online"
@@ -991,8 +994,12 @@ def sync(email: str, sync_all: bool = False) -> bytes:
             print(f"[Server]: error in 'sync' function, FileNotFound: '{file}'")
             printing_lock.release()
             logging.debug(f"[Server]: error in 'sync' function, FileNotFound: '{file}'")
+    if sync_all:
+        print("starting pickle")
     # pickle the dictionary
     sync_res: bytes = pickle.dumps(file_name_data)
+    if sync_all:
+        print("pickle finished")
     #
     unblock(f"{USERS_DATA}{email}\\sync")
     return sync_res
@@ -1121,6 +1128,7 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
             stay_encoded = {"file", "upload profile picture", "upload group picture", "new group"}
             # handle client's requests until client disconnects
             sync_msg = False
+            first_sync = False
             while True:
                 request: bytes
                 if not sync_msg:
@@ -1143,10 +1151,19 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                     sync_msg = True
                 elif cmd == "sync all":
                     request: str
-                    response = sync(email, sync_all=True)
-                    response = f"{'sync all'.ljust(30)}".encode() + response
-                    #
+                    first_sync = True if not sync_msg else False
                     sync_msg = True
+                    response = sync(email, sync_all=True)
+                    len_of_message_and_cmd = str(30 + len(response)).ljust(30).encode() + cmd.ljust(30).encode()
+                    #
+                    if not sync_msg or first_sync:
+                        print("sending response")
+                    client_socket.sendall(len_of_message_and_cmd)
+                    client_socket.sendall(response)
+                    if not sync_msg or first_sync:
+                        print("sent")
+                        first_sync = False
+                    continue
                 elif cmd == "msg":
                     request: str
                     len_chat_id = int(request[30: 45].strip())  # currently 20
@@ -1235,8 +1252,6 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                 # send response
                 if response is not None:
                     client_socket.send_message(response)
-                    if not sync_msg:
-                        print("sending response")
     except (socket.error, TypeError, OSError, ConnectionError, Exception) as err:
         add_exception_for_ip(client_ip_port[0])
         printing_lock.acquire()

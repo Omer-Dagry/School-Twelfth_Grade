@@ -5,7 +5,7 @@
     <title>ChatEase</title>
   </head>
 
-  <body class="disable_text_selection">
+  <body class="disable_text_selection" oncontextmenu="return false;">
     <!-- Box to contain the entire app -->
     <div id="box">
       <!-- Grid for left side (chat buttons) and right side (chat) -->
@@ -53,7 +53,7 @@
           <!-- Chats Actions (e.g send msg, file & emoji) -->
           <div id="chat_actions">
             <div id="left_side_actions">
-              <ion-icon name="document" id="upload_file" onclick="send_file()" title="Upload File"></ion-icon>
+              <ion-icon name="document" id="upload_file" onclick="send_file(get_open_chat_id())" title="Upload File"></ion-icon>
               <ion-icon name="happy-outline" id="emoji_drawer_btn" onclick="toggleEmojis()" title="Emoji"></ion-icon>
             </div>
             

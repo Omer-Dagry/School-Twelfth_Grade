@@ -1,4 +1,6 @@
 import os
+import sys
+
 import eel
 import wave
 import time
@@ -169,9 +171,24 @@ def update(com: Com, sync_socket: EncryptedProtocolSocket, first_time_sync_mode:
 
 @eel.expose
 def send_file(chat_id: str, file_path: str) -> None:
-    file_path = f"webroot\\{file_path}"
-    if file_path == "webroot\\" or os.path.isfile(file_path):
+    global communication
+    print(chat_id, file_path)
+    if chat_id == "" or chat_id is None:
+        return None
+    if os.path.isfile(file_path):
+        print("1")
         communication.upload_file(chat_id, filename=file_path)
+        return None
+    file_path = f"webroot\\{file_path}"
+    print(file_path)
+    if os.path.isfile(file_path):
+        print("2")
+        communication.upload_file(chat_id, filename=file_path)
+    elif file_path == "webroot\\":
+        print("3", threading.current_thread().name)
+        communication.upload_file(chat_id)
+    print("4")
+    return None
 
 
 @eel.expose
@@ -304,11 +321,12 @@ def delete_recording(recording_file_path: str):
 
 @eel.expose
 def start_file(file_path: str) -> bool:
+    file_path = file_path.replace("/", "\\")
     if os.path.isfile(file_path):
         os.startfile(file_path)
         return True
-    elif os.path.isfile(f"web_root\\{file_path}"):
-        os.startfile(f"web_root\\{file_path}")
+    elif os.path.isfile(f"webroot\\{file_path}"):
+        os.startfile(f"webroot\\{file_path}")
         return True
     return False
 
@@ -317,17 +335,9 @@ def start_file(file_path: str) -> bool:
 def close_program():
     global stop
     stop = True
-
-
-@eel.expose
-def restart_sync():
-    global sync_thread, stop
-    if sync_thread is None or stop or not sync_thread.is_alive():
-        stop = False
-        sync_thread = threading.Thread(
-            target=update, args=(communication, sync_sock, first_time_sync_all,), daemon=True
-        )
-        sync_thread.start()
+    if sync_thread is not None:
+        sync_thread.join(5)  # wait up to 5 seconds
+    sys.exit(0)
 
 
 """                                 Connect To Server & Start GUI & Sync                                             """
@@ -369,8 +379,9 @@ def start(user_email: str, user_username: str, user_password: str,
                     else:
                         raise Exception("Couldn't find an open port for GUI local host.")
             eel.start("index.html", port=port)
-        except Exception as e:
-            print(traceback.format_exception(e))
+        except (Exception, BaseException) as e:
+            if not isinstance(e, SystemExit) and not isinstance(e, KeyboardInterrupt):
+                traceback.print_exception(e)
         finally:
             if os.path.isdir(f"webroot\\{email}\\recordings"):
                 shutil.rmtree(f"webroot\\{email}\\recordings")

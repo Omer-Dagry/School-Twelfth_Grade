@@ -362,6 +362,21 @@ button:active {
     height: fit-content;
 }
 
+.msg_image {
+    max-width: 50vh;
+    /* background-image: ; */
+    margin: 10px;
+}
+
+.msg_file {
+    background-color: gray;
+    /*  */
+    font-size: medium;
+    margin: 10px;
+    padding: 10px;
+    cursor: pointer;
+} .msg_file:active { opacity: 0.7; }
+
 .msg_data {
     margin: 15px;
     margin-left: 5px;

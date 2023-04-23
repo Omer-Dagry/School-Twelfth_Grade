@@ -370,12 +370,13 @@ async function load_chat(chat_name, chat_id, chat_type, users) {
     chat.scrollTo(0, chat.scrollHeight);
 }
 async function load_more_msgs() {
+    chat.scrollBy(0, 20);
+    let chat_msgs = JSON.parse(await eel.get_more_msgs()());
+    console.log(chat_msgs);
+    if (Object.keys(chat_msgs).length === 0) return;  // no more messages
     let first_msg = chat.firstChild;
     let chat_id = chat.chat_id;
     console.log(`loading more messages (id: '${chat_id}')`);
-    let chat_msgs = JSON.parse(await eel.get_more_msgs()());
-    if (chat_msgs === {}) return;  // no more messages
-    chat.scrollBy(0, 10);
     await load_msgs(chat_msgs, "START");
     chat.onscroll = check_pos;  // re-allow loading more msgs
     chat.scrollTo(0, chat.scrollHeight);
@@ -394,6 +395,8 @@ function update(chat_id, chat_msgs) {
     chat_msgs = JSON.parse(chat_msgs);
     let from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time, msg_row, keys;
     let new_messages = {};
+    let scrollToBottom = false;
+    if (chat.scrollHeight - chat.scrollTop - chat.offsetHeight <= 200) scrollToBottom = true;
     for (let msg_index in chat_msgs) {
         [from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time] = chat_msgs[msg_index];
         if (parseInt(msg_index) > parseInt(last_msg_index)) {  // new messages
@@ -408,6 +411,7 @@ function update(chat_id, chat_msgs) {
         }
     }
     load_msgs(new_messages);
+    if (scrollToBottom) chat.scrollBy(0, chat.scrollHeight);
 }
 
 function adjust_msgs_input_width() {
@@ -459,6 +463,15 @@ function handle_msg_length(msg) {
 }
 
 
+function append_to_chat(position, element) {
+    if (position === "END") {
+        chat.appendChild(element);
+        chat.appendChild(window.clear.cloneNode(true));
+    } else {
+        chat.prepend(window.clear.cloneNode(true));
+        chat.prepend(element);
+    }
+}
 /* 
 TODO: add time - 
       when this msg time (date) is different from 
@@ -477,11 +490,14 @@ function add_msg(from, sender, msg, time, msg_index, msg_type, deleted_for,
         let full_sender = sender;
         sender = sender.split("@");
         sender = sender.slice(0, sender.length - 1).join("@") + ":";
+        if (msg.includes("omerdagry@gmail.com added omerdagry12345@gmail.com.")) {
+            console.log(msg_type);
+        }
         if (deleted_for_all) {
             // This message was deleted.
         } else if (deleted_for.includes(email)) {
             return;
-        } else if (msg_type == "msg") {
+        } else if (msg_type === "msg") {
             msg = handle_msg_length(msg);
             let this_msg_row = from == "me" ? window.my_msg_row.cloneNode(true) : window.msg_row.cloneNode(true);
             this_msg_row.id = `msg_${msg_index}`;
@@ -493,22 +509,41 @@ function add_msg(from, sender, msg, time, msg_index, msg_type, deleted_for,
                 msg_picture.style.backgroundImage = `url("${email}/profile_pictures/${full_sender}_profile_picture.png")`;
             }
             // append msg row to chat
-            if (position === "END") {
-                chat.appendChild(this_msg_row);
-                chat.appendChild(window.clear.cloneNode(true));
-            }
-            else {
-                chat.prepend(window.clear.cloneNode(true));
-                chat.prepend(this_msg_row);
-            }
+            append_to_chat(position, this_msg_row);
             // add event listener
             // msg_row.addEventListener("click", function() {func_name(msg_index, seen_by)}) // left click
-        } else if (msg_type == "file") {
+        } else if (msg_type === "file") {
             /* TODO
             check if photo, if so, display it, else display a special msg, 
             either way when pressed call a python function that start the file
+            `url("${email}/${msg}")`
             */
-        } else if (msg_type == "remove" || msg_type == "add") {
+            msg = msg.replaceAll("\\", "/");
+            console.log(msg);
+            let display_file = false;
+            console.log(msg.toLowerCase());
+            for (let index in image_types) {
+                console.log(image_types[index]);
+                if (msg.toLowerCase().endsWith(image_types[index])) {
+                    display_file = true;
+                    break;
+                }
+            }
+            if (display_file) {
+                let photo_row = from == "me" ? window.my_photo_msg_row.cloneNode(true) : window.photo_msg_row.cloneNode(true);
+                photo_row.getElementsByClassName("msg_image")[0].src = `${email}/${msg}`;
+                photo_row.onclick = async function () { await eel.start_file(`${email}/${msg}`); };
+                append_to_chat(position, photo_row);
+            } else {
+                let file_row = from == "me" ? window.my_photo_msg_row.cloneNode(true) : window.photo_msg_row.cloneNode(true);
+                file_row.getElementsByClassName("msg_image")[0].className = "msg_file";
+                let file_name = msg.split("/");
+                file_name = file_name[file_name.length - 1];
+                file_row.getElementsByClassName("msg_file")[0].innerHTML = file_name;
+                file_row.getElementsByClassName("msg_file")[0].onclick = async function () { await eel.start_file(`${email}/${msg}`); };
+                append_to_chat(position, file_row);
+            }
+        } else if (msg_type === "remove" || msg_type === "add") {
             /* TODO
             display the msg in gray (and centered) 
             */
@@ -770,7 +805,13 @@ async function main() {
     // Event listeners
     window.addEventListener("resize", adjust_msgs_input_width);
     window.addEventListener("beforeunload", function () { eel.close_program()(); })
-    await eel.restart_sync()();
+    // TODO: uncomment the next lines
+    // document.onkeydown = function (e) {
+    //     if (e.key === "F1" || e.key === "F3" || e.key === "F5" || 
+    //         e.key === "F7" || e.key === "F12") {
+    //         return false; 
+    //     }
+    // };
 
     // main finish log
     console.log("main setup finished successfully");
@@ -778,6 +819,7 @@ async function main() {
 
 
                                 /* Globals */
+var image_types = [".jpeg", ".webp", ".gif", ".png", ".apng", ".svg", ".bmp", ".ico"];
 var email;  // email
 var username; // username
 var last_msg_index;  // the index number of the most recent msg in current chat
