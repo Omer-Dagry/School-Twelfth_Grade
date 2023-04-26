@@ -56,16 +56,16 @@ function check_user(other_email, user_box_div) {
     let checkbox = document.getElementById(other_email);
     if (users_list.childElementCount > 1) {
         if (!checkbox.checked) {
-            users_list.prepend(user_box_div.sep);
-            users_list.prepend(user_box_div);
+            users_list.insertBefore(user_box_div.sep, users_list.children[2]);
+            users_list.insertBefore(user_box_div, user_box_div.sep);
         } else {
             let before_element = get_last_checked_user();
             if (before_element == null) users_list.appendChild(user_box_div.sep);
             else users_list.insertBefore(user_box_div.sep, before_element);
             users_list.insertBefore(user_box_div, user_box_div.sep);
         }
-        users_list.prepend(search_for_non_familiar_user);
-        users_list.prepend(create_new_chat_or_group);
+        // users_list.prepend(search_for_non_familiar_user);
+        // users_list.prepend(create_new_chat_or_group);
     }
     checkbox.checked = !checkbox.checked;
 }
@@ -830,17 +830,17 @@ var status_bar_name = document.getElementById("status-bar-name");  // chat name
 var status_bar_picture = document.getElementById("status-bar-picture");  // chat picture
 var status_bar_last_seen = document.getElementById("status-bar-last-seen");  // chat lst seen
 var chat_actions = document.getElementById("chat_actions");  // chat actions (file, emoji, send)
-var input_bar_box = document.getElementById("input_box");
-var users_list = document.createElement("div");
+var input_bar_box = document.getElementById("input_box");  // input message
+var users_list = document.createElement("div");  // list of users (for creating chats/groups)
 users_list.className = "chats_list";
-var chats_list = document.getElementsByClassName("chats_list")[0];
-var create_new_chat_or_group = document.createElement("button");
+var chats_list = document.getElementsByClassName("chats_list")[0];  // list of chats/groups
+var create_new_chat_or_group = document.createElement("button");  // create new chat/group btn
 create_new_chat_or_group.id = "create_chat_or_group";
 create_new_chat_or_group.onclick = new_group_or_chat;
 create_new_chat_or_group.innerHTML = "Create";
-var search_for_non_familiar_user = document.createElement("div");
+var search_for_non_familiar_user = document.createElement("div");  // search user (for new chat/group) box
 search_for_non_familiar_user.id = "search_for_non_familiar_user";
-let non_familiar_user_search_input = document.createElement("input");
+let non_familiar_user_search_input = document.createElement("input");  // input of username to search
 non_familiar_user_search_input.id = "non_familiar_user_search_input";
 non_familiar_user_search_input.placeholder = "Search for other users";
 search_for_non_familiar_user.appendChild(non_familiar_user_search_input);
@@ -848,7 +848,7 @@ let non_familiar_user_search_btn = document.createElement("button");
 non_familiar_user_search_btn.id = "non_familiar_user_search_btn";
 non_familiar_user_search_btn.innerHTML = "Search";
 non_familiar_user_search_btn.onclick = familiarize_user_with;
-search_for_non_familiar_user.appendChild(non_familiar_user_search_btn);
+search_for_non_familiar_user.appendChild(non_familiar_user_search_btn);  // button to trigger search
 
 var message_options_window;
 var call_options_window;

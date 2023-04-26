@@ -106,7 +106,6 @@ class EncryptedProtocolSocket:
             return self.sendall(data, flags)
         return False
 
-
     def receive_message(self, timeout: int | None = None) -> bytes:
         """ receive a message according to the protocol
         :param timeout: set a timeout to receive a message, if timeout is passed but part
