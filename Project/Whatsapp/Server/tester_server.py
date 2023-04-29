@@ -1,109 +1,78 @@
+import rsa
 import socket
-import threading
-import traceback
+import multiprocessing
 
+from aes import AESCipher
 from protocol_socket import EncryptedProtocolSocket
 
 
-# Constants
-CHUNK = 1024 * 2
-BUFFER_SIZE = CHUNK * 4
-
-# Globals
-lock = threading.Lock()
-addr_to_chat_id: dict[tuple[str, int], str] = {}
-chat_id_to_addrs: dict[str, list[tuple[str, int]]] = {}
+def recvall(buffsize: int, sock: socket.socket) -> bytes:
+    data = b""
+    while len(data) < buffsize:
+        data += sock.recv(buffsize - len(data))
+    return data
 
 
-def broadcast_audio(server_sock_udp: EncryptedProtocolSocket, data: bytes,
-                    sent_from_addr: tuple[str, int] | tuple[None, None]) -> None:
-    remove = []
-    lock.acquire()
-    chat_id = addr_to_chat_id[sent_from_addr]
-    clients = chat_id_to_addrs[chat_id].copy()
-    lock.release()
-    for addr in clients:
-        try:
-            if addr != sent_from_addr and data != b"":
-                server_sock_udp.sendto(data, addr)
-        except TimeoutError:
-            print(f"{addr} timed out")
-            remove.append(addr)
-    lock.acquire()
-    for addr in remove:
-        addr_to_chat_id.pop(addr)
-        chat_id_to_addrs[chat_id].remove(addr)
-    lock.release()
+def recv_message(sock: socket.socket, aes: AESCipher) -> bytes:
+    data_length = int(recvall(30, sock).decode().strip())
+    return aes.decrypt(recvall(data_length, sock))
 
 
-def udp():
-    server_sock_udp = EncryptedProtocolSocket(cert_file="private_key_and_crt\\certificate.crt",
-                                              key_file="private_key_and_crt\\privateKey.key",
-                                              family=socket.AF_INET, type=socket.SOCK_DGRAM, server_side=True)
-    server_sock_udp.bind(("0.0.0.0", 8821))
-    server_sock_udp.settimeout(0.01)
-    while True:
-        try:
-            data, addr = server_sock_udp.recvfrom(BUFFER_SIZE)
-            if addr not in addr_to_chat_id:
-                # a message was sent from someone who isn't connected to the TCP socket
-                continue
-            broadcast_audio(server_sock_udp, data, addr)
-        except ConnectionResetError:
-            pass
-        except socket.timeout:
-            broadcast_audio(server_sock_udp, b"", (None, None))
-        except Exception as e:
-            # traceback.print_exception(e)
-            pass
+def recvall_no_encryption(buffsize: int, sock: socket.socket) -> bytes:
+    data = b""
+    while len(data) < buffsize:
+        data += sock.recv(buffsize - len(data))
+    return data
 
 
-def tcp_connection():
-    server_sock_tcp = EncryptedProtocolSocket(cert_file="private_key_and_crt\\certificate.crt",
-                                              key_file="private_key_and_crt\\privateKey.key")
-    server_sock_tcp.bind(("0.0.0.0", 8820))
-    server_sock_tcp.listen()
-    clients: dict[EncryptedProtocolSocket, tuple[str, int]] = {}
-    addr_status: dict[tuple[str, int], bool] = {}
-    server_sock_tcp.settimeout(0.01)
-    while True:
-        try:
-            client_sock, addr = server_sock_tcp.accept()
-            clients[client_sock] = addr
-        except TimeoutError:
-            pass
-        for client in clients.keys():
-            if not addr_status[clients[client]]:
-                msg = client.receive_message()
-                if msg.startswith(b"login".ljust(30)):
-                    # TODO: check username and password and chat_id
-                    # username_length
-                    # username
-                    # password (md5) length known
-                    # chat_id (the rest of the message)
-                    #
-                    lock.acquire()
-                    # if chat_id in chat_id_to_addrs:
-                    #     chat_id_to_addrs[chat_id].append(clients[client])
-                    # else:
-                    #     chat_id_to_addrs[chat_id] = [clients[client]]
-                    # addr_to_chat_id[clients[client]] = chat_id
-                    lock.release()
-                elif msg.startswith(b"check in".ljust(30)):
-                    # check in every x seconds to make sure the client is still
-                    # connected on the udp as well, if not cut connection with them
-                    pass
-                else:
-                    client.close()
-                    addr_status.pop(clients[client])
-                    clients.pop(client)
+def send_message(data: bytes, sock: socket.socket, aes: AESCipher) -> None:
+    data = aes.encrypt(data)
+    sock.sendall(f"{len(data)}".ljust(30).encode())
+    sock.sendall(data)
+
+
+def exchange_aes_key(my_public_key: rsa.PublicKey, my_private_key: rsa.PrivateKey,
+                     sock: socket.socket) -> bytes:
+    my_public_key_bytes = my_public_key.save_pkcs1("PEM")
+    sock.sendall(f"{len(my_public_key_bytes)}".ljust(30).encode() + my_public_key_bytes)
+    aes_key_len = int(recvall_no_encryption(30, sock).decode().strip())
+    aes_key_encrypted = recvall_no_encryption(aes_key_len, sock)
+    return rsa.decrypt(aes_key_encrypted, my_private_key)
+
+
+def main_regular():
+    s = socket.socket()
+    s.bind(("0.0.0.0", 8820))
+    s.listen()
+    my_public_key, my_private_key = rsa.newkeys(2048, poolsize=multiprocessing.cpu_count())
+    print("done generating")
+    client_sock, client_ip_port = s.accept()
+    print(client_ip_port)
+    aes_key = exchange_aes_key(my_public_key, my_private_key, client_sock)
+    aes_cipher = AESCipher(aes_key)
+    print(aes_key)
+    print("finished exchanging")
+    msg = recv_message(client_sock, aes_cipher)
+    print(f"{len(msg) = }")
+    send_message(msg, client_sock, aes_cipher)
+    client_sock.close()
+    s.close()
 
 
 def main():
-    tcp_thread = threading.Thread(target=tcp_connection, daemon=True)
-    tcp_thread.start()
-    udp()
+    s = EncryptedProtocolSocket(cert_file="private_key_and_crt\\certificate.crt",
+                                key_file="private_key_and_crt\\privateKey.key",
+                                server_side=True)
+    s.bind(("0.0.0.0", 8820))
+    s.listen()
+    client_sock, client_ip_port = s.accept()
+    msg = client_sock.receive_message()
+    print(f"{len(msg) = }")
+    client_sock.send_message(msg)
+    client_sock.close()
+    s.close()
 
 
 if __name__ == '__main__':
-    main()
+    main_regular()
+
