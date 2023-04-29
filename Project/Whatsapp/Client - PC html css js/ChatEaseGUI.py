@@ -1,6 +1,5 @@
 import os
 import sys
-
 import eel
 import wave
 import time
@@ -173,22 +172,16 @@ def update(com: Com, sync_socket: ClientEncryptedProtocolSocket, first_time_sync
 @eel.expose
 def send_file(chat_id: str, file_path: str) -> None:
     global communication
-    print(chat_id, file_path)
     if chat_id == "" or chat_id is None:
         return None
     if os.path.isfile(file_path):
-        print("1")
         communication.upload_file(chat_id, filename=file_path)
         return None
     file_path = f"webroot\\{file_path}"
-    print(file_path)
     if os.path.isfile(file_path):
-        print("2")
         communication.upload_file(chat_id, filename=file_path)
     elif file_path == "webroot\\":
-        print("3", threading.current_thread().name)
         communication.upload_file(chat_id)
-    print("4")
     return None
 
 

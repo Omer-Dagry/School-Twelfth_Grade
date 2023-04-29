@@ -12,6 +12,7 @@ TODO: add a file in each chat of a pickled dict -> {email: number_of_unread_msgs
 """
 import os
 import ssl
+import sys
 import rsa
 import time
 import socket
@@ -59,6 +60,7 @@ BLOCK_AFTER_X_EXCEPTIONS = 100
 EXCEPTIONS_WINDOW_TIME = 60 * 5
 
 # Globals
+print_ = print
 # File DBs
 # email_password_file_database -> {email: password, another email: password, ...}
 email_password_file_database = FileDatabase(f"{SERVER_DATA}email_password", ignore_existing=True)
@@ -92,24 +94,30 @@ os.makedirs(f"{USERS_DATA}", exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)
 
 
+def print(*values: object, sep: str | None = " ", end: str | None = "\n"):
+    printing_lock.acquire()
+    print_(*values, sep=sep, end=end)
+    printing_lock.release()
+
+
 def start_server(my_public_key: rsa.PublicKey, my_private_key: rsa.PrivateKey) -> ServerEncryptedProtocolSocket:
+    """ creates server socket binds it and returns it """
     server_socket = ServerEncryptedProtocolSocket(my_public_key, my_private_key)
     try:
         server_socket.bind(SERVER_IP_PORT)
-        printing_lock.acquire()
         print(f"Server is up !! ({PORT = })")
         logging.info(f"Server is up !! ({PORT = })")
-        printing_lock.release()
         server_socket.listen()
     except OSError:
         logging.debug(f"The Port {PORT} Is Taken.")
         print(f"The Port {PORT} Is Taken.")
-        exit()
+        sys.exit(1)
     return server_socket
 
 
 def accept_client(server_socket: ServerEncryptedProtocolSocket) \
-        -> tuple[ServerEncryptedProtocolSocket, tuple[str, int]] | tuple[None, None]:
+        -> tuple[ServerEncryptedProtocolSocket | None, tuple[str, int] | None]:
+    """ except client with a timeout of 2 seconds, if there is no connection in 2 seconds returns None"""
     global clients_sockets
     server_socket.settimeout(2)
     try:
@@ -118,27 +126,18 @@ def accept_client(server_socket: ServerEncryptedProtocolSocket) \
         return None, None
     clients_sockets.append(client_socket)
     logging.info("[Server]: New Connection From: '%s:%s'" % (client_addr[0], client_addr[1]))
-    printing_lock.acquire()
     print("[Server]: New Connection From: '%s:%s'" % (client_addr[0], client_addr[1]))
-    printing_lock.release()
     return client_socket, client_socket.getpeername()
 
 
 def write_to_file(file_path: str, mode: str, data: bytes | str) -> None:
-    """ write to file
-    :param file_path: the path to the file
-    :param mode: the mode to open the file in
-    :param data: the data to write
-    """
+    """ write to file """
     with open(file_path, mode) as f:
         f.write(data)
 
 
 def read_from_file(file_path: str, mode: str) -> str | bytes:
-    """ read a file
-    :param file_path: the path to the file
-    :param mode: the mode to open the file in
-    """
+    """ read a file """
     with open(file_path, mode) as f:
         data: str | bytes = f.read()
     return data
@@ -151,9 +150,6 @@ def add_exception_for_ip(ip: str) -> None:
         received_exception_from[ip].add(datetime.datetime.now())
     else:
         received_exception_from[ip] = {datetime.datetime.now()}
-    printing_lock.acquire()
-    print(f"[Server]: added the exception that was received while handling '{ip}' to the list of exceptions")
-    printing_lock.release()
     logging.debug(f"[Server]: added the exception that was received while handling '{ip}' to the list of exceptions")
     add_exception_lock.release()
 
@@ -181,13 +177,11 @@ def watch_exception_dict():
                 blocked_client_lock.acquire()
                 blocked_ips[ip] = current_time
                 blocked_client_lock.release()
-                printing_lock.acquire()
-                print(f"[Server]: the IP '{ip}' received more than {BLOCK_AFTER_X_EXCEPTIONS} exception "
-                      f"in under than {EXCEPTIONS_WINDOW_TIME} seconds. this IP is blocked for {BLOCK_TIME}")
-                printing_lock.release()
-                logging.warning(f"[Server]: the IP '{ip}' received more than {BLOCK_AFTER_X_EXCEPTIONS} exception "
-                                f"in under than {EXCEPTIONS_WINDOW_TIME} seconds. this IP is blocked for {BLOCK_TIME}")
-                remove_ips.append(ip)
+                msg = f"[Server]: the IP '{ip}' received more than {BLOCK_AFTER_X_EXCEPTIONS} exception " \
+                      f"in under than {EXCEPTIONS_WINDOW_TIME} seconds. this IP is blocked for {BLOCK_TIME}"
+                print(msg)
+                logging.warning(msg)
+                remove_ips.append(ip)  # can't change during iteration
         for ip in remove_ips:
             received_exception_from.pop(ip)
         time.sleep(10)  # check every 10 seconds
@@ -196,12 +190,11 @@ def watch_exception_dict():
 def block(path: str) -> bool:
     """ :return: True to signal the "lock" is acquired """
     """
-        create a folder "folder_name" to block 
-        another thread from touching a specific resource file of the user
-        because we are reading the file and then writing back
-        and if someone does it the same time with us something will
-        be lost, so blocking like this allows to block only for 
-        this specific user, which is what we need
+        create a folder "folder_name" to block another thread from touching a 
+        specific resource file of the user/chat because we are reading the file 
+        and then writing back and if someone does it at the same time with us 
+        something will be lost, so blocking like this allows to block only for 
+        this specific chat and not block all the clients threads, which is what we want
     """
     while True:
         try:
@@ -259,6 +252,7 @@ def remove_chat_id_from_user_chats(user_email: str, chat_id: str) -> bool:
 
 
 def get_user_chats_file(email: str) -> set[str]:
+    """ returns all the chat ids of a user """
     block(f"{USERS_DATA}{email}\\chats block")
     if not os.path.isfile(f"{USERS_DATA}{email}\\chats"):
         write_to_file(f"{USERS_DATA}{email}\\chats", "wb", b"")
@@ -385,6 +379,7 @@ def get_new_data_of(email: str) -> set[str]:
 
 
 def add_one_on_one_chat(email_1: str, email_2: str):
+    """ adds a chat id (of type one on one) to users one_on_one_chats file """
     for email in [email_1, email_2]:
         block(f"{USERS_DATA}{email}\\one_on_one_chats_block")
         if not os.path.isfile(f"{USERS_DATA}{email}\\one_on_one_chats"):
@@ -589,7 +584,6 @@ def send_msg(ip: str, from_user: str, chat_id: str, msg: str,
         "file" if file_msg else "remove" if remove_msg else "add" if add_message else None
     if msg_type is None:
         return False
-    print("send msg:", from_user, chat_id, msg, msg_type)
     lock = block(f"{USERS_DATA}{chat_id}\\data\\not free")
     try:
         users_in_chat: set = chat_id_users_database.get(chat_id)
@@ -667,8 +661,6 @@ def send_file(ip: str, from_user: str, chat_id: str, file_data: bytes, file_name
             return False
     except Exception as e:
         add_exception_for_ip(ip)
-        print(f"received while handling '{ip}' exception: "
-              f"{''.join(traceback.format_exception(e))} (user: '{from_user}', func: 'send_file')")
         logging.warning(f"received while handling '{ip}' exception: "
                         f"{''.join(traceback.format_exception(e))} (user: '{from_user}', func: 'send_file')")
         return False
@@ -809,9 +801,7 @@ def signup(username: str, email: str, password: str, client_sock: ServerEncrypte
     send_mail(email, "Confirmation Code",
               f"Your code is: {confirmation_code}",
               f"<div style='color: rgb(18, 151, 228); font-size: xx-large;'>Your code is: {confirmation_code}</div>")
-    printing_lock.acquire()
     print(f"[Server]: A mail was sent to '{email}' with the confirmation code '{confirmation_code}'")
-    printing_lock.release()
     # send client a msg that says that we are waiting for a confirmation code
     client_sock.send_message(f"{'confirmation_code'.ljust(30)}".encode())
     # receive the response from the client and set a timeout of 5 minutes
@@ -861,9 +851,7 @@ def reset_password(email: str, client_sock: ServerEncryptedProtocolSocket) -> tu
     send_mail(email, "Confirmation Code",
               f"Your code is: {confirmation_code}",
               f"<div style='color: rgb(18, 151, 228); font-size: xx-large;'>Your code is: {confirmation_code}</div>")
-    printing_lock.acquire()
     print(f"[Server]: A mail was sent to '{email}' with the confirmation code '{confirmation_code}'")
-    printing_lock.release()
     # send client a msg that says that we are waiting for a confirmation code
     client_sock.send_message(f"{'confirmation_code'.ljust(30)}".encode())
     # receive the response from the client and set a timeout of 5 minutes
@@ -914,7 +902,7 @@ def login(email: str, password: str) -> bool:
 
 
 def sync(email: str, sync_all: bool = False) -> bytes:
-    """ send user all the requested files (those who are new or changes / all his files) """
+    """ send user all the requested files (those who are new or changed / all his files) """
     block(f"{USERS_DATA}{email}\\sync")
     new_data: list[str] = list(get_new_data_of(email))  # get new data and clear
     if not sync_all:
@@ -987,9 +975,6 @@ def sync(email: str, sync_all: bool = False) -> bytes:
         elif file == f"{USERS_DATA}{email}\\sync":
             pass
         else:
-            printing_lock.acquire()
-            print(f"[Server]: error in 'sync' function, FileNotFound: '{file}'")
-            printing_lock.release()
             logging.debug(f"[Server]: error in 'sync' function, FileNotFound: '{file}'")
     if sync_all:
         print("starting pickle")
@@ -1003,7 +988,7 @@ def sync(email: str, sync_all: bool = False) -> bytes:
 
 
 def call_group(from_email: str, chat_id: str):
-    """ make a call """
+    """ make a call to all the users in the chat - chat_id """
     """
         !!! open a thread to call this func !!!
 
@@ -1035,16 +1020,11 @@ def request_response(cmd: str, status: str, reason: str) -> bytes:
 
 def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: tuple[str, int]) -> None:
     """ handle a client (each client gets a thread that runs this function) """
-    logged_in = False
-    signed_up = False
-    stop = False
-    email = None
-    username = None
+    logged_in, signed_up, stop, email, username = False, False, False, None, None
     try:
         # let client login / signup and login
         while not logged_in:
-            # receive 1 msg
-            client_socket.settimeout(5)
+            client_socket.settimeout(5)  # add timeout of 5 seconds, if there is no request within this time, close con
             try:
                 msg = client_socket.recv_message()
             except socket.timeout:
@@ -1057,7 +1037,6 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
             cmd = msg[: 30].strip()
             # check if the msg is signup msg or login, else throw the msg
             # because the client hasn't logged in yet
-            # if client sent login request
             if cmd == "login":
                 len_email = int(msg[30: 45].strip())
                 email = msg[45: 45 + len_email].lower()
@@ -1086,10 +1065,10 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
                 client_socket.send_message(login_or_signup_response("signup", "ok", ""))
                 signed_up = True
                 del msg, len_username, len_email, password, reason, ok
-            elif cmd == "signup" and signed_up:
+            elif cmd == "signup" and signed_up:  # don't allow 1 connection to signup multiple times
                 stop = True
                 break
-            elif cmd == "reset password":
+            elif cmd == "reset password":  # TODO: add in client side
                 email_len = int(msg[30: 45])
                 tmp_email = msg[45: 45 + email_len].lower()
                 tmp_username = msg[45 + email_len:]
@@ -1109,23 +1088,19 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
             if email not in email_user_database:  # double check that this user exists
                 logging.debug(f"[Server]: The email '{email}' doesn't exists in the database.")
                 raise ValueError(f"[Server]: The email '{email}' doesn't exists in the database.")
-            #
             # set thread name                    email            number of connections (of this client)
             threading.current_thread().name = f"{email} (client - {user_online_status_database[email][1]})"
             client_socket.settimeout(None)
             username = email_user_database[email]
-            # password = email_password_database[email]
-            password = None
+            password = None  # no need to save the password, set to None
             #
-            printing_lock.acquire()
             print(f"[Server]: '%s:%s' logged in as '{email}-{username}'." % client_ip_port)
-            printing_lock.release()
             logging.info(f"[Server]: '%s:%s' logged in as '{email} - {username}'." % client_ip_port)
             #
-            stay_encoded = {"file", "upload profile picture", "upload group picture", "new group"}
             # handle client's requests until client disconnects
-            sync_msg = False
-            first_sync = False
+            sync_msg = False  # TODO: delete this
+            first_sync = False  # TODO: delete this
+            stay_encoded = {"file", "upload profile picture", "upload group picture", "new group"}
             while True:
                 request: bytes
                 if not sync_msg:
@@ -1144,7 +1119,6 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
                     request: str
                     response = sync(email)
                     response = f"{'sync new'.ljust(30)}".encode() + response
-                    #
                     sync_msg = True
                 elif cmd == "sync all":
                     request: str
@@ -1166,9 +1140,7 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
                     chat_id = request[45: len_chat_id + 45]
                     msg = request[len_chat_id + 45:]
                     ok = send_msg(client_ip_port[0], email, chat_id, msg)
-                    #
                     response = request_response(cmd, "ok" if ok else "not ok", "")
-                    print(response)
                 elif cmd == "delete for everyone":
                     request: str
                     chat_id_len = int(request[30: 45].strip())
@@ -1209,12 +1181,10 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
                     response = request_response(cmd, "ok" if ok else "not ok", "")
                 elif cmd == "upload profile picture":
                     request: bytes
-                    # save photo in user data in user folder as '{email}_profile_picture.png'
                     status = upload_profile_picture(email, request[30:])
                     response = request_response(cmd, "ok" if status else "not ok", "")
                 elif cmd == "upload group picture":
                     request: bytes
-                    # save photo in user data in chat_id folder as 'group_picture.png'
                     len_chat_id = int(request[30: 45].decode().strip())  # currently 20
                     chat_id = request[45: len_chat_id + 45].decode()
                     status = update_group_photo(email, chat_id, request[len_chat_id + 45:])
@@ -1240,35 +1210,27 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
                     status, chat_id = create_new_group(client_ip_port[0], email, other_users_list, group_name)
                     response = request_response(cmd, "ok" if status else "not ok", chat_id)
                 else:
-                    print(f"[Server]: '%s:%s' Logged In As '{email}-{username}' - "
-                          f"sent unknown cmd {cmd}" % client_ip_port)
-                    logging.warning(f"[Server]: '%s:%s' Logged In As '{email}-{username}' - "
-                                    f"sent unknown cmd {cmd}" % client_ip_port)
+                    msg = f"[Server]: '%s:%s' Logged In As '{email}-{username}' - sent unknown cmd {cmd}" % \
+                          client_ip_port
+                    print(msg)
+                    logging.warning(msg)
                     continue
-                # send response
+                # send the response
                 if response is not None:
                     client_socket.send_message(response)
-    except (socket.error, TypeError, OSError, ConnectionError, Exception) as err:
+    except Exception as err:
         add_exception_for_ip(client_ip_port[0])
-        printing_lock.acquire()
-        err = ''.join(traceback.format_exception(err))
-        if "username" in locals():
-            print(f"[Server]: error while handling '%s:%s' ('{username}'): {str(err)}" % client_ip_port)
-            logging.warning(f"[Server]: error while handling '%s:%s' ('{username}'): {str(err)}" % client_ip_port)
-        else:
-            print(f"[Server]: error while handling '%s:%s': {str(err)}" % client_ip_port)
-            logging.warning(f"[Server]: error while handling '%s:%s': {str(err)}" % client_ip_port)
-        printing_lock.release()
+        if not isinstance(err, ConnectionError):
+            username = "Unknown username" if "username" not in locals() else username
+            logging.warning(f"[Server]: error while handling '%s:%s' "
+                            f"('{username}'): {''.join(traceback.format_exception(err))}" % client_ip_port)
     finally:
         client_socket.close()
-        printing_lock.acquire()
         print(f"[Server]: Client '%s:%s' disconnected." % client_ip_port)
         logging.info(f"[Server]: Client '%s:%s' disconnected." % client_ip_port)
-        printing_lock.release()
         if email in email_user_database and user_online_status_database[email][0] == "Online":
             if user_online_status_database[email][1] == 1:
-                #                                                     last seen
-                user_online_status_database[email] = ["Offline", datetime.datetime.now()]
+                user_online_status_database[email] = ["Offline", datetime.datetime.now()]  # last seen
             else:
                 user_online_status_database[email][1] -= 1  # reduce online count by 1 (each connection is 1)
 
@@ -1276,20 +1238,20 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
 def main():
     # logging configuration
     logging.basicConfig(format=LOG_FORMAT, filename=LOG_FILE, level=LOG_LEVEL)
-    #
+    # generate public & private rsa keys, and start the server
     print("generating private and public keys")
     my_public_key, my_private_key = rsa.newkeys(2048, poolsize=os.cpu_count())
     print("done generating")
     server_socket = start_server(my_public_key, my_private_key)
-    clients_threads: list[threading.Thread] = []
-    clients_threads_socket: dict[threading.Thread, ServerEncryptedProtocolSocket] = {}
+    # exception watch thread
     watch_exception_dict_thread = threading.Thread(target=watch_exception_dict, daemon=True)
     watch_exception_dict_thread.start()
+    #
+    clients_threads: list[threading.Thread] = []
+    clients_threads_socket: dict[threading.Thread, ServerEncryptedProtocolSocket] = {}
     while True:
-        time.sleep(0.5)
-        client_socket, client_ip_port = accept_client(server_socket)
-        if client_socket is not None:
-            client_socket: ServerEncryptedProtocolSocket
+        client_socket, client_ip_port = accept_client(server_socket)  # try to accept client
+        if client_socket is not None:  # if there was a client waiting to connect
             client_ip_port: tuple[str, int]
             # check if the client's IP is blocked
             blocked_client_lock.acquire()
@@ -1298,41 +1260,37 @@ def main():
                 if (datetime.datetime.now() - blocked_ips[client_ip_port[0]]).seconds > BLOCK_TIME:
                     blocked_ips.pop(client_ip_port[0])
                 else:  # blocked
-                    printing_lock.acquire()
-                    print(f"[Server]: the IP '{client_ip_port[0]}' is blocked and tried to "
-                          f"connect again. closing connection.")
-                    printing_lock.release()
-                    logging.warning(f"[Server]: the IP '{client_ip_port[0]}' is blocked and tried to "
-                                    f"connect again. closing connection.")
+                    msg = f"[Server]: the IP '{client_ip_port[0]}' is blocked and tried to " \
+                          f"connect again. closing connection."
+                    print(msg)
+                    logging.warning(msg)
                     blocked_client_lock.release()
                     try:
-                        client_socket.close()
-                    except Exception as e:
-                        printing_lock.acquire()
-                        print(f"[Server]: exception when closing connection with a "
-                              f"blocked ip '{client_ip_port[0]}' (ex: {''.join(traceback.format_exception(e))})")
-                        printing_lock.release()
-                        logging.warning(f"exception when closing connection with a blocked ip '{client_ip_port[0]}' "
-                                        f"(ex: {''.join(traceback.format_exception(e))})")
+                        client_socket.close()  # close connection with blocked client
+                    except (socket.error, ConnectionError):
+                        pass
                     continue  # skip blocked client
             blocked_client_lock.release()
             # pass the client to the 'handle client' function (with a thread)
-            client_thread = threading.Thread(target=handle_client,
-                                             args=(client_socket, client_ip_port),
+            client_thread = threading.Thread(target=handle_client, args=(client_socket, client_ip_port),
                                              daemon=True, name="%s:%s" % client_ip_port)
             client_thread.start()
             clients_threads.append(client_thread)
             clients_threads_socket[client_thread] = client_socket
         # check if someone disconnected
+        remove = []
         for client_thread in clients_threads:
             if not client_thread.is_alive():
-                clients_threads.remove(client_thread)
+                remove.append(client_thread)
                 try:
                     client_socket = clients_threads_socket[client_thread]
                     client_socket.close()
-                except socket.error:
+                except (socket.error, ConnectionError):
                     pass
                 clients_threads_socket.pop(client_thread)
+        for client_thread in remove:
+            clients_threads.remove(client_thread)
+        time.sleep(0.05)  # prevent high cpu usage from the while loop
 
 
 def unblock_all():
