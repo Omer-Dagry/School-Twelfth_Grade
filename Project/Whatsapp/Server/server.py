@@ -10,10 +10,9 @@ TODO: add a file in each chat of a pickled dict -> {email: number_of_unread_msgs
       each time a user enters the chat set his number_of_unread_msgs to 0
 ###############################################
 """
-
-
 import os
 import ssl
+import rsa
 import time
 import socket
 import pickle
@@ -31,7 +30,7 @@ from typing import *
 from email.mime.text import MIMEText
 from SyncDB import SyncDatabase, FileDatabase
 from email.mime.multipart import MIMEMultipart
-from protocol_socket import EncryptedProtocolSocket
+from server_encrypted_protocol_socket import ServerEncryptedProtocolSocket
 
 
 # Constants
@@ -93,10 +92,8 @@ os.makedirs(f"{USERS_DATA}", exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)
 
 
-def start_server() -> EncryptedProtocolSocket:
-    server_socket = EncryptedProtocolSocket(cert_file=os.path.abspath("private_key_and_crt\\certificate.crt"),
-                                            key_file=os.path.abspath("private_key_and_crt\\privateKey.key"),
-                                            server_side=True)
+def start_server(my_public_key: rsa.PublicKey, my_private_key: rsa.PrivateKey) -> ServerEncryptedProtocolSocket:
+    server_socket = ServerEncryptedProtocolSocket(my_public_key, my_private_key)
     try:
         server_socket.bind(SERVER_IP_PORT)
         printing_lock.acquire()
@@ -111,8 +108,8 @@ def start_server() -> EncryptedProtocolSocket:
     return server_socket
 
 
-def accept_client(server_socket: EncryptedProtocolSocket) \
-        -> tuple[EncryptedProtocolSocket, tuple[str, int]] | tuple[None, None]:
+def accept_client(server_socket: ServerEncryptedProtocolSocket) \
+        -> tuple[ServerEncryptedProtocolSocket, tuple[str, int]] | tuple[None, None]:
     global clients_sockets
     server_socket.settimeout(2)
     try:
@@ -629,7 +626,7 @@ def send_msg(ip: str, from_user: str, chat_id: str, msg: str,
     except Exception as e:
         add_exception_for_ip(ip)
         logging.warning(f"received exception while handling '{ip}' exception: "
-                        f"{traceback.format_exception(e)} (user: '{from_user}', func: 'send_msg')")
+                        f"{''.join(traceback.format_exception(e))} (user: '{from_user}', func: 'send_msg')")
         return False
     finally:
         if lock:
@@ -671,9 +668,9 @@ def send_file(ip: str, from_user: str, chat_id: str, file_data: bytes, file_name
     except Exception as e:
         add_exception_for_ip(ip)
         print(f"received while handling '{ip}' exception: "
-              f"{traceback.format_exception(e)} (user: '{from_user}', func: 'send_file')")
+              f"{''.join(traceback.format_exception(e))} (user: '{from_user}', func: 'send_file')")
         logging.warning(f"received while handling '{ip}' exception: "
-                        f"{traceback.format_exception(e)} (user: '{from_user}', func: 'send_file')")
+                        f"{''.join(traceback.format_exception(e))} (user: '{from_user}', func: 'send_file')")
         return False
 
 
@@ -709,7 +706,7 @@ def delete_msg_for_me(ip: str, from_user: str, chat_id: str, index_of_msg: int) 
     except Exception as e:
         add_exception_for_ip(ip)
         logging.debug(f"received while handling '{ip}' exception: "
-                      f"{traceback.format_exception(e)} (user: '{from_user}', func: 'delete_msg_for_me')")
+                      f"{''.join(traceback.format_exception(e))} (user: '{from_user}', func: 'delete_msg_for_me')")
         return False
     finally:
         if lock:
@@ -750,8 +747,8 @@ def delete_msg_for_everyone(ip: str, from_user: str, chat_id: str, index_of_msg:
         return True
     except Exception as e:
         add_exception_for_ip(ip)
-        logging.debug(f"received while handling '{ip}' exception: "
-                      f"{traceback.format_exception(e)} (user: '{from_user}', func: 'delete_msg_for_everyone')")
+        logging.debug(f"received while handling '{ip}' exception: {''.join(traceback.format_exception(e))} "
+                      f"(user: '{from_user}', func: 'delete_msg_for_everyone')")
         return False
     finally:
         if lock:
@@ -795,7 +792,7 @@ def send_mail(to: str, subject: str, body: str, html: str = "") -> None:
     logging.info(f"sent email to {to}")
 
 
-def signup(username: str, email: str, password: str, client_sock: EncryptedProtocolSocket) -> tuple[bool, str]:
+def signup(username: str, email: str, password: str, client_sock: ServerEncryptedProtocolSocket) -> tuple[bool, str]:
     """  signup
     :param username: the username
     :param email: the email of the user
@@ -818,7 +815,7 @@ def signup(username: str, email: str, password: str, client_sock: EncryptedProto
     # send client a msg that says that we are waiting for a confirmation code
     client_sock.send_message(f"{'confirmation_code'.ljust(30)}".encode())
     # receive the response from the client and set a timeout of 5 minutes
-    msg = client_sock.receive_message(timeout=60*5)
+    msg = client_sock.recv_message(timeout=60*5)
     # if response timed out
     if msg == b"":
         return False, "Request timeout."
@@ -849,7 +846,7 @@ def signup(username: str, email: str, password: str, client_sock: EncryptedProto
     return False, "Email already registered."
 
 
-def reset_password(email: str, client_sock: EncryptedProtocolSocket) -> tuple[bool, str]:
+def reset_password(email: str, client_sock: ServerEncryptedProtocolSocket) -> tuple[bool, str]:
     """ reset password
     :param email: the email of the user that wants to reset their password
     :param client_sock: the socket of the client
@@ -870,7 +867,7 @@ def reset_password(email: str, client_sock: EncryptedProtocolSocket) -> tuple[bo
     # send client a msg that says that we are waiting for a confirmation code
     client_sock.send_message(f"{'confirmation_code'.ljust(30)}".encode())
     # receive the response from the client and set a timeout of 5 minutes
-    msg = client_sock.receive_message(timeout=60 * 5)
+    msg = client_sock.recv_message(timeout=60 * 5)
     # if response timed out
     if msg == b"":
         return False, "Request timeout."
@@ -882,7 +879,7 @@ def reset_password(email: str, client_sock: EncryptedProtocolSocket) -> tuple[bo
     # send client a msg that says that we are waiting for a new password
     client_sock.send_message(f"{'new_password'.ljust(30)}".encode())
     # receive the response from the client and set a timeout of 5 minutes
-    msg = client_sock.receive_message(timeout=60 * 5)
+    msg = client_sock.recv_message(timeout=60 * 5)
     # if response timed out
     if msg == b"":
         return False, "Request timeout."
@@ -1036,7 +1033,7 @@ def request_response(cmd: str, status: str, reason: str) -> bytes:
     return f"{cmd.ljust(30)}{status.lower().ljust(6)}{reason}".encode()
 
 
-def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[str, int]) -> None:
+def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: tuple[str, int]) -> None:
     """ handle a client (each client gets a thread that runs this function) """
     logged_in = False
     signed_up = False
@@ -1049,7 +1046,7 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
             # receive 1 msg
             client_socket.settimeout(5)
             try:
-                msg = client_socket.receive_message()
+                msg = client_socket.recv_message()
             except socket.timeout:
                 add_exception_for_ip(client_ip_port[0])
                 client_socket.send_message(login_or_signup_response("login", "not ok", "Request Timed Out."))
@@ -1133,7 +1130,7 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                 request: bytes
                 if not sync_msg:
                     print("waiting for message")
-                request = client_socket.receive_message()
+                request = client_socket.recv_message()
                 if request == b"":
                     break
                 cmd = request[: 30].decode().strip()
@@ -1154,12 +1151,11 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
                     first_sync = True if not sync_msg else False
                     sync_msg = True
                     response = sync(email, sync_all=True)
-                    len_of_message_and_cmd = str(30 + len(response)).ljust(30).encode() + cmd.ljust(30).encode()
+                    response = cmd.ljust(30).encode() + response
                     #
                     if not sync_msg or first_sync:
                         print("sending response")
-                    client_socket.sendall(len_of_message_and_cmd)
-                    client_socket.sendall(response)
+                    client_socket.send_message(response)
                     if not sync_msg or first_sync:
                         print("sent")
                         first_sync = False
@@ -1255,7 +1251,7 @@ def handle_client(client_socket: EncryptedProtocolSocket, client_ip_port: tuple[
     except (socket.error, TypeError, OSError, ConnectionError, Exception) as err:
         add_exception_for_ip(client_ip_port[0])
         printing_lock.acquire()
-        err = traceback.format_exception(err)
+        err = ''.join(traceback.format_exception(err))
         if "username" in locals():
             print(f"[Server]: error while handling '%s:%s' ('{username}'): {str(err)}" % client_ip_port)
             logging.warning(f"[Server]: error while handling '%s:%s' ('{username}'): {str(err)}" % client_ip_port)
@@ -1281,16 +1277,19 @@ def main():
     # logging configuration
     logging.basicConfig(format=LOG_FORMAT, filename=LOG_FILE, level=LOG_LEVEL)
     #
-    server_socket = start_server()
+    print("generating private and public keys")
+    my_public_key, my_private_key = rsa.newkeys(2048, poolsize=os.cpu_count())
+    print("done generating")
+    server_socket = start_server(my_public_key, my_private_key)
     clients_threads: list[threading.Thread] = []
-    clients_threads_socket: dict[threading.Thread, EncryptedProtocolSocket] = {}
+    clients_threads_socket: dict[threading.Thread, ServerEncryptedProtocolSocket] = {}
     watch_exception_dict_thread = threading.Thread(target=watch_exception_dict, daemon=True)
     watch_exception_dict_thread.start()
     while True:
         time.sleep(0.5)
         client_socket, client_ip_port = accept_client(server_socket)
         if client_socket is not None:
-            client_socket: EncryptedProtocolSocket
+            client_socket: ServerEncryptedProtocolSocket
             client_ip_port: tuple[str, int]
             # check if the client's IP is blocked
             blocked_client_lock.acquire()
@@ -1311,10 +1310,10 @@ def main():
                     except Exception as e:
                         printing_lock.acquire()
                         print(f"[Server]: exception when closing connection with a "
-                              f"blocked ip '{client_ip_port[0]}' (ex: {traceback.format_exception(e)})")
+                              f"blocked ip '{client_ip_port[0]}' (ex: {''.join(traceback.format_exception(e))})")
                         printing_lock.release()
-                        logging.warning(f"exception when closing connection with a "
-                                        f"blocked ip '{client_ip_port[0]}' (ex: {traceback.format_exception(e)})")
+                        logging.warning(f"exception when closing connection with a blocked ip '{client_ip_port[0]}' "
+                                        f"(ex: {''.join(traceback.format_exception(e))})")
                     continue  # skip blocked client
             blocked_client_lock.release()
             # pass the client to the 'handle client' function (with a thread)

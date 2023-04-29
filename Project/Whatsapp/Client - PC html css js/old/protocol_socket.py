@@ -84,10 +84,13 @@ class EncryptedProtocolSocket:
         if self.__encrypted_sock is None:
             raise OSError(f"Please Call '{'bind' if self.__server_side else 'connect'}' before sending a message.")
         flags = [] if flags is None else [flags]
-        try:
-            self.__encrypted_sock.sendall(data, *flags)
-        except ssl.SSLEOFError:  # connection closed
-            return False
+        last_index = 0
+        for index in range(65_535, len(data) + 65_535, 65_535):
+            try:
+                self.__encrypted_sock.sendall(data[last_index: index], *flags)
+            except ssl.SSLEOFError:  # connection closed
+                return False
+            last_index = index
         return True
 
     def send_message(self, data: bytearray | memoryview | bytes, flags: None | int = None) -> bool:

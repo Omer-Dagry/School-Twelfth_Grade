@@ -18,7 +18,7 @@ class EncryptedProtocolSocket:
             kwargs = {"family": family, "type": type, "proto": proto, "fileno": fileno}
             kwargs = {key_word: arg for key_word, arg in kwargs.items() if arg is not None}
             self.__sock = socket.socket(**kwargs)
-            self.__context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER) if server_side else ssl.create_default_context()
+            self.__context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2) if server_side else ssl.create_default_context()
             if server_side:
                 if cert_file is None or key_file is None:
                     c_f = 'cert_file' if cert_file is None else ''
@@ -77,6 +77,22 @@ class EncryptedProtocolSocket:
         ssl_socket, ip_port = self.__encrypted_sock.accept()
         return EncryptedProtocolSocket(ssl_socket=ssl_socket), ip_port
 
+    def sendall(self, data: bytearray | memoryview | bytes, flags: None | int = None) -> bool:
+        if self.__family == socket.AF_INET and self.__type == socket.SOCK_DGRAM:
+            raise OSError("UDP socket can't use 'send_message', instead of 'sendto'")
+        # check that encrypted socket isn't None
+        if self.__encrypted_sock is None:
+            raise OSError(f"Please Call '{'bind' if self.__server_side else 'connect'}' before sending a message.")
+        flags = [] if flags is None else [flags]
+        last_index = 0
+        for index in range(65_535, len(data) + 65_535, 65_535):
+            try:
+                self.__encrypted_sock.sendall(data[last_index: index], *flags)
+            except ssl.SSLEOFError:  # connection closed
+                return False
+            last_index = index
+        return True
+
     def send_message(self, data: bytearray | memoryview | bytes, flags: None | int = None) -> bool:
         """ send a message according to the protocol
         :return: True connection alive, otherwise False
@@ -87,15 +103,11 @@ class EncryptedProtocolSocket:
         if self.__encrypted_sock is None:
             raise OSError(f"Please Call '{'bind' if self.__server_side else 'connect'}' before sending a message.")
         # add the length of the data unencrypted before the data itself
-        data = str(len(data)).ljust(30).encode() + data
-        flags = [] if flags is None else [flags]
-        while len(data) > 0:
-            try:
-                sent = self.__encrypted_sock.send(data, *flags)
-            except ssl.SSLEOFError:  # connection closed
-                return False
-            data = data[sent:]
-        return True
+        data_length = str(len(data)).ljust(30).encode()
+        ok = self.sendall(data_length, flags)
+        if ok:
+            return self.sendall(data, flags)
+        return False
 
     def receive_message(self, timeout: int | None = None) -> bytes:
         """ receive a message according to the protocol

@@ -6,7 +6,6 @@ Date: 06/01/2023 (dd/mm/yyyy)
 ###############################################
 """
 import os
-import time
 import socket
 import hashlib
 import logging
@@ -15,10 +14,9 @@ import traceback
 import ChatEaseGUI
 
 from typing import *
-from threading import Thread
 from communication import signup
 from communication import Communication as Com
-from protocol_socket import EncryptedProtocolSocket
+from client_encrypted_protocol_socket import ClientEncryptedProtocolSocket
 
 
 # Constants
@@ -51,7 +49,7 @@ if not os.path.isfile(LOG_FILE):
 logging.basicConfig(format=LOG_FORMAT, filename=LOG_FILE, level=LOG_LEVEL)
 
 
-def login_signup(server_ip_port: tuple[str, int]) -> tuple[bool, EncryptedProtocolSocket | None]:
+def login_signup(server_ip_port: tuple[str, int]) -> tuple[bool, ClientEncryptedProtocolSocket | None]:
     """ ask the user what to do, login or signup, after signup logged in automatically """
     global username, password, email, communication
     login_or_signup = input("Login Or Signup [L/S] ? ").lower()

@@ -406,7 +406,7 @@ function update(chat_id, chat_msgs) {
         // old message that has been changed
         // TODO: check if deleted and change color
         msg_row = document.getElementById(`msg_${msg_index}`);
-        if (msg_row.innerHTML != handle_msg_length(msg)) {
+        if (msg_row != null && msg_row.innerHTML != handle_msg_length(msg)) {
             msg_row.getElementsByClassName("msg_text")[0].innerHTML = handle_msg_length(msg);
         }
     }
@@ -804,7 +804,8 @@ async function main() {
 
     // Event listeners
     window.addEventListener("resize", adjust_msgs_input_width);
-    window.addEventListener("beforeunload", function () { eel.close_program()(); })
+    // window.addEventListener("beforeunload", function () { eel.close_program()(); })
+
     // TODO: uncomment the next lines
     // document.onkeydown = function (e) {
     //     if (e.key === "F1" || e.key === "F3" || e.key === "F5" || 

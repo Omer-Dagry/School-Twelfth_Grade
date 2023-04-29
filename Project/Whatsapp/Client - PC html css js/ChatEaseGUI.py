@@ -14,7 +14,7 @@ import threading
 import traceback
 
 from communication import Communication as Com
-from protocol_socket import EncryptedProtocolSocket
+from client_encrypted_protocol_socket import ClientEncryptedProtocolSocket
 
 
 # Constants
@@ -26,16 +26,16 @@ username: None | str = None
 password: None | str = None
 server_ip_port: None | tuple[str, int] = None
 communication: None | Com = None
-sock: None | EncryptedProtocolSocket = None
+sock: None | ClientEncryptedProtocolSocket = None
 open_chat_files_lock = threading.Lock()
-open_chat_files: set[str] = ()
+open_chat_files: set[str] = set()
 chat_folder: str = ""
 message_options_root: tkinter.Tk | None = None
 stop_rec: bool = True
 stop: bool = False
 sync_thread: threading.Thread | None = None
 first_time_sync_all: bool = True
-sync_sock: EncryptedProtocolSocket | None = None
+sync_sock: ClientEncryptedProtocolSocket | None = None
 
 
 """                                                 Chat                                                             """
@@ -55,7 +55,8 @@ def get_all_chat_ids() -> str:
             with open(f"webroot\\{email}\\{chat_id}\\name", "rb") as f:
                 chat_name = pickle.loads(f.read())
             chat_type = "group" if len(chat_name) == 1 else "1 on 1"
-            chat_name = chat_name[0] if len(chat_name) == 1 else chat_name[0] if chat_name[0] != username else chat_name[1]
+            chat_name = chat_name[0] if len(chat_name) == 1 else chat_name[0] if chat_name[0] != username \
+                else chat_name[1]
             with open(f"webroot\\{email}\\{chat_id}\\users", "rb") as f:
                 users = list(pickle.loads(f.read()))
             latest_chat_msgs_file_name = max(os.listdir(f"webroot\\{email}\\{chat_id}\\data\\chat"))
@@ -133,7 +134,7 @@ def get_username() -> str:
 """                             Sync With Server & Update Open Chats In GUI                                          """
 
 
-def update(com: Com, sync_socket: EncryptedProtocolSocket, first_time_sync_mode: bool) -> None:
+def update(com: Com, sync_socket: ClientEncryptedProtocolSocket, first_time_sync_mode: bool) -> None:
     global first_sync_done, stop
     sync_new = "new"
     sync_all = "all"
@@ -345,7 +346,7 @@ def close_program():
 
 def start(user_email: str, user_username: str, user_password: str,
           server_ip_port_: tuple[str, int], first_time_sync_mode: bool,
-          regular_sock: EncryptedProtocolSocket, sync_socket: EncryptedProtocolSocket) -> None:
+          regular_sock: ClientEncryptedProtocolSocket, sync_socket: ClientEncryptedProtocolSocket) -> None:
     global email, username, password, communication, server_ip_port, sock, sync_thread, sync_sock, first_time_sync_all
     # Set Globals
     email = user_email
