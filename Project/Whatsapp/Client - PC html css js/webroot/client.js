@@ -72,7 +72,7 @@ function check_user(other_email, user_box_div) {
 
 // sort chats
 function sort_chats_by_date(chat_buttons, search_key) {
-    let keys, chat_button
+    let keys, chat_button;
     chat_buttons.sort(function(a, b) {
         return new Date(a.getElementsByClassName("chat-last-message-time")[0].innerHTML) - 
             new Date(b.getElementsByClassName("chat-last-message-time")[0].innerHTML);
@@ -84,6 +84,7 @@ function sort_chats_by_date(chat_buttons, search_key) {
             chat_button.style.visibility = 'visible';
             chat_button.sep.style.visibility = 'visible';
         } else if (chat_button.style.visibility == "hidden") continue;
+        if (keys.length == 1 && chats_list.firstChild == chat_button) continue;
         chats_list.prepend(chat_button.sep);
         chats_list.prepend(chat_button);
     }
@@ -91,15 +92,15 @@ function sort_chats_by_date(chat_buttons, search_key) {
 }
 
 // search (in chats/users)
-function chat_search() {
+function chat_search(do_anyway=false, changed_buttons=[]) {
     let search_key = document.getElementById("search_chat").value.toLowerCase();
-    if (search_key == current_search_key) return;  // prevet calculation for no reason
+    if (search_key == current_search_key && !do_anyway) return;  // prevet calculation for no reason
     current_search_key = search_key;
     let chat_buttons = [].slice.call(document.getElementsByClassName("chat"));
     let keys = Object.keys(chat_buttons);
     let chat_button, chat_name, last_msg, last_msg_time;
     if  (search_key == "") {
-        sort_chats_by_date(chat_buttons, search_key); 
+        sort_chats_by_date(do_anyway ? changed_buttons : chat_buttons, search_key);
         return;
     }
     for (let key in keys) {
@@ -122,7 +123,7 @@ function chat_search() {
             chats_list.appendChild(chat_button.sep);
         }
     }
-    sort_chats_by_date(chat_buttons, search_key);
+    sort_chats_by_date(do_anyway ? changed_buttons : chat_buttons, search_key);
 }
 function user_search() {
     let search_key = document.getElementById("search_chat").value.toLowerCase();
@@ -202,11 +203,13 @@ function chat_box_left(chat_picture_path, chat_name, last_message,
     chat_box_div.sep = chat_sep;
     // add event listener
     chat_box_div.addEventListener("click", function() { load_chat(chat_name, chat_id, chat_type, users) });
+    return chat_box_div;
 }
 function user_box_left(user_picture_path, other_email) {
     // the div of the entire user box
     let user_box_div = document.createElement("div");
     user_box_div.className = "chat";
+    user_box_div.id = `user_box_${other_email}`;
     // user picture div
     let user_picture_div = document.createElement("div");
     user_picture_div.className = "chat-picture";
@@ -237,14 +240,27 @@ function user_box_left(user_picture_path, other_email) {
 }
 async function load_chat_buttons() {
     let changed = false;
+    let changed_buttons = [];
     if (document.contains(chats_list)) {
         // {chat_id: [chat_name, last_msg, time, chat_type]}
         let chat_ids = JSON.parse(await eel.get_all_chat_ids()());
         let chat_id, chat_name, last_message, time, chat_type, users;
         let picture_path;
+        let chat_box;
         for (chat_id in chat_ids) {
             [chat_name, last_message, time, chat_type, users] = chat_ids[chat_id];
-            if (document.getElementById(chat_id) != null) continue;  // already exists
+            if (document.getElementById(chat_id) != null) { // already exists
+                chat_box = document.getElementById(chat_id);
+                if (chat_box.getElementsByClassName("chat-last-message")[0].innerHTML !== last_message 
+                    || chat_box.getElementsByClassName("chat-last-message-time")[0].innerHTML !== time) 
+                    {
+                    chat_box.getElementsByClassName("chat-last-message")[0].innerHTML = last_message;
+                    chat_box.getElementsByClassName("chat-last-message-time")[0].innerHTML = time;
+                    changed = true;
+                    changed_buttons.push(chat_box);
+                }
+                continue;   
+            }
             changed = true;
             if (chat_type === "group") {
                 picture_path = `url("${email}/${chat_id}/group_picture.png")`;
@@ -253,11 +269,11 @@ async function load_chat_buttons() {
                 else other_user_email = users[1];
                 picture_path = `url("${email}/profile_pictures/${other_user_email}_profile_picture.png")`;
             }
-            chat_box_left(picture_path, chat_name, last_message, time, chat_id, chat_type, users);
+            changed_buttons.push(chat_box_left(picture_path, chat_name, last_message, time, chat_id, chat_type, users));
         }
+        if (changed) chat_search(do_anyway=true, changed_buttons);
     }
-    setTimeout(load_chat_buttons, 2_000);  // every 2 seconds update
-    if (document.contains(chats_list) && changed) chat_search();
+    setTimeout(load_chat_buttons, 100);  // update again in 100 milliseconds
 }
 async function load_users_buttons() {
     users_list.innerHTML = "";
@@ -265,6 +281,7 @@ async function load_users_buttons() {
     users_list.appendChild(search_for_non_familiar_user);
     let known_to_user = JSON.parse(await eel.get_known_to_user()());
     let other_email;
+    let user_box;
     for (let index in known_to_user) {
         other_email = known_to_user[index];
         picture_path = `url("${email}/profile_pictures/${other_email}_profile_picture.png")`;
@@ -341,6 +358,12 @@ async function load_msgs(chat_msgs, position = "END") {
         if (parseInt(last_msg_index) < parseInt(msg_index)) last_msg_index = parseInt(msg_index);
     }
 }
+async function update_last_seen() {
+    if (current_chat_other_email != "") {
+        status_bar_last_seen.innerHTML = await eel.get_user_last_seen(other_user_email)();
+    }
+    setTimeout(update_last_seen, 1_000);
+}
 async function load_chat(chat_name, chat_id, chat_type, users) {
     if (chat_id == chat.chat_id) {
         change_chat_visibility(chat.style.visibility == "visible" ? "hidden" : "visible");
@@ -352,6 +375,7 @@ async function load_chat(chat_name, chat_id, chat_type, users) {
     if (chat_type === "group") {
         status_bar_picture.style.backgroundImage = `url("${email}/${chat_id}/group_picture.png")`;
         status_bar_last_seen.innerHTML = "";
+        current_chat_other_email = "";
         status_bar_picture.onclick = function () { upload_group_picture(chat_id) };
     }
     else {
@@ -359,6 +383,7 @@ async function load_chat(chat_name, chat_id, chat_type, users) {
         else other_user_email = users[1];
         status_bar_picture.style.backgroundImage = `url("${email}/profile_pictures/${other_user_email}_profile_picture.png")`;
         status_bar_last_seen.innerHTML = await eel.get_user_last_seen(other_user_email)();
+        current_chat_other_email = other_user_email;  // in order to update every 1 second
         status_bar_picture.onclick = null;
     }
     last_msg_index = 0;
@@ -645,7 +670,7 @@ async function familiarize_user_with() {
         !other_email.includes(" ")
         ) {
         exists = await eel.familiarize_user_with(other_email)();
-        await sleep(2000);
+        await sleep(1000);
         if (exists) { toggle_chats_users(); toggle_chats_users(); }
     } else alert("Invalid user, user is an email, needs to have '@' & '.' and can't contain spaces.")
 }
@@ -798,6 +823,9 @@ async function main() {
     load_chat_buttons();
     adjust_msgs_input_width();
 
+    // start last seen updater
+    await update_last_seen();
+
     // bind functions
     // let drawer = document.getElementById('drawer');
     // drawer.onclick = toggleEmojiDrawer;
@@ -830,6 +858,7 @@ chat.chat_id = "";
 var status_bar_name = document.getElementById("status-bar-name");  // chat name
 var status_bar_picture = document.getElementById("status-bar-picture");  // chat picture
 var status_bar_last_seen = document.getElementById("status-bar-last-seen");  // chat lst seen
+var current_chat_other_email = "";  // if one on one chat, it will contaim the email of the other user
 var chat_actions = document.getElementById("chat_actions");  // chat actions (file, emoji, send)
 var input_bar_box = document.getElementById("input_box");  // input message
 var users_list = document.createElement("div");  // list of users (for creating chats/groups)

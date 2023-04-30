@@ -146,8 +146,7 @@ def update(com: Com, sync_socket: ClientEncryptedProtocolSocket, first_time_sync
         if new_data:
             try:
                 open_chat_id = eel.get_open_chat_id()()
-            except AttributeError:  # as e:  # GUI haven't loaded up yet
-                # print(*traceback.format_exception(e), sep="")
+            except AttributeError:  # GUI haven't loaded up yet
                 pass
             if open_chat_id != "":
                 for file_path in modified_files:
@@ -161,8 +160,8 @@ def update(com: Com, sync_socket: ClientEncryptedProtocolSocket, first_time_sync
                             raise
                         # eel.update(open_chat_id, data)()
             # TODO: handle deleted_files
-        if len(modified_files) == 1:  # if there is no new data (only users_status), sleep an extra .5 seconds
-            time.sleep(0.5)
+        if len(modified_files) == 1:  # if there is no new data (only users_status), sleep an extra .2 seconds
+            time.sleep(0.2)
         time.sleep(0.5)
 
 
