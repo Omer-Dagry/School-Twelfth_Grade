@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+body {
+    font-family: 'Poppins', sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(to right, #333399, #ff00cc);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+button:hover {
+    cursor: pointer;
+}
+
+button:active {
+    opacity: 0.7;
+}
+
+.enable_text_selection {
+    user-select: text; /* standard syntax */
+    -webkit-user-select: text; /* webkit (safari, chrome) browsers */
+    -moz-user-select: text; /* mozilla browsers */
+    -khtml-user-select: text; /* webkit (konqueror) browsers */
+    -ms-user-select: text; /* IE10+ */
+}
+
+.disable_text_selection {
+    user-select: none; /* standard syntax */
+    -webkit-user-select: none; /* webkit (safari, chrome) browsers */
+    -moz-user-select: none; /* mozilla browsers */
+    -khtml-user-select: none; /* webkit (konqueror) browsers */
+    -ms-user-select: none; /* IE10+ */
+}
+
+#box {
+    width: 450px;
+    background: rgba(255, 255, 255, .5);
+    padding: 4rem;
+    border-radius: 10px;
+    position: relative;
+    text-align: center;
+}
+
+#box::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, .15);
+    transform: rotate(-6deg);
+    border-radius: 10px;
+    z-index: -1;
+}
+
+#username_input, #password_input, #email_input, #confirmation_code_input {
+    border: none;
+    outline: none;
+    background: rgba(255, 255, 255, .3);
+    padding: 1rem;
+    border-radius: 100px;
+    width: 400px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#login_btn, #signup_btn, #reset_password_btn, #submit {
+    border: none;
+    margin-bottom: 20px;
+    background: rgb(8, 8, 8);
+    color: white;
+    padding: 1rem;
+    border-radius: 100px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.other_pages {
+    margin-bottom: 10px;
+}
+
+a {
+    text-decoration: none;
+}
