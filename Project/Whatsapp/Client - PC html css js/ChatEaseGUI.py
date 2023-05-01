@@ -371,7 +371,7 @@ def start(user_email: str, user_username: str, user_password: str,
                         port += 1
                     else:
                         raise Exception("Couldn't find an open port for GUI local host.")
-            eel.start("index.html", port=port)
+            eel.start("ChatEase.html", port=port)
         except (Exception, BaseException) as e:
             if not isinstance(e, SystemExit) and not isinstance(e, KeyboardInterrupt):
                 traceback.print_exception(e)
