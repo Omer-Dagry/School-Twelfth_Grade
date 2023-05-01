@@ -1,3 +1,11 @@
+"""
+###############################################
+Author: Omer Dagry
+Mail: omerdagry@gmail.com
+Date: 06/01/2023 (dd/mm/yyyy)
+###############################################
+"""
+import hashlib
 import os
 import sys
 import eel
@@ -8,33 +16,35 @@ import socket
 import shutil
 import pickle
 import pyaudio
-import tkinter
 import threading
 import traceback
 
 from communication import Communication as Com
 from client_encrypted_protocol_socket import ClientEncryptedProtocolSocket
+from communication import signup_request, send_confirmation_code, reset_password_request, reset_password_choose_password
 
 
 # Constants
+SERVER_PORT = 8820
+SERVER_IP = "127.0.0.1"
+SERVER_IP_PORT = (SERVER_IP, SERVER_PORT)
 
 # Globals
-first_sync_done: bool = False
 email: None | str = None
 username: None | str = None
 password: None | str = None
-server_ip_port: None | tuple[str, int] = None
 communication: None | Com = None
 sock: None | ClientEncryptedProtocolSocket = None
+waiting_for_confirmation_code_reset: bool = False
+waiting_for_confirmation_code_signup: bool = False
+sync_sock: ClientEncryptedProtocolSocket | None = None
+sync_thread: threading.Thread | None = None
+first_time_sync_all: bool = True
 open_chat_files_lock = threading.Lock()
 open_chat_files: set[str] = set()
 chat_folder: str = ""
-message_options_root: tkinter.Tk | None = None
 stop_rec: bool = True
 stop: bool = False
-sync_thread: threading.Thread | None = None
-first_time_sync_all: bool = True
-sync_sock: ClientEncryptedProtocolSocket | None = None
 
 
 """                                                 Chat                                                             """
@@ -42,6 +52,9 @@ sync_sock: ClientEncryptedProtocolSocket | None = None
 
 @eel.expose
 def get_all_chat_ids() -> str:
+    """
+    returns all chat ids as json dict, {chat_ids: [chat_name, last_msg, last_msg_time, chat_type, users]}
+    """
     chat_ids = [chat_id for chat_id in os.listdir(f"webroot\\{email}") if os.path.isdir(f"webroot\\{email}\\{chat_id}")]
     if "profile_pictures" in chat_ids:
         chat_ids.remove("profile_pictures")
@@ -73,6 +86,7 @@ def get_all_chat_ids() -> str:
 
 @eel.expose
 def get_user_last_seen(user_email: str) -> str:
+    """ returns the time 'user_email' was last seen or 'Online' if he is online """
     with open(f"webroot\\{email}\\users_status", "rb") as f:
         try:
             users_status: dict = pickle.loads(f.read())
@@ -83,20 +97,29 @@ def get_user_last_seen(user_email: str) -> str:
 
 @eel.expose
 def get_chat_msgs(chat_id: str) -> str:
+    """ returns the last file of msgs + the file before it (max 1600 msgs) """
     global chat_folder, open_chat_files
-    latest_file = f"webroot\\{email}\\{chat_id}\\data\\chat\\"
-    latest_file = latest_file + max(os.listdir(latest_file))
-    with open(latest_file, "rb") as f:
-        data = json.dumps(pickle.loads(f.read()))
+    latest_file_path = f"webroot\\{email}\\{chat_id}\\data\\chat\\"
+    latest_file = max(os.listdir(latest_file_path))
+    data: dict = {}
+    open_chat_files = set()
+    if latest_file != "0":
+        with open(f"{latest_file_path}{int(latest_file) - 1}", "rb") as f:
+            data = pickle.loads(f.read())
+        open_chat_files.add(f"{latest_file_path}{int(latest_file) - 1}")
+    latest_file_path += latest_file
+    with open(latest_file_path, "rb") as f:
+        data.update(pickle.loads(f.read()))
     open_chat_files_lock.acquire()
-    open_chat_files = {latest_file}
-    chat_folder = os.path.dirname(latest_file)
+    open_chat_files.add(latest_file_path)
+    chat_folder = os.path.dirname(latest_file_path)
     open_chat_files_lock.release()
-    return data
+    return json.dumps(data)
 
 
 @eel.expose
 def get_more_msgs() -> str:
+    """ checks if there is an older chat file that isn't already loaded, if there is it returns the msgs (800 msgs) """
     open_chat_files_lock.acquire()
     if chat_folder + "\\0" not in open_chat_files:  # no more chat files to load
         with open(chat_folder + f"\\{int(min(list(open_chat_files))) - 1}") as f:
@@ -109,6 +132,7 @@ def get_more_msgs() -> str:
 
 @eel.expose
 def get_known_to_user() -> str:
+    """ returns all the users that are known to the user """
     with open(f"webroot\\{email}\\known_users", "rb") as f:
         try:
             known_users: list[str] = list(pickle.loads(f.read()))
@@ -134,15 +158,13 @@ def get_username() -> str:
 
 
 def update(com: Com, sync_socket: ClientEncryptedProtocolSocket, first_time_sync_mode: bool) -> None:
-    global first_sync_done, stop
+    """ syncs with the sever and updates the GUI """
+    global stop
     sync_new = "new"
     sync_all = "all"
     open_chat_id = ""
     while not stop:
         new_data, modified_files, deleted_files = com.sync(sync_socket, sync_all if first_time_sync_mode else sync_new)
-        if not first_sync_done:
-            first_sync_done = True
-            first_time_sync_mode = False
         if new_data:
             try:
                 open_chat_id = eel.get_open_chat_id()()
@@ -156,16 +178,99 @@ def update(com: Com, sync_socket: ClientEncryptedProtocolSocket, first_time_sync
                                 data = json.dumps(pickle.loads(f.read()))
                             eel.update(open_chat_id, data)()
                         except pickle.UnpicklingError:
-                            print(file_path)
                             raise
                         # eel.update(open_chat_id, data)()
             # TODO: handle deleted_files
         if len(modified_files) == 1:  # if there is no new data (only users_status), sleep an extra .2 seconds
             time.sleep(0.2)
         time.sleep(0.5)
+        first_time_sync_mode = False
 
 
 """                                   Communication Wrapper Functions                                                """
+
+
+@eel.expose
+def login(email_: str, password_: str) -> tuple[bool, str]:
+    """ login """
+    if email_ is None or email_ == "" or password_ is None or password_ == "":
+        return False, ""
+    global communication, sock, email, password, username
+    password_ = hashlib.md5(password_.encode()).hexdigest().lower()
+    communication = Com(email_, password_, SERVER_IP_PORT)
+    status, regular_sock, username_or_reason = communication.login(verbose=False)
+    if status:
+        sock = regular_sock
+        username = username_or_reason
+        email = email_
+        password = password_
+        start_app()
+        return True, ""
+    communication = None
+    return False, username_or_reason
+
+
+@eel.expose
+def signup_stage1(email_: str, password_: str, username_: str) -> tuple[bool, str]:
+    """ make signup request """
+    if email_ is None or username_ is None or email_ == "" or username_ == "" or password_ is None or password_ == "":
+        return False, ""
+    global sock, email, password, username, waiting_for_confirmation_code_signup
+    password_ = hashlib.md5(password_.encode()).hexdigest().lower()
+    status, regular_sock, reason = signup_request(username_, email_, password_, SERVER_IP_PORT, return_status=True)
+    if status:
+        sock = regular_sock
+        username = username_
+        email = email_
+        password = password_
+        waiting_for_confirmation_code_signup = True
+        return True, reason
+    return False, reason
+
+
+@eel.expose
+def signup_stage2(confirmation_code: str) -> bool:
+    """ confirmation code for signup request """
+    global waiting_for_confirmation_code_signup, sock
+    if sock is None or not waiting_for_confirmation_code_signup or confirmation_code is None or confirmation_code == "":
+        return False
+    waiting_for_confirmation_code_signup = False
+    status = send_confirmation_code(sock, confirmation_code, False, "signup")
+    if not status:
+        sock = None
+    return status
+
+
+@eel.expose
+def reset_password_stage1(email_: str, username_: str) -> bool:
+    """ make reset password request """
+    if email_ is None or username_ is None or email_ == "" or username_ == "":
+        return False
+    global sock, waiting_for_confirmation_code_reset
+    status, regular_sock = reset_password_request(username_, email_, SERVER_IP_PORT)
+    if status:
+        waiting_for_confirmation_code_reset = True
+        sock = regular_sock
+    return status
+
+
+@eel.expose
+def reset_password_stage2(confirmation_code: str, password_: str) -> bool:
+    """ confirmation code for reset password request and password reset """
+    global waiting_for_confirmation_code_reset, sock
+    if sock is None or not waiting_for_confirmation_code_reset or \
+            password_ is None or confirmation_code is None or password == "" or confirmation_code == "":
+        return False
+    waiting_for_confirmation_code_reset = False
+    status = send_confirmation_code(sock, confirmation_code, False, "reset")
+    if not status:
+        sock = None
+        return False
+    password_ = hashlib.md5(password_.encode()).hexdigest().lower()
+    status = reset_password_choose_password(sock, password_)
+    if not status:
+        sock = None
+    return status
 
 
 @eel.expose
@@ -196,7 +301,6 @@ def familiarize_user_with(other_email: str) -> bool:
 
 @eel.expose
 def new_chat(other_email: str) -> bool:
-    print(f"new chat {other_email}")
     return communication.new_chat(other_email, sock)
 
 
@@ -232,12 +336,12 @@ def upload_group_picture(chat_id: str) -> bool:
 
 @eel.expose
 def delete_message_for_me(chat_id: str, message_index: int):
-    return communication.delete_message_for_me(chat_id, message_index, message_options_root, sock)
+    return communication.delete_message_for_me(chat_id, message_index, sock)
 
 
 @eel.expose
 def delete_message_for_everyone(chat_id: str, message_index: int):
-    return communication.delete_message_for_everyone(chat_id, message_index, message_options_root, sock)
+    return communication.delete_message_for_everyone(chat_id, message_index, sock)
 
 
 """                                           Recording                                                              """
@@ -290,7 +394,6 @@ def record_audio(chat_id: str) -> None:
     if not skip:
         time.sleep(1)
         eel.display_recording_options(recording_file_path[8:], chat_id)()
-        print("done")
 
 
 @eel.expose
@@ -336,69 +439,46 @@ def close_program():
 """                                 Connect To Server & Start GUI & Sync                                             """
 
 
-def start(user_email: str, user_username: str, user_password: str,
-          server_ip_port_: tuple[str, int], first_time_sync_mode: bool,
-          regular_sock: ClientEncryptedProtocolSocket, sync_socket: ClientEncryptedProtocolSocket) -> None:
-    global email, username, password, communication, server_ip_port, sock, sync_thread, sync_sock, first_time_sync_all
-    # Set Globals
-    email = user_email
-    sock = regular_sock
-    sync_sock = sync_socket
-    username = user_username
-    password = user_password
-    server_ip_port = server_ip_port_
-    first_time_sync_all = first_time_sync_mode
+def start_app(first_time_sync_mode: bool = True) -> None:
+    global sync_thread, sync_sock, first_time_sync_all
     os.makedirs(f"webroot\\{email}\\", exist_ok=True)
-    communication = Com(email, password, server_ip_port)
+    # Set Globals
+    first_time_sync_all = first_time_sync_mode
+    status, sync_sock, reason = communication.login(verbose=False)
+    if not status:
+        pass  # todo display error
     # Start sync thread
     sync_thread = threading.Thread(target=update, args=(communication, sync_sock, first_time_sync_all,), daemon=True)
     sync_thread.start()
-    # Wait for first sync (so we will have all the data) and then launch the GUI
-    while not first_sync_done and sync_thread.is_alive():
-        time.sleep(0.1)
-    if sync_thread.is_alive():
-        # Launch GUI
-        try:
-            eel.init("webroot")
-            port = 8080
-            while True:
-                try:
-                    with socket.socket() as s:
-                        s.bind(("127.0.0.1", port))
-                    break
-                except OSError:  # port taken
-                    if port < 65535:
-                        port += 1
-                    else:
-                        raise Exception("Couldn't find an open port for GUI local host.")
-            eel.start("ChatEase.html", port=port)
-        except (Exception, BaseException) as e:
-            if not isinstance(e, SystemExit) and not isinstance(e, KeyboardInterrupt):
-                traceback.print_exception(e)
-        finally:
-            if os.path.isdir(f"webroot\\{email}\\recordings"):
-                shutil.rmtree(f"webroot\\{email}\\recordings")
+
+
+def main():
+    # Launch GUI
+    try:
+        eel.init("webroot")
+        port = 8080
+        while True:
             try:
-                eel.close_window()
-            except Exception:
-                pass
-    else:
-        print("Error when syncing with server.")
+                with socket.socket() as s:
+                    s.bind(("127.0.0.1", port))
+                break
+            except OSError:  # port taken
+                if port < 65535:
+                    port += 1
+                else:
+                    raise Exception("Couldn't find an open port for GUI local host.")
+        eel.start("login.html", port=port)
+    except (Exception, BaseException) as e:
+        if not isinstance(e, SystemExit) and not isinstance(e, KeyboardInterrupt):
+            traceback.print_exception(e)
+    finally:
+        if os.path.isdir(f"webroot\\{email}\\recordings"):
+            shutil.rmtree(f"webroot\\{email}\\recordings")
+        try:
+            eel.close_window()
+        except Exception:
+            pass
 
 
 if __name__ == '__main__':
-    # start("omerdagry@gmail.com", "Omer Dagry", "", ("127.0.0.1", 8820), True)
-
-    # --------------------------------------
-
-    email = "omerdagry@gmail.com"
-    username = "Omer Dagry"
-    try:
-        eel.init("webroot")
-        eel.start("index.html", port=8080)
-    finally:
-        if os.path.isdir("webroot\\omerdagry@gmail.com\\recordings"):
-            shutil.rmtree("webroot\\omerdagry@gmail.com\\recordings")
-
-
-# TODO: add a communication options to upload a group picture
+    main()

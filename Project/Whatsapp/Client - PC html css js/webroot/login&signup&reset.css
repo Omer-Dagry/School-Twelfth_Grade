@@ -53,7 +53,7 @@ button:active {
     z-index: -1;
 }
 
-#password_box, #email_box, #username_box {
+#password_box, #email_box, #username_box, #confirmation_code_box {
     width: fit-content;
     height: fit-content;
     display: block;

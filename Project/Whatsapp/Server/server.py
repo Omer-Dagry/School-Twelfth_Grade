@@ -793,7 +793,8 @@ def signup(username: str, email: str, password: str, client_sock: ServerEncrypte
     """
     # check that the email isn't registered
     if email in email_user_database:
-        return False, ""
+        return False, "Error"
+    client_sock.send_message("signup".ljust(30).encode())
     # create confirmation code
     confirmation_code = random.choices(range(0, 10), k=6)
     confirmation_code = "".join(map(str, confirmation_code))
@@ -832,17 +833,22 @@ def signup(username: str, email: str, password: str, client_sock: ServerEncrypte
             f"{USERS_DATA}{email}\\{email}_profile_picture.png", "wb",
             read_from_file(f"{SERVER_DATA}\\default_group_picture.png", "rb")
         )
+        print(f"Signed up successfully {email}-{username}")
         return True, "Signed up successfully."
     return False, "Email already registered."
 
 
-def reset_password(email: str, client_sock: ServerEncryptedProtocolSocket) -> tuple[bool, str]:
+def reset_password(email: str, username: str, client_sock: ServerEncryptedProtocolSocket) -> tuple[bool, str]:
     """ reset password
     :param email: the email of the user that wants to reset their password
+    :param username: the username
     :param client_sock: the socket of the client
     """
-    if email not in email_password_database:
+    if email not in email_user_database:
         return False, ""
+    if email_user_database[email] != username:
+        return False, ""
+    client_sock.send_message("reset password".ljust(30).encode())
     username = email_user_database[email]
     # create confirmation code
     confirmation_code = random.choices(range(0, 10), k=6)
@@ -864,8 +870,9 @@ def reset_password(email: str, client_sock: ServerEncryptedProtocolSocket) -> tu
     if msg[: 30].strip() != "confirmation_code" or msg[30:] != confirmation_code:
         logging.info(f"reset password attempt (for '{email}') failed - got wrong confirmation code from user")
         return False, "Confirmation code is incorrect."
+    client_sock.send_message(f"{'reset password'.ljust(30)}{'ok'.ljust(6)}".encode())
     # send client a msg that says that we are waiting for a new password
-    client_sock.send_message(f"{'new_password'.ljust(30)}".encode())
+    client_sock.send_message("new password".ljust(30).encode())
     # receive the response from the client and set a timeout of 5 minutes
     msg = client_sock.recv_message(timeout=60 * 5)
     # if response timed out
@@ -873,12 +880,13 @@ def reset_password(email: str, client_sock: ServerEncryptedProtocolSocket) -> tu
         return False, "Request timeout."
     msg = msg.decode()
     # validate the response
-    if msg[: 30].strip() != "new_password":
+    if msg[: 30].strip() != "new password":
         return False, ""
     # extract password
     password = msg[30:]
     # set new password
     email_password_database[email] = hashlib.md5(password.encode()).hexdigest().lower()
+    print(f"reset password attempt successful - email: '{email}', username: '{username}'.")
     logging.info(f"reset password attempt successful - email: '{email}', username: '{username}'.")
     return True, "Password changed successfully."
 
@@ -976,12 +984,8 @@ def sync(email: str, sync_all: bool = False) -> bytes:
             pass
         else:
             logging.debug(f"[Server]: error in 'sync' function, FileNotFound: '{file}'")
-    if sync_all:
-        print("starting pickle")
     # pickle the dictionary
     sync_res: bytes = pickle.dumps(file_name_data)
-    if sync_all:
-        print("pickle finished")
     #
     unblock(f"{USERS_DATA}{email}\\sync")
     return sync_res
@@ -1043,7 +1047,7 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
                 password = msg[45 + len_email:]
                 if not login(email, password):
                     client_socket.send_message(
-                        login_or_signup_response("login", "not ok", "email or password is incorrect.")
+                        login_or_signup_response("login", "not ok", "Incorrect email or password !")
                     )
                     stop = True
                     break
@@ -1068,18 +1072,15 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
             elif cmd == "signup" and signed_up:  # don't allow 1 connection to signup multiple times
                 stop = True
                 break
-            elif cmd == "reset password":  # TODO: add in client side
+            elif cmd == "reset password":
                 email_len = int(msg[30: 45])
                 tmp_email = msg[45: 45 + email_len].lower()
                 tmp_username = msg[45 + email_len:]
-                if tmp_email not in email_user_database:
-                    stop = True
-                    break
-                if email_user_database[tmp_email] != tmp_username:
-                    stop = True
-                    break
-                status, reason = reset_password(tmp_email, client_socket)
+                status, reason = reset_password(tmp_email, tmp_username, client_socket)
                 client_socket.send_message(request_response(cmd, "ok" if status else "not ok", reason))
+                if not status:
+                    stop = True
+                    break
             else:
                 add_exception_for_ip(client_ip_port[0])
                 stop = True
@@ -1098,19 +1099,13 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
             logging.info(f"[Server]: '%s:%s' logged in as '{email} - {username}'." % client_ip_port)
             #
             # handle client's requests until client disconnects
-            sync_msg = False  # TODO: delete this
-            first_sync = False  # TODO: delete this
             stay_encoded = {"file", "upload profile picture", "upload group picture", "new group"}
             while True:
                 request: bytes
-                if not sync_msg:
-                    print("waiting for message")
                 request = client_socket.recv_message()
                 if request == b"":
                     break
                 cmd = request[: 30].decode().strip()
-                if not sync_msg:
-                    print(cmd)
                 # decode the request only if it's not a file
                 request = request if cmd in stay_encoded else request.decode()
                 # TODO: add user in chat X + add a function to modify seen by lists of messages (call it for these msgs)
@@ -1122,18 +1117,9 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
                     sync_msg = True
                 elif cmd == "sync all":
                     request: str
-                    first_sync = True if not sync_msg else False
                     sync_msg = True
                     response = sync(email, sync_all=True)
                     response = cmd.ljust(30).encode() + response
-                    #
-                    if not sync_msg or first_sync:
-                        print("sending response")
-                    client_socket.send_message(response)
-                    if not sync_msg or first_sync:
-                        print("sent")
-                        first_sync = False
-                    continue
                 elif cmd == "msg":
                     request: str
                     len_chat_id = int(request[30: 45].strip())  # currently 20
