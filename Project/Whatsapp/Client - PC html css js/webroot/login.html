@@ -8,8 +8,15 @@
   <body class="disable_text_selection" oncontextmenu="return false;"">
     <div id="box">
         <h1>Login</h1>
-        <input id="username_input" type="text" placeholder="username">
-        <input id="password_input" type="password" placeholder="password">
+        <div id="email_box">
+          <i class="fa fa-envelope" title="email"></i>
+          <input id="email_input" type="email" placeholder="Email">
+        </div>
+        <div id="password_box">
+          <i class="fa fa-lock" title="password"></i>
+          <input id="password_input" type="password" placeholder="Password">
+          <i class="fa fa-eye" id="eye" title="Show Password" onclick="toggle_password_visibility()"></i>
+        </div>
         <button id="login_btn">Login</button>
         <div class="other_pages">
             Don't have an account? <a href="signup.html">signup</a>
@@ -28,5 +35,6 @@
     <!-- <script type="text/javascript" src="selection.js"></script> -->
     <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
     <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.7/css/all.css">
   </body>
 </html>

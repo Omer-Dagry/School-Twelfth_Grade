@@ -53,6 +53,21 @@ button:active {
     z-index: -1;
 }
 
+#password_box, #email_box, #username_box {
+    width: fit-content;
+    height: fit-content;
+    display: block;
+    position: relative;
+}
+
+.fa.fa-lock, .fa.fa-envelope, .fa.fa-user {
+    position: absolute;
+    top: 20.5%;
+    left: 10px;
+    font-size: 18px;
+    color: rgb(58, 58, 58);
+}
+
 #username_input, #password_input, #email_input, #confirmation_code_input {
     border: none;
     outline: none;
@@ -61,10 +76,19 @@ button:active {
     border-radius: 100px;
     width: 400px;
     margin-bottom: 20px;
-    display: flex;
+    display: inline;
     flex-direction: column;
     margin-left: auto;
     margin-right: auto;
+    padding-left: 35px;
+}
+
+.fa.fa-eye, .fa.fa-eye-slash {
+    position: absolute;
+    top: 21%;
+    right: 15px;
+    font: 18px;
+    color: rgb(58, 58, 58);
 }
 
 #login_btn, #signup_btn, #reset_password_btn, #submit {
