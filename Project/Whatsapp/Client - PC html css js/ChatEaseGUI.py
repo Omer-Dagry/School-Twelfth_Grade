@@ -5,9 +5,7 @@ Mail: omerdagry@gmail.com
 Date: 06/01/2023 (dd/mm/yyyy)
 ###############################################
 """
-import hashlib
 import os
-import sys
 import eel
 import wave
 import time
@@ -15,10 +13,12 @@ import json
 import socket
 import shutil
 import pickle
+import hashlib
 import pyaudio
 import threading
 import traceback
 
+from typing import Callable, Any
 from communication import Communication as Com
 from client_encrypted_protocol_socket import ClientEncryptedProtocolSocket
 from communication import signup_request, send_confirmation_code, reset_password_request, reset_password_choose_password
@@ -75,7 +75,8 @@ def get_all_chat_ids() -> str:
             with open(f"webroot\\{email}\\{chat_id}\\data\\chat\\{latest_chat_msgs_file_name}", "rb") as f:
                 last_chat_msgs = pickle.loads(f.read())
             last_msg = last_chat_msgs[max(last_chat_msgs.keys())]
-            msg = f"{last_msg[0].split('@')[0]}: {last_msg[1]}"
+            sender = last_msg[0].split('@')[0] if last_msg[0] != email else "You"
+            msg = f"{sender}: {last_msg[1]}"
             msg = msg if len(msg) <= 25 else msg[:25] + "..."
             msg_time = last_msg[-1]
             chat_id_last_msg_and_time[chat_id] = [chat_name, msg, msg_time, chat_type, users]
@@ -157,14 +158,24 @@ def get_username() -> str:
 """                             Sync With Server & Update Open Chats In GUI                                          """
 
 
-def update(com: Com, sync_socket: ClientEncryptedProtocolSocket, first_time_sync_mode: bool) -> None:
+def update() -> None:
     """ syncs with the sever and updates the GUI """
-    global stop
+    global stop, sync_sock, communication, first_time_sync_all
+    stop = False
     sync_new = "new"
     sync_all = "all"
     open_chat_id = ""
     while not stop:
-        new_data, modified_files, deleted_files = com.sync(sync_socket, sync_all if first_time_sync_mode else sync_new)
+        try:
+            new_data, modified_files, deleted_files = \
+                communication.sync(sync_sock, sync_all if first_time_sync_all else sync_new)
+        except (ConnectionError, socket.error):
+            sync_sock.close()
+            status, sync_sock, reason = communication.login(verbose=False)
+            if not status:
+                # TODO: display error (reason)
+                break
+            continue
         if new_data:
             try:
                 open_chat_id = eel.get_open_chat_id()()
@@ -177,14 +188,16 @@ def update(com: Com, sync_socket: ClientEncryptedProtocolSocket, first_time_sync
                             with open(file_path, "rb") as f:
                                 data = json.dumps(pickle.loads(f.read()))
                             eel.update(open_chat_id, data)()
-                        except pickle.UnpicklingError:
-                            raise
-                        # eel.update(open_chat_id, data)()
-            # TODO: handle deleted_files
+                        except (pickle.UnpicklingError, AttributeError):
+                            pass
+            # delete a file, if the user who sent it deleted the msg
+            for file_path in deleted_files:
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
         if len(modified_files) == 1:  # if there is no new data (only users_status), sleep an extra .2 seconds
             time.sleep(0.2)
         time.sleep(0.5)
-        first_time_sync_mode = False
+        first_time_sync_all = False
 
 
 """                                   Communication Wrapper Functions                                                """
@@ -193,9 +206,35 @@ def update(com: Com, sync_socket: ClientEncryptedProtocolSocket, first_time_sync
 @eel.expose
 def login(email_: str, password_: str) -> tuple[bool, str]:
     """ login """
+    global communication, sock, email, password, username, stop, sync_sock, sock, sync_thread
     if email_ is None or email_ == "" or password_ is None or password_ == "":
         return False, ""
-    global communication, sock, email, password, username
+    if email_ == email:
+        status, status2, _ = True, True, ""
+        if sync_sock is None:
+            status, sync_sock, _ = communication.login(verbose=False)
+        if sock is None:
+            status2, sock, _ = communication.login(verbose=False)
+        if not status or not status2:
+            return False, _
+        if sync_thread is None or not sync_thread.is_alive():
+            sync_thread = threading.Thread(target=update, daemon=True)
+            sync_thread.start()
+        return False, "Already Logged In"
+    if sync_thread is not None and sync_thread.is_alive():
+        stop = True
+    if sync_sock is not None:
+        try:
+            sync_sock.close()
+        except (ConnectionError, socket.error):
+            pass
+    if sock is not None:
+        try:
+            sock.close()
+        except (ConnectionError, socket.error):
+            pass
+    sync_sock = None
+    sock = None
     password_ = hashlib.md5(password_.encode()).hexdigest().lower()
     communication = Com(email_, password_, SERVER_IP_PORT)
     status, regular_sock, username_or_reason = communication.login(verbose=False)
@@ -204,7 +243,7 @@ def login(email_: str, password_: str) -> tuple[bool, str]:
         username = username_or_reason
         email = email_
         password = password_
-        start_app()
+        # start_app()  # calling it from js on load up
         return True, ""
     communication = None
     return False, username_or_reason
@@ -361,11 +400,8 @@ def start_recording(chat_id: str) -> bool:
 def record_audio(chat_id: str) -> None:
     global stop_rec
     skip = False
-    # os.makedirs("webroot\\omerdagry@gmail.com\\recordings", exist_ok=True)  # TODO: change to {email}
-    os.makedirs(f"webroot\\{email}\\recordings", exist_ok=True)  # TODO: change to {email}
+    os.makedirs(f"webroot\\{email}\\recordings", exist_ok=True)
     # TODO: change to {email}
-    # num = max([int(num.split(".")[0]) for num in os.listdir("webroot\\omerdagry@gmail.com\\recordings")] + [0])
-    # recording_file_path = f"webroot\\omerdagry@gmail.com\\recordings\\{num + 1}.wav"
     num = max([int(num.split(".")[0]) for num in os.listdir(f"webroot\\{email}\\recordings")] + [0])
     recording_file_path = f"webroot\\{email}\\recordings\\{num + 1}.wav"
     try:
@@ -393,7 +429,7 @@ def record_audio(chat_id: str) -> None:
         stop_rec = True
     if not skip:
         time.sleep(1)
-        eel.display_recording_options(recording_file_path[8:], chat_id)()
+        eel.display_recording_options(recording_file_path[8:], chat_id)()  # TODO
 
 
 @eel.expose
@@ -429,27 +465,28 @@ def start_file(file_path: str) -> bool:
 
 @eel.expose
 def close_program():
-    global stop
+    global stop, sync_thread
     stop = True
     if sync_thread is not None:
         sync_thread.join(5)  # wait up to 5 seconds
-    sys.exit(0)
+        sync_thread = None
 
 
 """                                 Connect To Server & Start GUI & Sync                                             """
 
 
-def start_app(first_time_sync_mode: bool = True) -> None:
-    global sync_thread, sync_sock, first_time_sync_all
+@eel.expose
+def start_app() -> None:
+    global sync_thread, sync_sock
     os.makedirs(f"webroot\\{email}\\", exist_ok=True)
-    # Set Globals
-    first_time_sync_all = first_time_sync_mode
-    status, sync_sock, reason = communication.login(verbose=False)
-    if not status:
-        pass  # todo display error
-    # Start sync thread
-    sync_thread = threading.Thread(target=update, args=(communication, sync_sock, first_time_sync_all,), daemon=True)
-    sync_thread.start()
+    if sync_sock is None:
+        status, sync_sock, reason = communication.login(verbose=False)
+        if not status:
+            pass  # todo display error
+    if sync_thread is None or not sync_thread.is_alive():
+        # Start sync thread
+        sync_thread = threading.Thread(target=update, daemon=True)
+        sync_thread.start()
 
 
 def main():
@@ -475,8 +512,14 @@ def main():
         if os.path.isdir(f"webroot\\{email}\\recordings"):
             shutil.rmtree(f"webroot\\{email}\\recordings")
         try:
-            eel.close_window()
-        except Exception:
+            if sync_sock is not None:
+                sync_sock.close()
+        except (ConnectionError, socket.error):
+            pass
+        try:
+            if sock is not None:
+                sock.close()
+        except (ConnectionError, socket.error):
             pass
 
 

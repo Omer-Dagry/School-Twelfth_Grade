@@ -397,7 +397,6 @@ async function load_chat(chat_name, chat_id, chat_type, users) {
 async function load_more_msgs() {
     chat.scrollBy(0, 20);
     let chat_msgs = JSON.parse(await eel.get_more_msgs()());
-    console.log(chat_msgs);
     if (Object.keys(chat_msgs).length === 0) return;  // no more messages
     let first_msg = chat.firstChild;
     let chat_id = chat.chat_id;
@@ -416,6 +415,7 @@ function check_pos() {
 }
 // eel.expose
 function update(chat_id, chat_msgs) {
+    console.log("asdfasdf");
     if (chat_id !== chat.chat_id) return null;
     chat_msgs = JSON.parse(chat_msgs);
     let from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time, msg_row, keys;
@@ -515,10 +515,8 @@ function add_msg(from, sender, msg, time, msg_index, msg_type, deleted_for,
         let full_sender = sender;
         sender = sender.split("@");
         sender = sender.slice(0, sender.length - 1).join("@") + ":";
-        if (msg.includes("omerdagry@gmail.com added omerdagry12345@gmail.com.")) {
-            console.log(msg_type);
-        }
         if (deleted_for_all) {
+            // TODO
             // This message was deleted.
         } else if (deleted_for.includes(email)) {
             return;
@@ -544,11 +542,8 @@ function add_msg(from, sender, msg, time, msg_index, msg_type, deleted_for,
             `url("${email}/${msg}")`
             */
             msg = msg.replaceAll("\\", "/");
-            console.log(msg);
             let display_file = false;
-            console.log(msg.toLowerCase());
             for (let index in image_types) {
-                console.log(image_types[index]);
                 if (msg.toLowerCase().endsWith(image_types[index])) {
                     display_file = true;
                     break;
@@ -564,7 +559,7 @@ function add_msg(from, sender, msg, time, msg_index, msg_type, deleted_for,
                 file_row.getElementsByClassName("msg_image")[0].className = "msg_file";
                 let file_name = msg.split("/");
                 file_name = file_name[file_name.length - 1];
-                file_row.getElementsByClassName("msg_file")[0].innerHTML = file_name;
+                file_row.getElementsByClassName("msg_file")[0].alt = file_name;
                 file_row.getElementsByClassName("msg_file")[0].onclick = async function () { await eel.start_file(`${email}/${msg}`); };
                 append_to_chat(position, file_row);
             }
@@ -677,7 +672,6 @@ async function familiarize_user_with() {
 
 // new chat/group
 async function new_chat(other_email) {
-    console.log(`new chat ${other_email}`)
     await eel.new_chat(other_email)();
 }
 async function new_group(other_emails, group_name) {
@@ -798,14 +792,11 @@ async function delete_message_for_everyone() {
 
 
 // eel.expose
-function close_window() {
-    window.close();
-}
-
-// eel.expose
 async function main() {
     console.log("main");
-    // ask for email
+    // start the python updater
+    await eel.start_app()();
+    // ask for email & username
     await ask_for_email();
     await ask_for_username();
 
@@ -813,32 +804,31 @@ async function main() {
     let user_profile_picture = document.getElementById("user-profile-picture");
     user_profile_picture.style.backgroundImage = `url("${email}/${email}_profile_picture.png")`;
 
+    // load all chat buttons
+    load_chat_buttons();
+    // adjust input width on loadup
+    adjust_msgs_input_width();
+
+    // start last seen updater, call it once and it will call it-self
+    await update_last_seen();
+
+    // Event listeners
+    // window resize, resize input width
+    window.addEventListener("resize", adjust_msgs_input_width);
     // window active & inactive event listeners
     window.addEventListener('focus', window_active);
     window.addEventListener('blur', window_inactive);
+    // current state
     if (document.hasFocus()) window_active();
     else window_inactive();
-
-    // load all chat buttons
-    load_chat_buttons();
-    adjust_msgs_input_width();
-
-    // start last seen updater
-    await update_last_seen();
-
-    // bind functions
-    // let drawer = document.getElementById('drawer');
-    // drawer.onclick = toggleEmojiDrawer;
-
-    // Event listeners
-    window.addEventListener("resize", adjust_msgs_input_width);
-    // window.addEventListener("beforeunload", function () { eel.close_program()(); })
+    window.addEventListener("beforeunload", function () { eel.close_program()(); })
 
     // TODO: uncomment the next lines
+    // block special keys
     // document.onkeydown = function (e) {
     //     if (e.key === "F1" || e.key === "F3" || e.key === "F5" || 
     //         e.key === "F7" || e.key === "F12") {
-    //         return false; 
+    //         return false;
     //     }
     // };
 
@@ -851,19 +841,25 @@ async function main() {
 var image_types = [".jpeg", ".webp", ".gif", ".png", ".apng", ".svg", ".bmp", ".ico"];
 var email;  // email
 var username; // username
+//
 var last_msg_index;  // the index number of the most recent msg in current chat
 var current_search_key;  // current search input (of chat buttons)
+// the chat
 var chat = document.getElementById("chat");  // the chat div
 chat.chat_id = "";
+// chat status bar
 var status_bar_name = document.getElementById("status-bar-name");  // chat name
 var status_bar_picture = document.getElementById("status-bar-picture");  // chat picture
 var status_bar_last_seen = document.getElementById("status-bar-last-seen");  // chat lst seen
 var current_chat_other_email = "";  // if one on one chat, it will contaim the email of the other user
+// chat actions & input
 var chat_actions = document.getElementById("chat_actions");  // chat actions (file, emoji, send)
 var input_bar_box = document.getElementById("input_box");  // input message
+// chat list
+var chats_list = document.getElementsByClassName("chats_list")[0];  // list of chats/groups
+// new chat/group
 var users_list = document.createElement("div");  // list of users (for creating chats/groups)
 users_list.className = "chats_list";
-var chats_list = document.getElementsByClassName("chats_list")[0];  // list of chats/groups
 var create_new_chat_or_group = document.createElement("button");  // create new chat/group btn
 create_new_chat_or_group.id = "create_chat_or_group";
 create_new_chat_or_group.onclick = new_group_or_chat;
@@ -887,14 +883,16 @@ var call_options_window;
 eel.expose(get_open_chat_id);
 eel.expose(update);
 eel.expose(display_recording_options);
-eel.expose(close_window);
 eel.expose(main);
 
 main();
 
 
 /*                                    TODOS
-* need to bind function in js to html
-* need to add buttons for adding & removing users when a chat is 'group'
-* need to add messages options
+1. need to add buttons for adding & removing users when a chat is 'group'
+2. need to add messages options - 
+   delete with an eye - only for me
+   delete with trash can - for everyone
+   seen list?
+3. need to add calls options (hang up & maybe timer)
 */

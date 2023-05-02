@@ -60,6 +60,14 @@ async function reset_password_confirmation_and_send_pass() {
 }
 
 
+// document.onkeydown = function (e) {
+//     if (e.key === "F1" || e.key === "F3" || e.key === "F5" || 
+//         e.key === "F7" || e.key === "F12") {
+//         return false;
+//     }
+// };
+
+
 var email_box = document.getElementById("email_box");
 var username_box = document.getElementById("username_box");
 var reset_password_btn = document.getElementById("reset_password_btn");

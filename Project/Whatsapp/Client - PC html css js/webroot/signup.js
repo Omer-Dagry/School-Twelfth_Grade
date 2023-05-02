@@ -60,6 +60,14 @@ async function signup_confirmation_code() {
 }
 
 
+// document.onkeydown = function (e) {
+//     if (e.key === "F1" || e.key === "F3" || e.key === "F5" || 
+//         e.key === "F7" || e.key === "F12") {
+//         return false; 
+//     }
+// };
+
+
 var email_box = document.getElementById("email_box");
 var username_box = document.getElementById("username_box");
 var password_box = document.getElementById("password_box");

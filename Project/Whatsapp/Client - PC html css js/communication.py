@@ -8,6 +8,7 @@ Date: 06/01/2023 (dd/mm/yyyy)
 import os
 import pickle
 import shutil
+import socket
 
 from tkinter import *
 from threading import Thread
@@ -179,7 +180,10 @@ class Communication:
         login_msg = f"{'login'.ljust(30)}{str(len(self.__email)).ljust(15)}{self.__email}{self.__password}".encode()
         if sock is None:
             sock = ClientEncryptedProtocolSocket()
-            sock.connect(self.__server_ip_port)
+            try:
+                sock.connect(self.__server_ip_port)
+            except (ConnectionError, socket.error):
+                return False, None, "Can't reach the server."
         if not sock.send_message(login_msg):
             showerror("Login Error", "Could not send login request, lost connection to server.")
             sock.close()
@@ -187,7 +191,7 @@ class Communication:
         # login (length 30)   status (length 6)   reason
         response = sock.recv_message().decode()
         if response[:30].strip() != "login":
-            return False, None, ""
+            return False, None, "Error"
         response = response[30:]
         if response[:6].strip() != "ok":
             response = response[6:]

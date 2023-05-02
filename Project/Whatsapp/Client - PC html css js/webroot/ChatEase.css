@@ -29,7 +29,8 @@
 }
 
 body {
-    background-color: #0c1216;
+    /* background-color: #0c1216; */
+    background: linear-gradient(to right, #08080c, #0c1318, #0b080c);
     font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -364,14 +365,11 @@ button:active {
 
 .msg_image {
     max-width: 50vh;
-    /* background-image: ; */
     margin: 10px;
 }
 
 .msg_file {
-    background-color: gray;
-    /*  */
-    font-size: medium;
+    background-color: lightslategrey;
     margin: 10px;
     padding: 10px;
     cursor: pointer;

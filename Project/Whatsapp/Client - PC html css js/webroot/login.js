@@ -13,7 +13,7 @@ async function login() {
     let password_input = document.getElementById("password_input");
     let email = email_input.value, password = password_input.value;
     let [status, reason] = await eel.login(email, password)();
-    if (!status) {
+    if (!status && reason != "Already Logged In") {
         let error_msg = document.getElementById("error_msg");
         if (error_msg === null) {
             error_msg = document.createElement("div");
@@ -29,3 +29,11 @@ async function login() {
     }
     login_btn.onclick = login;
 }
+
+
+// document.onkeydown = function (e) {
+//     if (e.key === "F1" || e.key === "F3" || e.key === "F5" || 
+//         e.key === "F7" || e.key === "F12") {
+//         return false;
+//     }
+// };
