@@ -209,7 +209,7 @@ def login(email_: str, password_: str) -> tuple[bool, str]:
     global communication, sock, email, password, username, stop, sync_sock, sock, sync_thread
     if email_ is None or email_ == "" or password_ is None or password_ == "":
         return False, ""
-    if email_ == email:
+    if email_ == email and communication is not None:
         status, status2, _ = True, True, ""
         if sync_sock is None:
             status, sync_sock, _ = communication.login(verbose=False)
@@ -429,7 +429,8 @@ def record_audio(chat_id: str) -> None:
         stop_rec = True
     if not skip:
         time.sleep(1)
-        eel.display_recording_options(recording_file_path[8:], chat_id)()  # TODO
+        # eel.display_recording_options(recording_file_path[8:], chat_id)()  # TODO
+        send_file(chat_id, recording_file_path)
 
 
 @eel.expose

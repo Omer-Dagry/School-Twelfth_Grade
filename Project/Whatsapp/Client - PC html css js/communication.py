@@ -278,6 +278,7 @@ class Communication:
         with open(filepath, "rb") as f:
             file_data = f.read()
         file_name = filepath.split("/")[-1]
+        file_name = file_name.split("\\")[-1]
         request = f"{'file'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}" \
                   f"{str(len(file_name)).ljust(15)}{file_name}".encode() + file_data
         if not sock.send_message(request):

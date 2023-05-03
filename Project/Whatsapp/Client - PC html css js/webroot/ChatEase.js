@@ -365,6 +365,7 @@ async function update_last_seen() {
     setTimeout(update_last_seen, 1_000);
 }
 async function load_chat(chat_name, chat_id, chat_type, users) {
+    document.getElementById("msg_input").focus();
     if (chat_id == chat.chat_id) {
         change_chat_visibility(chat.style.visibility == "visible" ? "hidden" : "visible");
         return;
@@ -838,7 +839,7 @@ async function main() {
 
 
                                 /* Globals */
-var image_types = [".jpeg", ".webp", ".gif", ".png", ".apng", ".svg", ".bmp", ".ico"];
+var image_types = [".jpeg", ".webp", ".gif", ".png", ".apng", ".svg", ".bmp", ".ico", ".jpg"];
 var email;  // email
 var username; // username
 //

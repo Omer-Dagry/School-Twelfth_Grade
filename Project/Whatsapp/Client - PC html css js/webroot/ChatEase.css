@@ -28,10 +28,16 @@
     100% { opacity: 1; transform: translateX(0) translateY(0); }
 }
 
+dialog {
+    border-radius: 10px;
+}
+
 body {
     /* background-color: #0c1216; */
     background: linear-gradient(to right, #08080c, #0c1318, #0b080c);
     font-family: Arial, Helvetica, sans-serif;
+    justify-content: center;
+    align-items: center;
 }
 
 button:hover {
@@ -114,7 +120,8 @@ button:active {
     height: 40px;
     margin-right: 12.5px;
     translate: 2px 4px;
-} #StartNewChat:hover {cursor: pointer;} #StartNewChat:active {opacity: 0.7;}
+    cursor: pointer;
+} #StartNewChat:active {opacity: 0.7;}
 
 #setting-button {
     background-color: transparent;
@@ -125,8 +132,9 @@ button:active {
     margin-left: 12.5px;
     translate: 2px 4px;
     animation: 0.5s rotateIn;
+    cursor: pointer;
 } 
-#setting-button:hover {cursor: pointer; animation: 0.5s rotateOut;} 
+#setting-button:hover {animation: 0.5s rotateOut;} 
 #setting-button:active {opacity: 0.7;}
 
 #search_bar_box {
@@ -318,7 +326,8 @@ button:active {
     height: 50px;
     float: right;
     transform: translateX(-40%) translateY(-10%);
-} #call_btn:hover {cursor: pointer;} #call_btn:active {opacity: 0.7;}
+    cursor: pointer;
+} #call_btn:active {opacity: 0.7;}
 
 #chat {
     padding-top: 80px;
@@ -439,7 +448,8 @@ button:active {
     width: 50px;
     height: 50px;
     transform: translateY(-5%);
-} #upload_file:hover {cursor: pointer;} #upload_file:active {opacity: 0.7;}
+    cursor: pointer;
+} #upload_file:active {opacity: 0.7;}
 
 #emoji_drawer_btn {
     background-color: transparent;
@@ -450,7 +460,8 @@ button:active {
     height: 50px;
     border-radius: 100px;
     transform: translateY(-5%);
-} #emoji_drawer_btn:hover {cursor: pointer;} #emoji_drawer_btn:active {opacity: 0.7;}
+    cursor: pointer;
+} #emoji_drawer_btn:active {opacity: 0.7;}
 
 #drawer { 
     background-color: #c0c0c0;
@@ -468,9 +479,6 @@ button:active {
     text-align: center;
     font-size: 24px;
     padding: 8px;
-}
-
-.emoji:hover {
     cursor: pointer;
 }
 
@@ -482,7 +490,8 @@ button:active {
     width: 50px;
     height: 50px;
     transform: translateY(-5%);
-} #delete_recording:hover {cursor: pointer;} #delete_recording:active {opacity: 0.7;}
+    cursor: pointer;
+} #delete_recording:active {opacity: 0.7;}
 
 #input_box {
     display: inline;
@@ -518,7 +527,8 @@ button:active {
     height: 50px;
     margin-left: 10px;
     transform: translateY(-5%);
-} #send_msg:hover {cursor: pointer;} #send_msg:active {opacity: 0.7;}
+    cursor: pointer;
+} #send_msg:active {opacity: 0.7;}
 
 #record_msg {
     background-color: transparent;
@@ -528,7 +538,8 @@ button:active {
     height: 50px;
     margin-right: 10px;
     transform: translateY(-5%);
-} #record_msg:hover {cursor: pointer;} #record_msg:active {opacity: 0.7;}
+    cursor: pointer;
+} #record_msg:active {opacity: 0.7;}
 
 
                     /* Scrollbar Style */
