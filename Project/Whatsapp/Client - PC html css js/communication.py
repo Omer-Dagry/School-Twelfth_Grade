@@ -257,21 +257,28 @@ class Communication:
         else:
             return False, [], []
 
-    def upload_file(self, chat_id: str | int, filename: str = "", root: Tk = None, delete_file: bool = False) -> None:
-        upload_thread = Thread(target=self.upload_file_, args=(str(chat_id), filename, delete_file,), daemon=True)
+    def upload_file(self, chat_id: str | int, filename: str = "", root: Tk = None,
+                    delete_file: bool = False, send_file_active: list[bool] = None) -> None:
+        upload_thread = Thread(
+            target=self.upload_file_, args=(str(chat_id), filename, delete_file, send_file_active), daemon=True
+        )
         upload_thread.start()
         if root is not None:
             root.destroy()
 
-    def upload_file_(self, chat_id: str, filepath: str = "", delete_file: bool = False) -> None:
+    def upload_file_(self, chat_id: str, filepath: str, delete_file: bool, send_file_active: list[bool]) -> None:
         if filepath == "":
             root = Tk()
             root.attributes('-topmost', True)  # Display the dialog in the foreground.
             root.iconify()  # Hide the little window.
             filepath = askopenfilename(parent=root)
             root.destroy()
+            if send_file_active:
+                send_file_active[0] = False
             if filepath == "" or filepath is None or not os.path.isfile(filepath):
                 return
+        elif send_file_active:
+            send_file_active[0] = False
         ok, sock, _ = self.login(verbose=False)
         if not ok:
             raise ValueError("email or password incorrect, could not login to upload file")

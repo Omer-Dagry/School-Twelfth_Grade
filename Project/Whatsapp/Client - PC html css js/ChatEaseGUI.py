@@ -18,7 +18,6 @@ import pyaudio
 import threading
 import traceback
 
-from typing import Callable, Any
 from communication import Communication as Com
 from client_encrypted_protocol_socket import ClientEncryptedProtocolSocket
 from communication import signup_request, send_confirmation_code, reset_password_request, reset_password_choose_password
@@ -45,6 +44,7 @@ open_chat_files: set[str] = set()
 chat_folder: str = ""
 stop_rec: bool = True
 stop: bool = False
+send_file_active: list[bool] = [False]
 
 
 """                                                 Chat                                                             """
@@ -314,17 +314,20 @@ def reset_password_stage2(confirmation_code: str, password_: str) -> bool:
 
 @eel.expose
 def send_file(chat_id: str, file_path: str) -> None:
-    global communication
+    global communication, send_file_active
+    if send_file_active[0]:
+        return None
+    send_file_active[0] = True
     if chat_id == "" or chat_id is None:
         return None
     if os.path.isfile(file_path):
-        communication.upload_file(chat_id, filename=file_path)
+        communication.upload_file(chat_id, filename=file_path, send_file_active=send_file_active)
         return None
     file_path = f"webroot\\{file_path}"
     if os.path.isfile(file_path):
-        communication.upload_file(chat_id, filename=file_path)
+        communication.upload_file(chat_id, filename=file_path, send_file_active=send_file_active)
     elif file_path == "webroot\\":
-        communication.upload_file(chat_id)
+        communication.upload_file(chat_id, send_file_active=send_file_active)
     return None
 
 
