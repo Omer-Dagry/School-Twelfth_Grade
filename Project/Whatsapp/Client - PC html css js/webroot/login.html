@@ -3,27 +3,30 @@
 <html>
   <head>
     <title>ChatEase Login</title>
+    <link rel="icon" href="favicon.ico">
   </head>
 
-  <body class="disable_text_selection" oncontextmenu="return false;"">
-    <div id="box">
-        <h1>Login</h1>
-        <div id="email_box">
-          <i class="fa fa-envelope" title="email"></i>
-          <input id="email_input" type="email" placeholder="Email">
-        </div>
-        <div id="password_box">
-          <i class="fa fa-lock" title="password"></i>
-          <input id="password_input" type="password" placeholder="Password">
-          <i class="fa fa-eye" id="eye" title="Show Password" onclick="toggle_password_visibility()"></i>
-        </div>
-        <button id="login_btn" onclick="login()">Login</button>
-        <div class="other_pages">
-            Don't have an account? <a href="signup.html">signup</a>
-        </div>
-        <div class="other_pages">
-            Forgot your password? <a href="reset_password.html">reset your password</a>
-        </div>
+  <body class="disable_text_selection" oncontextmenu="return false;">
+    <div id="box_wrap">
+      <div id="box">
+          <h1>Login</h1>
+          <div id="email_box">
+            <i class="fa fa-envelope" title="email"></i>
+            <input id="email_input" type="email" placeholder="Email">
+          </div>
+          <div id="password_box">
+            <i class="fa fa-lock" title="password"></i>
+            <input id="password_input" type="password" placeholder="Password">
+            <i class="fa fa-eye" id="eye" title="Show Password" onclick="toggle_password_visibility()"></i>
+          </div>
+          <button id="login_btn" onclick="login()">Login</button>
+          <div class="other_pages">
+              Don't have an account? <a href="signup.html">signup</a>
+          </div>
+          <div class="other_pages">
+              Forgot your password? <a href="reset_password.html">reset your password</a>
+          </div>
+      </div>
     </div>
     <!--                          Other Files (javascript & css)                        -->
     <link rel="stylesheet" href="login&signup&reset.css">

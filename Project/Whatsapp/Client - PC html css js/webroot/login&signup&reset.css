@@ -1,5 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
+@keyframes box_animation {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
 body {
     font-family: 'Poppins', sans-serif;
     min-height: 100vh;
@@ -34,23 +43,35 @@ button:active {
     -ms-user-select: none; /* IE10+ */
 }
 
+#box_wrap::before {
+    content: '';
+    position: absolute;
+    width: 594px;
+    height: 505px;
+    top: -50%;
+    left: -50%;
+    background: linear-gradient(0deg, transparent, transparent, #ff00cc, #ff00cc, #ff00cc);
+    transform-origin: bottom right;
+    animation: box_animation 6s linear infinite;
+    z-index: 1;
+}
+
+#box_wrap {
+    position: relative;
+    background: transparent;
+    border-radius: 10px;
+    padding: 8px;
+    overflow: hidden;
+}
+
 #box {
     width: 450px;
-    background: rgba(255, 255, 255, .5);
+    background: #BE8ED4;
     padding: 4rem;
     border-radius: 10px;
     position: relative;
     text-align: center;
-}
-
-#box::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: rgba(255, 255, 255, .15);
-    transform: rotate(-6deg);
-    border-radius: 10px;
-    z-index: -1;
+    z-index: 2;
 }
 
 #password_box, #email_box, #username_box, #confirmation_code_box {
@@ -108,5 +129,7 @@ button:active {
 }
 
 a {
-    text-decoration: none;
-}
+    /* text-decoration: none; */
+    color: #3f89ff;
+    font-weight: bold;
+} a:hover { text-decoration: none; }
