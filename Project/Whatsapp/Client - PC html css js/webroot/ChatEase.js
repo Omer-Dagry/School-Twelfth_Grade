@@ -5,9 +5,6 @@ function assert(condition, message) {
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
-function isOverflown(element) {
-    return element.scrollHeight > element.clientHeight || element.scrollWidth > element.clientWidth;
-}
 function elementInViewport(el) {
     var top = el.offsetTop;
     var left = el.offsetLeft;
@@ -93,6 +90,10 @@ function sort_chats_by_date(chat_buttons, search_key) {
 
 // search (in chats/users)
 function chat_search(do_anyway=false, changed_buttons=[]) {
+    if (!document.getElementById("left").contains(chats_list)) {
+        user_search();
+        return
+    }
     let search_key = document.getElementById("search_chat").value.toLowerCase();
     if (search_key == current_search_key && !do_anyway) return;  // prevet calculation for no reason
     current_search_key = search_key;
@@ -126,12 +127,16 @@ function chat_search(do_anyway=false, changed_buttons=[]) {
     sort_chats_by_date(do_anyway ? changed_buttons : chat_buttons, search_key);
 }
 function user_search() {
+    if (document.getElementById("left").contains(chats_list)) {
+        chat_search();
+        return
+    }
     let search_key = document.getElementById("search_chat").value.toLowerCase();
     if (search_key == current_search_key) return;  // prevet calculation for no reason
     current_search_key = search_key;
     let users_buttons = [].slice.call(document.getElementsByClassName("chat"));
     let keys = Object.keys(users_buttons);
-    let users_button, chat_name, last_msg, last_msg_time;
+    let users_button, chat_name;
     if  (search_key == "") {
         for (let key in keys) {
             users_button = users_buttons[key];
@@ -265,13 +270,14 @@ async function load_chat_buttons() {
             if (chat_type === "group") {
                 picture_path = `url("${email}/${chat_id}/group_picture.png")`;
             } else {
+                let other_user_email;
                 if (users[0] != email) other_user_email = users[0];
                 else other_user_email = users[1];
                 picture_path = `url("${email}/profile_pictures/${other_user_email}_profile_picture.png")`;
             }
             changed_buttons.push(chat_box_left(picture_path, chat_name, last_message, time, chat_id, chat_type, users));
         }
-        if (changed) chat_search(do_anyway=true, changed_buttons);
+        if (changed) chat_search(true, changed_buttons);
     }
     setTimeout(load_chat_buttons, 100);  // update again in 100 milliseconds
 }
@@ -281,10 +287,9 @@ async function load_users_buttons() {
     users_list.appendChild(search_for_non_familiar_user);
     let known_to_user = JSON.parse(await eel.get_known_to_user()());
     let other_email;
-    let user_box;
     for (let index in known_to_user) {
         other_email = known_to_user[index];
-        picture_path = `url("${email}/profile_pictures/${other_email}_profile_picture.png")`;
+        let picture_path = `url("${email}/profile_pictures/${other_email}_profile_picture.png")`;
         user_box_left(picture_path, other_email);
     }
 }
@@ -360,7 +365,7 @@ async function load_msgs(chat_msgs, position = "END") {
 }
 async function update_last_seen() {
     if (current_chat_other_email != "") {
-        status_bar_last_seen.innerHTML = await eel.get_user_last_seen(other_user_email)();
+        status_bar_last_seen.innerHTML = await eel.get_user_last_seen(current_chat_other_email)();
     }
     setTimeout(update_last_seen, 1_000);
 }
@@ -380,6 +385,7 @@ async function load_chat(chat_name, chat_id, chat_type, users) {
         status_bar_picture.onclick = function () { upload_group_picture(chat_id) };
     }
     else {
+        let other_user_email;
         if (users[0] != email) other_user_email = users[0];
         else other_user_email = users[1];
         status_bar_picture.style.backgroundImage = `url("${email}/profile_pictures/${other_user_email}_profile_picture.png")`;
@@ -416,10 +422,9 @@ function check_pos() {
 }
 // eel.expose
 function update(chat_id, chat_msgs) {
-    console.log("asdfasdf");
     if (chat_id !== chat.chat_id) return null;
     chat_msgs = JSON.parse(chat_msgs);
-    let from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time, msg_row, keys;
+    let from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time, msg_row;
     let new_messages = {};
     let scrollToBottom = false;
     if (chat.scrollHeight - chat.scrollTop - chat.offsetHeight <= 200) scrollToBottom = true;
@@ -573,18 +578,18 @@ function add_msg(from, sender, msg, time, msg_index, msg_type, deleted_for,
 function msg_from_me(sender, msg, time, msg_index, msg_type, deleted_for, 
     deleted_for_all, seen_by, position="END") {
     add_msg("me", sender, msg, time, msg_index, msg_type, deleted_for, 
-    deleted_for_all, seen_by, position="END");
+    deleted_for_all, seen_by, position);
 }
 function msg_from_others(sender, msg, time, msg_index, msg_type, deleted_for, 
     deleted_for_all, seen_by, position="END") {
     add_msg("others", sender, msg, time, msg_index, msg_type, deleted_for, 
-    deleted_for_all, seen_by, position="END");
+    deleted_for_all, seen_by, position);
 }
 
 
                             /* Window active & inactive */
 
-function window_active(evt) {
+function window_active() {
                     /* Change Color Of Search Sep */
     // remove search bar sep
     let search_bar_box = document.getElementById("search_bar_box");
@@ -601,7 +606,7 @@ function window_active(evt) {
     search_bar_box.appendChild(sep);
 }
 
-function window_inactive(evt) {
+function window_inactive() {
                     /* Change Color Of Search Sep */
     // remove search bar sep
     let search_bar_box = document.getElementById("search_bar_box");
@@ -621,16 +626,6 @@ function window_inactive(evt) {
                                     /* Emoji */
 function addEmoji(emoji) {
     document.getElementById('input_bar').value += emoji;
-}
-  
-function toggleEmojiDrawer() {
-    let drawer = document.getElementById('drawer');
-
-    if (drawer.classList.contains('hidden')) {
-        drawer.classList.remove('hidden');
-    } else {
-        drawer.classList.add('hidden');
-    }
 }
 
                                 /* Necessary Data */
@@ -665,7 +660,7 @@ async function familiarize_user_with() {
         other_email.length > 2 && other_email.includes(".") &&
         !other_email.includes(" ")
         ) {
-        exists = await eel.familiarize_user_with(other_email)();
+        let exists = await eel.familiarize_user_with(other_email)();
         await sleep(1000);
         if (exists) { toggle_chats_users(); toggle_chats_users(); }
     } else alert("Invalid user, user is an email, needs to have '@' & '.' and can't contain spaces.")
@@ -800,6 +795,7 @@ async function main() {
     // ask for email & username
     await ask_for_email();
     await ask_for_username();
+    window.title += ` - ${username}`
 
     // profile picture
     let user_profile_picture = document.getElementById("user-profile-picture");

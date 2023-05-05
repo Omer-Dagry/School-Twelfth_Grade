@@ -1103,7 +1103,7 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
             while True:
                 request: bytes
                 request = client_socket.recv_message()
-                if request == b"":
+                if request == b"" or request == b"bye":
                     break
                 cmd = request[: 30].decode().strip()
                 # decode the request only if it's not a file
@@ -1302,3 +1302,7 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:  # exit nicely on KeyboardInterrupt
         pass
+    finally:
+        for email in user_online_status_database.keys():
+            if user_online_status_database[email][1] == "Online":
+                user_online_status_database[email] = ["Offline", datetime.datetime.now()]

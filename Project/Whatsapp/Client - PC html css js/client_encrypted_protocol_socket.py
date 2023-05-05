@@ -13,6 +13,7 @@ class ClientEncryptedProtocolSocket:
         self.__sock = socket.socket(**kwargs)
         self.__aes_key = os.urandom(16)
         self.__aes_cipher = AESCipher(self.__aes_key)
+        self.settimeout(10)
 
     # Public:
 
@@ -60,6 +61,11 @@ class ClientEncryptedProtocolSocket:
         return self.__sock.getpeername()
 
     def close(self):
+        try:
+            self.settimeout(1)
+            self.send_message(b"bye")
+        except (ConnectionError, socket.error):
+            pass
         self.__sock.close()
 
     # Private:
