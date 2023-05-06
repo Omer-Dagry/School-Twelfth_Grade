@@ -28,6 +28,8 @@ def broadcast_audio(data_queue: multiprocessing.Queue, server_socket: socket.soc
                     server_socket.sendto(data, addr)
             except Exception as e:
                 print(f"closed {addr}, ({str(e)})")
+        # if data_queue.full():  # maybe open another process of this function?
+        #     pass
 
 
 def receive_audio_and_handle_queue(server_socket: socket.socket, clients_ips: set[str],
