@@ -8,13 +8,6 @@ Date: 06/01/2023 (dd/mm/yyyy)
 import io
 import os
 import sys
-# for .exe
-if not os.path.dirname(__file__).endswith("Client - PC html css js"):
-    os.chdir(os.path.dirname(__file__))
-    logfile = io.StringIO()
-    sys.stdout = logfile
-    sys.stderr = logfile
-import eel
 import wave
 import time
 import json
@@ -23,9 +16,19 @@ import shutil
 import pickle
 import easygui
 import hashlib
+import imaplib
 import pyaudio
 import threading
 import traceback
+import email as email_lib
+# for .exe
+if not os.path.dirname(__file__).endswith("Client - PC html css js"):
+    os.chdir(os.path.dirname(__file__))
+    logfile = io.StringIO()
+    sys.stdout = logfile
+    sys.stderr = logfile
+# import eel only after handling stdout and stderr
+import eel
 
 from communication import Communication as Com
 from client_encrypted_protocol_socket import ClientEncryptedProtocolSocket
@@ -35,11 +38,7 @@ from communication import signup_request, send_confirmation_code, reset_password
 # Constants
 SERVER_PORT = 8820
 # SERVER_IP = "127.0.0.1"
-SERVER_IP = None
-while SERVER_IP is None or SERVER_IP.count(".") != 3 or not \
-        all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split("."))):
-    SERVER_IP = easygui.enterbox("Please Enter Server IP: ", "Server IP")
-SERVER_IP_PORT = (SERVER_IP, SERVER_PORT)
+# SERVER_IP_PORT = None
 
 # Globals
 email: None | str = None
@@ -495,6 +494,33 @@ def close_program():
         sync_thread = None
 
 
+def get_server_ip() -> str | None:
+    try:
+        connection = imaplib.IMAP4_SSL("imap.gmail.com")
+        connection.login("project.twelfth.grade.get.ip@gmail.com", "wkqakclcvgfwyitn")
+        connection.select()
+        result, data = connection.uid('search', None, "ALL")
+        if result == 'OK':
+            for num in reversed(data[0].split()):
+                result, data = connection.uid('fetch', num, '(RFC822)')
+                if result == 'OK':
+                    email_message = email_lib.message_from_bytes(data[0][1])
+                    from_email = str(email_message['From'])
+                    if from_email != "project.twelfth.grade@gmail.com":
+                        continue
+                    subject = str(email_message['Subject'])
+                    if subject == "server up":
+                        content = str(email_message.get_payload()[0])
+                        return content.split('server_ip=')[-1].strip()
+                    elif subject == "server down":
+                        return None
+        connection.close()
+        connection.logout()
+    except Exception as e:
+        traceback.format_exception(e)  # returns the formatted exception
+        return None
+
+
 """                                 Connect To Server & Start GUI & Sync                                             """
 
 
@@ -528,7 +554,7 @@ def main():
                     port += 1
                 else:
                     raise Exception("Couldn't find an open port for GUI local host.")
-        eel.start("login.html", port=port)
+        eel.start("login.html", port=port, cmdline_args=["-incognito"])
     except (Exception, BaseException) as e:
         if not isinstance(e, SystemExit) and not isinstance(e, KeyboardInterrupt):
             traceback.print_exception(e)
@@ -548,5 +574,11 @@ def main():
             pass
 
 
+# Server IP
+SERVER_IP = get_server_ip()
+while SERVER_IP is None or SERVER_IP.count(".") != 3 or not \
+        all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split("."))):
+    SERVER_IP = easygui.enterbox("Please Enter Server IP: ", "Server IP")
+SERVER_IP_PORT = (SERVER_IP, SERVER_PORT)
 if __name__ == '__main__':
     main()
