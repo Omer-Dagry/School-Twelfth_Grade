@@ -50,7 +50,7 @@ def send_sound(stream: pyaudio.Stream, client_socket: socket.socket):
             traceback.print_exception(e)
             stop = True
             break
-        time.sleep(0.02)
+        time.sleep(0.03)
 
 
 def main():
