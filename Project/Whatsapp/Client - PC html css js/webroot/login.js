@@ -27,7 +27,7 @@ async function login() {
     } else {
         window.location = "ChatEase.html";
     }
-    login_btn.onclick = login;
+    login_btn.onclick = async function() { await login(); };
 }
 
 

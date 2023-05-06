@@ -19,8 +19,7 @@ from photo_tools import check_size
 from tkinter.filedialog import askopenfilename
 from client_encrypted_protocol_socket import ClientEncryptedProtocolSocket
 
-
-# Globals
+# Constants
 REMOVE = "remove"
 SYNC_MODES = ["new", "all"]
 
@@ -297,6 +296,9 @@ class Communication:
 
     @staticmethod
     def send_message(chat_id: str | int, msg: str, sock: ClientEncryptedProtocolSocket) -> bool:
+        if len(msg) > 5000:
+            showerror("Message To Long", f"Message length is {len(msg)}, and the maximum is 4999")
+            return False
         chat_id = str(chat_id)
         request = f"{'msg'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{msg}".encode()
         if not sock.send_message(request):

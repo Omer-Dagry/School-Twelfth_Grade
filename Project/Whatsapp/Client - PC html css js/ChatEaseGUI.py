@@ -5,7 +5,15 @@ Mail: omerdagry@gmail.com
 Date: 06/01/2023 (dd/mm/yyyy)
 ###############################################
 """
+import io
 import os
+import sys
+# for .exe
+if not os.path.dirname(__file__).endswith("Client - PC html css js"):
+    os.chdir(os.path.dirname(__file__))
+    logfile = io.StringIO()
+    sys.stdout = logfile
+    sys.stderr = logfile
 import eel
 import wave
 import time
@@ -13,6 +21,7 @@ import json
 import socket
 import shutil
 import pickle
+import easygui
 import hashlib
 import pyaudio
 import threading
@@ -25,7 +34,11 @@ from communication import signup_request, send_confirmation_code, reset_password
 
 # Constants
 SERVER_PORT = 8820
-SERVER_IP = "127.0.0.1"
+# SERVER_IP = "127.0.0.1"
+SERVER_IP = None
+while SERVER_IP is None or SERVER_IP.count(".") != 3 or not \
+        all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split("."))):
+    SERVER_IP = easygui.enterbox("Please Enter Server IP: ", "Server IP")
 SERVER_IP_PORT = (SERVER_IP, SERVER_PORT)
 
 # Globals
@@ -178,6 +191,8 @@ def update() -> None:
             continue
         if new_data:
             try:
+                if first_time_sync_all:
+                    raise AttributeError
                 open_chat_id = eel.get_open_chat_id()()
             except AttributeError:  # GUI haven't loaded up yet
                 pass
@@ -197,7 +212,9 @@ def update() -> None:
         if len(modified_files) == 1:  # if there is no new data (only users_status), sleep an extra .2 seconds
             time.sleep(0.2)
         time.sleep(0.5)
-        first_time_sync_all = False
+        if first_time_sync_all:
+            first_time_sync_all = False
+            time.sleep(2)
 
 
 """                                   Communication Wrapper Functions                                                """
@@ -243,7 +260,9 @@ def login(email_: str, password_: str) -> tuple[bool, str]:
         username = username_or_reason
         email = email_
         password = password_
-        # start_app()  # calling it from js on load up
+        start_app()  # start sync thread
+        while first_time_sync_all:  # wait for first sync to finish
+            time.sleep(0.1)
         return True, ""
     communication = None
     return False, username_or_reason
@@ -481,8 +500,9 @@ def close_program():
 
 @eel.expose
 def start_app() -> None:
-    global sync_thread, sync_sock
+    global sync_thread, sync_sock, stop
     os.makedirs(f"webroot\\{email}\\", exist_ok=True)
+    stop = False
     if sync_sock is None:
         status, sync_sock, reason = communication.login(verbose=False)
         if not status:
@@ -513,8 +533,9 @@ def main():
         if not isinstance(e, SystemExit) and not isinstance(e, KeyboardInterrupt):
             traceback.print_exception(e)
     finally:
-        if os.path.isdir(f"webroot\\{email}\\recordings"):
-            shutil.rmtree(f"webroot\\{email}\\recordings")
+        if os.path.isdir(f"webroot\\{email}"):
+            shutil.rmtree(f"webroot\\{email}")
+            # shutil.rmtree(f"webroot\\{email}\\recordings")
         try:
             if sync_sock is not None:
                 sync_sock.close()

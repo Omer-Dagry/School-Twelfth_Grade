@@ -1,0 +1,5 @@
+# this file specifies all the required libraries for the project
+# to use it - 'pip install -r requirements.txt '
+
+rsa
+pycryptodome

@@ -1125,7 +1125,10 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
                     len_chat_id = int(request[30: 45].strip())  # currently 20
                     chat_id = request[45: len_chat_id + 45]
                     msg = request[len_chat_id + 45:]
-                    ok = send_msg(client_ip_port[0], email, chat_id, msg)
+                    if len(msg) < 5000:
+                        ok = send_msg(client_ip_port[0], email, chat_id, msg)
+                    else:
+                        ok = False
                     response = request_response(cmd, "ok" if ok else "not ok", "")
                 elif cmd == "delete for everyone":
                     request: str
