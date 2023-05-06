@@ -771,16 +771,16 @@ def update_group_photo(from_user: str, chat_id: str, picture_file: bytes) -> boo
 
 def send_mail(to: str, subject: str, body: str, html: str = "") -> None:
     """ send an email (for signup and password reset) """
-    em = MIMEMultipart('alternative')
-    em["From"] = SERVER_EMAIL
-    em["To"] = to
-    em["Subject"] = subject
-    em.attach(MIMEText(body, "plain"))
+    email_msg = MIMEMultipart('alternative')
+    email_msg["From"] = SERVER_EMAIL
+    email_msg["To"] = to
+    email_msg["Subject"] = subject
+    email_msg.attach(MIMEText(body, "plain"))
     if html != "":
-        em.attach(MIMEText(html, "html"))
+        email_msg.attach(MIMEText(html, "html"))
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context()) as smtp:
         smtp.login(SERVER_EMAIL, SERVER_EMAIL_APP_PASSWORD)
-        smtp.sendmail(SERVER_EMAIL, to, em.as_string())
+        smtp.sendmail(SERVER_EMAIL, to, email_msg.as_string())
     logging.info(f"sent email to {to}")
 
 
@@ -951,8 +951,8 @@ def sync(email: str, sync_all: bool = False) -> bytes:
     current_time = datetime.datetime.now()
     for user in users_status:
         if isinstance(users_status[user], datetime.datetime):
-            strftime = "%H:%M %m/%d/%Y" if (current_time - users_status[user]).days >= 1 else "%H:%M"
-            users_status[user] = f'Last Seen {users_status[user].strftime(strftime)}'
+            time_format = "%H:%M %m/%d/%Y" if (current_time - users_status[user]).days >= 1 else "%H:%M"
+            users_status[user] = f'Last Seen {users_status[user].strftime(time_format)}'
         else:
             users_status[user] = "Online"
     file_name_data: dict[str, str] = {"users_status": pickle.dumps(users_status)}
@@ -965,11 +965,13 @@ def sync(email: str, sync_all: bool = False) -> bytes:
                     file_path_for_user = "\\".join(file.split("\\")[2:])
                     chat_id = file_path_for_user.split("\\")[0]
                     block(f"{USERS_DATA}{chat_id}\\data\\not free")
-                    file_name_data[file_path_for_user] = read_from_file(file, "rb")
-                    unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
+                    try:
+                        file_name_data[file_path_for_user] = read_from_file(file, "rb")
+                    finally:
+                        unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
                     continue
-            except Exception:
-                pass
+            except Exception as e:
+                traceback.format_exception(e)
         if os.path.isfile(file):
             #                            remove Data\\Users_Data
             file_path_for_user = "\\".join(file.split("\\")[2:])
@@ -1319,6 +1321,6 @@ if __name__ == '__main__':
     finally:
         # send the app client's get ip email the server is down
         send_mail("project.twelfth.grade.get.ip@gmail.com", "server down", "")
-        for email in user_online_status_database.keys():
-            if user_online_status_database[email][1] == "Online":
-                user_online_status_database[email] = ["Offline", datetime.datetime.now()]
+        for em in user_online_status_database.keys():
+            if user_online_status_database[em][1] == "Online":
+                user_online_status_database[em] = ["Offline", datetime.datetime.now()]

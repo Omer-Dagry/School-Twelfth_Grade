@@ -450,8 +450,8 @@ def record_audio(chat_id: str) -> None:
         stop_rec = True
     if not skip:
         time.sleep(1)
-        # eel.display_recording_options(recording_file_path[8:], chat_id)()  # TODO
-        send_file(chat_id, recording_file_path)
+        eel.display_recording_options(recording_file_path[8:], chat_id)()
+        # send_file(chat_id, recording_file_path)
 
 
 @eel.expose
