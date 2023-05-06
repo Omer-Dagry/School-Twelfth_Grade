@@ -576,9 +576,12 @@ def main():
 
 # Server IP
 SERVER_IP = get_server_ip()
-while SERVER_IP is None or SERVER_IP.count(".") != 3 or not \
-        all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split("."))):
+while SERVER_IP != "no" and \
+        (SERVER_IP is None or SERVER_IP.count(".") != 3 or not
+         all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split(".")))):
     SERVER_IP = easygui.enterbox("Please Enter Server IP: ", "Server IP")
+if SERVER_IP == "no":
+    sys.exit(1)
 SERVER_IP_PORT = (SERVER_IP, SERVER_PORT)
 if __name__ == '__main__':
     main()
