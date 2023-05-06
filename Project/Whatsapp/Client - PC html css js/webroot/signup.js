@@ -37,7 +37,7 @@ async function signup_request() {
         box.appendChild(confirmation_code_box);
         box.appendChild(submit_btn);
     }
-    signup_btn.onclick = signup_request;
+    signup_btn.onclick = async function () { await signup_request(); };
 }
 
 async function signup_confirmation_code() {
@@ -56,7 +56,7 @@ async function signup_confirmation_code() {
     if (msg != null) msg.remove();
     if (!status) display_msg("Signup failed !");
     else display_msg("Signed up successfully !", type="regular");
-    submit_btn.onclick = signup_confirmation_code;
+    submit_btn.onclick = async function() { await signup_confirmation_code(); };
 }
 
 

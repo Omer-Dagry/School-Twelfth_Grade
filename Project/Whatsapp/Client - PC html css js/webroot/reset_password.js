@@ -37,7 +37,7 @@ async function reset_password_request() {
         box.appendChild(password_box);
         box.appendChild(submit_btn);
     }
-    reset_password_btn.onclick = reset_password_request;
+    reset_password_btn.onclick = async function() { await reset_password_request(); };
 }
 
 async function reset_password_confirmation_and_send_pass() {
@@ -56,7 +56,7 @@ async function reset_password_confirmation_and_send_pass() {
     if (msg != null) msg.remove();
     if (!status) display_msg("Reset password failed !");
     else display_msg("Password has been reset successfully !", type="regular");
-    submit_btn.onclick = reset_password_confirmation_and_send_pass;
+    submit_btn.onclick = async function() { await reset_password_confirmation_and_send_pass(); };
 }
 
 
