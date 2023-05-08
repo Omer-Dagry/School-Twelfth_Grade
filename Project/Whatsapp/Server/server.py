@@ -1003,6 +1003,10 @@ def call_group(from_email: str, chat_id: str):
            and for the other users send a "call message" with the port number
     """
     users_in_chat = get_group_users(chat_id)
+    online = []
+    for user in users_in_chat:
+        if user in user_online_status_database and user_online_status_database[user][0] == "Online":
+            online.append(user)
     # TODO: finish this func
 
 

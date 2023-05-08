@@ -6,7 +6,7 @@ import traceback
 
 
 # PyAudio
-CHUNK = 1024 * 2
+CHUNK = 1024 * 4
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
