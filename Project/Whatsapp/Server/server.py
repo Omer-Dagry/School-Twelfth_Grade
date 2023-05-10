@@ -752,6 +752,7 @@ def upload_profile_picture(email: str, picture_file: bytes) -> bool:
     write_to_file(f"{USERS_DATA}{email}\\{email}_profile_picture.png", "wb", picture_file)
     known_to_user = get_user_known_users(email)
     known_to_user.add(email)
+    add_new_data_to(email, f"{USERS_DATA}{email}\\{email}_profile_picture.png")
     for user in known_to_user:
         add_new_data_to(user, f"known user profile picture|{USERS_DATA}{email}\\{email}_profile_picture.png")
     return True
