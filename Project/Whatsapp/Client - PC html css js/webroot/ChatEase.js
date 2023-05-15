@@ -400,6 +400,7 @@ async function load_chat(chat_name, chat_id, chat_type, users) {
     await load_msgs(chat_msgs);
     status_bar_name.innerHTML = chat_name;
     chat.scrollTo(0, chat.scrollHeight);
+    setTimeout(function() { chat.scrollTo(0, chat.scrollHeight); }, 200);
 }
 async function load_more_msgs() {
     chat.scrollBy(0, 20);
@@ -435,10 +436,18 @@ function update(chat_id, chat_msgs) {
             continue;
         }
         // old message that has been changed
-        // TODO: check if deleted and change color
-        msg_row = document.getElementById(`msg_${msg_index}`);
-        if (msg_row != null && msg_row.innerHTML != handle_msg_length(msg)) {
-            msg_row.getElementsByClassName("msg_text")[0].innerHTML = handle_msg_length(msg);
+        if (deleted_for.includes(email)) {
+            msg_row = document.getElementById(`msg_${msg_index}`);
+            if (msg_row !== null) {
+                msg_row.remove();
+            }
+        } else if (deleted_for_all) {
+            msg_row = document.getElementById(`msg_${msg_index}`);
+            if (msg_row !== null) {
+                msg_row.getElementsByClassName("msg_text")[0].innerHTML = msg;  // This message was deleted.
+                if (from_user === email) msg_row.getElementsByClassName("my_msg_box")[0].style.backgroundColor = "#232323";
+                else msg_row.getElementsByClassName("msg_box")[0].style.backgroundColor = "#232323";
+            }
         }
     }
     load_msgs(new_messages);
@@ -469,8 +478,31 @@ function get_open_chat_id() {
 
                                     /* Messages */
 // TODO: implement func
-function message_options() {
-
+function message_options(msg_index, full_sender, seen_by, deleted_for_all) {
+    let popup = document.createElement("dialog");
+    let delete_for_me = document.createElement("button");
+    delete_for_me.innerHTML = "Delete for me";  // TODO: change to icon
+    delete_for_me.addEventListener("click", async function() {
+        popup.close();
+        document.getElementsByTagName("body")[0].removeChild(popup);
+        await eel.delete_message_for_me(get_open_chat_id(), msg_index)();
+    });
+    popup.appendChild(delete_for_me);
+    if (full_sender === email && !deleted_for_all) {
+        let delete_for_all = document.createElement("button");
+        delete_for_all.innerHTML = "Delete for all";  // TODO: change to icon
+        delete_for_all.addEventListener("click", async function() {
+            popup.close();
+            document.getElementsByTagName("body")[0].removeChild(popup);
+            await eel.delete_message_for_everyone(get_open_chat_id(), msg_index)();
+        });
+        popup.appendChild(delete_for_all);
+    }
+    let read_receipts = document.createElement("button");
+    read_receipts.innerHTML = "Read receipts";  // TODO: change to icon
+    popup.appendChild(read_receipts);
+    document.getElementsByTagName("body")[0].prepend(popup);
+    popup.showModal();
 }
 function handle_msg_length(msg) {
     let max_chars = 65;
@@ -522,8 +554,16 @@ function add_msg(from, sender, msg, time, msg_index, msg_type, deleted_for,
         sender = sender.split("@");
         sender = sender.slice(0, sender.length - 1).join("@") + ":";
         if (deleted_for_all) {
-            // TODO
             // This message was deleted.
+            let this_msg_row = from == "me" ? window.my_msg_row.cloneNode(true) : window.msg_row.cloneNode(true);
+            this_msg_row.id = `msg_${msg_index}`;
+            this_msg_row.getElementsByClassName("msg_text")[0].innerHTML = msg;
+            let msg_box = full_sender === email ? this_msg_row.getElementsByClassName("my_msg_box")[0] : this_msg_row.getElementsByClassName("msg_box")[0];
+            msg_box.style.backgroundColor = "#232323";
+            // append msg row to chat
+            append_to_chat(position, this_msg_row);
+            // add event listener
+            this_msg_row.addEventListener("contextmenu", function() { message_options(msg_index, full_sender, seen_by, deleted_for_all); }) // right click
         } else if (deleted_for.includes(email)) {
             return;
         } else if (msg_type === "msg") {
@@ -540,13 +580,8 @@ function add_msg(from, sender, msg, time, msg_index, msg_type, deleted_for,
             // append msg row to chat
             append_to_chat(position, this_msg_row);
             // add event listener
-            // msg_row.addEventListener("click", function() {func_name(msg_index, seen_by)}) // left click
+            this_msg_row.addEventListener("contextmenu", function() { message_options(msg_index, full_sender, seen_by, deleted_for_all); }) // right click
         } else if (msg_type === "file") {
-            /* TODO
-            check if photo, if so, display it, else display a special msg, 
-            either way when pressed call a python function that start the file
-            `url("${email}/${msg}")`
-            */
             msg = msg.replaceAll("\\", "/");
             let display_file = false;
             for (let index in image_types) {
@@ -558,8 +593,9 @@ function add_msg(from, sender, msg, time, msg_index, msg_type, deleted_for,
             if (display_file) {
                 let photo_row = from == "me" ? window.my_photo_msg_row.cloneNode(true) : window.photo_msg_row.cloneNode(true);
                 photo_row.getElementsByClassName("msg_image")[0].src = `${email}/${msg}`;
-                photo_row.onclick = async function () { await eel.start_file(`${email}/${msg}`); };
+                photo_row.getElementsByClassName("msg_image")[0].onclick = async function () { await eel.start_file(`${email}/${msg}`); };
                 append_to_chat(position, photo_row);
+                photo_row.addEventListener("contextmenu", function() { message_options(msg_index, full_sender, seen_by, deleted_for_all); }) // right click
             } else {
                 let file_row = from == "me" ? window.my_photo_msg_row.cloneNode(true) : window.photo_msg_row.cloneNode(true);
                 file_row.getElementsByClassName("msg_image")[0].className = "msg_file";
@@ -568,11 +604,12 @@ function add_msg(from, sender, msg, time, msg_index, msg_type, deleted_for,
                 file_row.getElementsByClassName("msg_file")[0].alt = file_name;
                 file_row.getElementsByClassName("msg_file")[0].onclick = async function () { await eel.start_file(`${email}/${msg}`); };
                 append_to_chat(position, file_row);
+                file_row.addEventListener("contextmenu", function() { message_options(msg_index, full_sender, seen_by, deleted_for_all); }) // right click
             }
         } else if (msg_type === "remove" || msg_type === "add") {
-            /* TODO
-            display the msg in gray (and centered) 
-            */
+           let add_remove_msg_row = window.add_remove_msg_row.cloneNode(true);
+           add_remove_msg_row.getElementsByClassName("msg_text")[0].innerHTML = msg;
+           append_to_chat(position, add_remove_msg_row);
         }
 }
 function msg_from_me(sender, msg, time, msg_index, msg_type, deleted_for, 

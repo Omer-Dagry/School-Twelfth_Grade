@@ -46,9 +46,9 @@ username: None | str = None
 password: None | str = None
 communication: None | Com = None
 sock: None | ClientEncryptedProtocolSocket = None
+sync_sock: None | ClientEncryptedProtocolSocket = None
 waiting_for_confirmation_code_reset: bool = False
 waiting_for_confirmation_code_signup: bool = False
-sync_sock: ClientEncryptedProtocolSocket | None = None
 sync_thread: threading.Thread | None = None
 first_time_sync_all: bool = True
 open_chat_files_lock = threading.Lock()
@@ -86,10 +86,15 @@ def get_all_chat_ids() -> str:
             latest_chat_msgs_file_name = max(os.listdir(f"webroot\\{email}\\{chat_id}\\data\\chat"))
             with open(f"webroot\\{email}\\{chat_id}\\data\\chat\\{latest_chat_msgs_file_name}", "rb") as f:
                 last_chat_msgs = pickle.loads(f.read())
-            last_msg = last_chat_msgs[max(last_chat_msgs.keys())]
-            sender = last_msg[0].split('@')[0] if last_msg[0] != email else "You"
-            msg = f"{sender}: {last_msg[1]}"
-            msg = msg if len(msg) <= 25 else msg[:25] + "..."
+            msgs_index = set(last_chat_msgs.keys())
+            last_msg_index = max(msgs_index)
+            last_msg = last_chat_msgs[last_msg_index]
+            if email not in last_msg[3]:
+                sender = last_msg[0].split('@')[0] if last_msg[0] != email else "You"
+                msg = f"{sender}: {last_msg[1]}"
+                msg = msg if len(msg) <= 25 else msg[:25] + "..."
+            else:
+                msg = ""
             msg_time = last_msg[-1]
             chat_id_last_msg_and_time[chat_id] = [chat_name, msg, msg_time, chat_type, users]
         except FileNotFoundError:
@@ -170,18 +175,17 @@ def get_username() -> str:
 """                             Sync With Server & Update Open Chats In GUI                                          """
 
 
-def update() -> None:
+def update(first_time_sync_mode: bool) -> None:
     """ syncs with the sever and updates the GUI """
-    global stop, sync_sock, communication, first_time_sync_all
-    stop = False
+    global sync_sock, stop
     sync_new = "new"
     sync_all = "all"
     open_chat_id = ""
     while not stop:
         try:
             new_data, modified_files, deleted_files = \
-                communication.sync(sync_sock, sync_all if first_time_sync_all else sync_new)
-        except (ConnectionError, socket.error):
+                communication.sync(sync_sock, sync_all if first_time_sync_mode else sync_new)
+        except (ConnectionError, socket.error, UnicodeError):
             sync_sock.close()
             status, sync_sock, reason = communication.login(verbose=False)
             if not status:
@@ -190,12 +194,14 @@ def update() -> None:
             continue
         if new_data:
             try:
-                if first_time_sync_all:
+                if first_time_sync_mode:
                     raise AttributeError
                 open_chat_id = eel.get_open_chat_id()()
             except AttributeError:  # GUI haven't loaded up yet
-                pass
+                open_chat_id = ""
             if open_chat_id != "":
+                # let the server know that the user saw all the messages in the chat
+                communication.mark_as_seen(sync_sock, open_chat_id)
                 for file_path in modified_files:
                     if open_chat_id == file_path.split("\\")[2] and file_path in open_chat_files:
                         try:
@@ -208,12 +214,13 @@ def update() -> None:
             for file_path in deleted_files:
                 if os.path.isfile(file_path):
                     os.remove(file_path)
+        if first_time_sync_mode:
+            os.makedirs(f"webroot\\{email}\\first sync done", exist_ok=True)
+            first_time_sync_mode = False
+            time.sleep(2)
         if len(modified_files) == 1:  # if there is no new data (only users_status), sleep an extra .2 seconds
             time.sleep(0.2)
         time.sleep(0.5)
-        if first_time_sync_all:
-            first_time_sync_all = False
-            time.sleep(2)
 
 
 """                                   Communication Wrapper Functions                                                """
@@ -222,34 +229,14 @@ def update() -> None:
 @eel.expose
 def login(email_: str, password_: str) -> tuple[bool, str]:
     """ login """
-    global communication, sock, email, password, username, stop, sync_sock, sock, sync_thread
+    global communication, sock, email, password, username, sock, first_time_sync_all, sync_sock
     if email_ is None or email_ == "" or password_ is None or password_ == "":
         return False, ""
-    if email_ == email and communication is not None:
-        status, status2, _ = True, True, ""
-        if sync_sock is None:
-            status, sync_sock, _ = communication.login(verbose=False)
-        if sock is None:
-            status2, sock, _ = communication.login(verbose=False)
-        if not status or not status2:
-            return False, _
-        if sync_thread is None or not sync_thread.is_alive():
-            sync_thread = threading.Thread(target=update, daemon=True)
-            sync_thread.start()
-        return False, "Already Logged In"
-    if sync_thread is not None and sync_thread.is_alive():
-        stop = True
-    if sync_sock is not None:
-        try:
-            sync_sock.close()
-        except (ConnectionError, socket.error):
-            pass
     if sock is not None:
         try:
             sock.close()
         except (ConnectionError, socket.error):
             pass
-    sync_sock = None
     sock = None
     password_ = hashlib.md5(password_.encode()).hexdigest().lower()
     communication = Com(email_, password_, SERVER_IP_PORT)
@@ -260,7 +247,7 @@ def login(email_: str, password_: str) -> tuple[bool, str]:
         email = email_
         password = password_
         start_app()  # start sync thread
-        while first_time_sync_all:  # wait for first sync to finish
+        while not os.path.isdir(f"webroot\\{email}\\first sync done"):  # wait for first sync to finish
             time.sleep(0.1)
         return True, ""
     communication = None
@@ -351,7 +338,18 @@ def send_file(chat_id: str, file_path: str) -> None:
 
 @eel.expose
 def send_message(message: str, chat_id: str) -> bool:
-    return communication.send_message(chat_id, message, sock) if chat_id != "" else False
+    global sock
+    if chat_id == "":
+        return False
+    res = communication.send_message(chat_id, message, sock)
+    if not res:
+        sock.close()
+        status, sock, reason = communication.login(verbose=False)
+        res = communication.send_message(chat_id, message, sock)
+        if not res:
+            pass
+            # TODO: display error
+    return res
 
 
 @eel.expose
@@ -422,7 +420,6 @@ def record_audio(chat_id: str) -> None:
     global stop_rec
     skip = False
     os.makedirs(f"webroot\\{email}\\recordings", exist_ok=True)
-    # TODO: change to {email}
     num = max([int(num.split(".")[0]) for num in os.listdir(f"webroot\\{email}\\recordings")] + [0])
     recording_file_path = f"webroot\\{email}\\recordings\\{num + 1}.wav"
     try:
@@ -446,7 +443,6 @@ def record_audio(chat_id: str) -> None:
         # TODO: display error message
         skip = True
     finally:
-        # TODO: disable recording button until RecordingOptions is closed
         stop_rec = True
     if not skip:
         time.sleep(1)
@@ -487,10 +483,11 @@ def start_file(file_path: str) -> bool:
 
 @eel.expose
 def close_program():
-    global stop, sync_thread
+    global sync_thread, stop
     stop = True
     if sync_thread is not None:
-        sync_thread.join(5)  # wait up to 5 seconds
+        sync_thread.join()
+        sync_sock.close()
         sync_thread = None
 
 
@@ -526,22 +523,27 @@ def get_server_ip() -> str | None:
 
 @eel.expose
 def start_app() -> None:
-    global sync_thread, sync_sock, stop
+    global sync_thread, sync_sock, first_time_sync_all, stop
     os.makedirs(f"webroot\\{email}\\", exist_ok=True)
+    if sync_sock is not None:
+        sync_sock.close()
+    status, sync_sock, reason = communication.login(verbose=False)
+    if not status:
+        pass  # TODO: display error
+        print("error restarting sync sock")
     stop = False
-    if sync_sock is None:
-        status, sync_sock, reason = communication.login(verbose=False)
-        if not status:
-            pass  # todo display error
     if sync_thread is None or not sync_thread.is_alive():
         # Start sync thread
-        sync_thread = threading.Thread(target=update, daemon=True)
+        sync_thread = threading.Thread(target=update, args=(first_time_sync_all,), daemon=True)
         sync_thread.start()
+        first_time_sync_all = False
 
 
 def main():
     # Launch GUI
     try:
+        if os.path.isdir(f"webroot\\{email}\\first sync done"):
+            shutil.rmtree(f"webroot\\{email}\\first sync done")
         eel.init("webroot")
         port = 8080
         while True:
@@ -562,6 +564,7 @@ def main():
         if os.path.isdir(f"webroot\\{email}"):
             shutil.rmtree(f"webroot\\{email}")
             # shutil.rmtree(f"webroot\\{email}\\recordings")
+            # shutil.rmtree(f"webroot\\{email}\\first sync done")
         try:
             if sync_sock is not None:
                 sync_sock.close()

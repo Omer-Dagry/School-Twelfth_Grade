@@ -3,11 +3,6 @@
 Author: Omer Dagry
 Mail: omerdagry@gmail.com
 Final Date:  (dd/mm/yyyy) TODO: add date, and copy this to all files
-
-
-TODO: add a file in each chat of a pickled dict -> {email: number_of_unread_msgs}
-      each time a msg is sent increment number_of_unread_msgs for all the users
-      each time a user enters the chat set his number_of_unread_msgs to 0
 ###############################################
 """
 import os
@@ -447,7 +442,6 @@ def get_user_known_users(email: str) -> set[str]:
     return known_to_user
 
 
-# TODO: handle picture for 1 on 1 chats (in sync func, send the user all the profile pictures of his known users)
 def create_new_chat(ip: str, user_created: str, with_user: str) -> tuple[bool, str]:
     """ create a new chat (one on one, not group)
     :param ip: the ip of the clients
@@ -479,6 +473,8 @@ def create_new_chat(ip: str, user_created: str, with_user: str) -> tuple[bool, s
     write_to_file(f"{USERS_DATA}{chat_id}\\name", "wb", pickle.dumps([user_created_username, with_user_username]))
     write_to_file(f"{USERS_DATA}{chat_id}\\type", "w", "chat")
     write_to_file(f"{USERS_DATA}{chat_id}\\users", "wb", b"")
+    write_to_file(f"{USERS_DATA}{chat_id}\\unread_msgs", "wb",
+                  pickle.dumps({user_created: 0, with_user: 0}))
     add_user_to_group_users_file(user_created, chat_id)
     add_user_to_group_users_file(with_user, chat_id)
     # add chat id to each user chats
@@ -519,6 +515,8 @@ def create_new_group(ip: str, user_created: str, users: list[str], group_name: s
         f"{USERS_DATA}{chat_id}\\group_picture.png", "wb",
         read_from_file(f"{SERVER_DATA}\\default_group_picture.png", "rb")
     )
+    write_to_file(f"{USERS_DATA}{chat_id}\\unread_msgs", "wb",
+                  pickle.dumps(dict(((user_email, 0) for user_email in users))))
     for email in users:
         add_chat_id_to_user_chats(email, chat_id)
         add_user_to_group_users_file(email, chat_id)
@@ -542,6 +540,10 @@ def add_user_to_group(ip: str, from_user: str, add_user: str, group_id: str) -> 
     add_user_to_group_users_file(add_user, group_id)
     #
     add_chat_id_to_user_chats(add_user, group_id)
+    unread_msgs: dict = pickle.loads(read_from_file(f"{USERS_DATA}{group_id}\\unread_msgs", "rb"))
+    unread_msgs[from_user] = 0
+    write_to_file(f"{USERS_DATA}{group_id}\\unread_msgs", "wb", pickle.dumps(unread_msgs))
+    #
     add_new_data_to(add_user, f"{USERS_DATA}{group_id}")  # make the entire chat as new data for the added user
     add_new_data_to(group_users, f"{USERS_DATA}{group_id}\\users")  # only update the users file for the others
     send_msg(ip, from_user, group_id, f"{from_user} added {add_user}.", add_message=True)
@@ -559,6 +561,10 @@ def remove_user_from_group(ip: str, from_user: str, remove_user: str, group_id: 
     remove_user_from_group_users_file(remove_user, group_id)
     #
     remove_chat_id_from_user_chats(remove_user, group_id)
+    unread_msgs: dict = pickle.loads(read_from_file(f"{USERS_DATA}{group_id}\\unread_msgs", "rb"))
+    unread_msgs.pop(from_user)
+    write_to_file(f"{USERS_DATA}{group_id}\\unread_msgs", "wb", pickle.dumps(unread_msgs))
+    #
     add_new_data_to(remove_user, f"{USERS_DATA}{remove_user}\\chats")
     add_new_data_to(get_group_users(group_id), f"{USERS_DATA}{group_id}\\users")
     add_new_data_to(remove_user, f"remove - {USERS_DATA}{group_id}")
@@ -611,6 +617,15 @@ def send_msg(ip: str, from_user: str, chat_id: str, msg: str,
             time_formatted = datetime.datetime.now().strftime("%m/%d/%Y %H:%M")
             data[max(data.keys()) + 1] = [from_user, msg, msg_type, [], False, [], time_formatted]
             write_to_file(f"{USERS_DATA}{chat_id}\\data\\chat\\{latest}", "wb", pickle.dumps(data))
+        block(f"{USERS_DATA}{chat_id}\\unread messages not free")
+        try:
+            unread_msgs: dict = pickle.loads(read_from_file(f"{USERS_DATA}{chat_id}\\unread_msgs", "rb"))
+        except EOFError:
+            unread_msgs = {}
+        for user in unread_msgs.keys():
+            unread_msgs[user] += 1
+        write_to_file(f"{USERS_DATA}{chat_id}\\unread_msgs", "wb", pickle.dumps(unread_msgs))
+        unblock(f"{USERS_DATA}{chat_id}\\unread messages not free")
         # when finished remove the folder
         lock = unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
         # add the new file / updated file to the new data of all the users in the chat
@@ -690,9 +705,9 @@ def delete_msg_for_me(ip: str, from_user: str, chat_id: str, index_of_msg: int) 
             data[index_of_msg] = msg
             write_to_file(f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}", "wb", pickle.dumps(data))
         else:
-            unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
+            lock = unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
             return False
-        unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
+        lock = unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
         add_new_data_to(from_user, f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}")
         return True
     except Exception as e:
@@ -732,9 +747,9 @@ def delete_msg_for_everyone(ip: str, from_user: str, chat_id: str, index_of_msg:
                 # tell all the clients to remove this file on their side
                 add_new_data_to(users_in_chat, f"remove - {USERS_DATA}{chat_id}\\data\\files\\{msg[1]}")
         else:
-            unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
+            lock = unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
             return False
-        unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
+        lock = unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
         add_new_data_to(users_in_chat, f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}")
         return True
     except Exception as e:
@@ -745,6 +760,44 @@ def delete_msg_for_everyone(ip: str, from_user: str, chat_id: str, index_of_msg:
     finally:
         if lock:
             unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
+
+
+def mark_as_seen(chat_id: str, user_email: str) -> None:
+    """ Mark all unread msgs in the chat that the user is currently in as read """
+    users_in_chat: set = chat_id_users_database.get(chat_id)
+    if users_in_chat is None or not is_user_in_chat(user_email, chat_id):
+        return
+    block(f"{USERS_DATA}{chat_id}\\unread messages not free")
+    try:
+        unread_msgs: dict = pickle.loads(read_from_file(f"{USERS_DATA}{chat_id}\\unread_msgs", "rb"))
+    except EOFError:
+        unread_msgs = {}
+    unread_msgs_amount = unread_msgs[user_email]
+    unread_msgs[user_email] = 0
+    write_to_file(f"{USERS_DATA}{chat_id}\\unread_msgs", "wb", pickle.dumps(unread_msgs))
+    add_new_data_to(user_email, f"{USERS_DATA}{chat_id}\\unread_msgs")
+    unblock(f"{USERS_DATA}{chat_id}\\unread messages not free")
+    if unread_msgs_amount > 0:
+        block(f"{USERS_DATA}{chat_id}\\data\\not free")
+        chat_files = os.listdir(f"{USERS_DATA}{chat_id}\\data\\chat")
+        chat_files.sort(key=lambda x: int(x), reverse=True)
+        current_file_pos = 0
+        while unread_msgs_amount > 0 and current_file_pos != len(chat_files):
+            # msgs -> {index: [from_user, msg, msg_type, deleted_for, delete_for_all, seen by, time]}
+            msgs: dict = pickle.loads(
+                read_from_file(f"{USERS_DATA}{chat_id}\\data\\chat\\{chat_files[current_file_pos]}", "rb"))
+            added_to_new_data = False
+            for msg_index in msgs.keys():
+                if user_email not in msgs[msg_index][-2]:
+                    # TODO: maybe if everyone read it just change to True instead of a list?
+                    msgs[msg_index][-2].append(user_email)
+                    unread_msgs_amount -= 1
+                    if not added_to_new_data:
+                        added_to_new_data = True
+                        add_new_data_to(users_in_chat,
+                                        f"{USERS_DATA}{chat_id}\\data\\chat\\{chat_files[current_file_pos]}")
+            current_file_pos += 1
+        unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
 
 
 def upload_profile_picture(email: str, picture_file: bytes) -> bool:
@@ -904,7 +957,7 @@ def login(email: str, password: str) -> bool:
     if user_password_hashed_hash != hashlib.md5(password.encode()).hexdigest().lower():
         return False
     if user_online_status_database[email][0] == "Online":
-        user_online_status_database[email][1] += 1
+        user_online_status_database[email] = ["Online", user_online_status_database[email][1] + 1]
     else:
         user_online_status_database[email] = ["Online", 1]
     return True
@@ -913,84 +966,98 @@ def login(email: str, password: str) -> bool:
 def sync(email: str, sync_all: bool = False) -> bytes:
     """ send user all the requested files (those who are new or changed / all his files) """
     block(f"{USERS_DATA}{email}\\sync")
-    new_data: list[str] = list(get_new_data_of(email))  # get new data and clear
-    if not sync_all:
-        add = []
-        remove = []
-        for i in range(len(new_data)):
-            path = new_data[i]
-            if os.path.isdir(path):
-                # add all files in dir and sub-dirs
-                for path2, _, files in os.walk(path):
-                    add.extend(map(lambda p: os.path.join(path2, p), files))  # (can't change during iteration)
-                remove.append(i)  # remove the folder itself from new_data list (can't change during iteration)
-        for index in remove:
-            # move the item we want to remove to the end of the list and then pop it,
-            # better performance because if we remove an item that isn't the last all the items
-            # after it need to move 1 index back, unless we remove the last item in the list
-            new_data[-1], new_data[index] = new_data[index], new_data[-1]
-            new_data.pop()
-        new_data.extend(add)
-        del add, remove
-    else:
-        # user metadata
-        # new_data = [f"{USERS_DATA}{email}\\known_users", f"{USERS_DATA}{email}\\{email}_profile_picture.png"]
-        new_data = [f"{USERS_DATA}{email}\\{file}" for file in os.listdir(f"{USERS_DATA}{email}\\")]
-        # user chats and groups
-        chat_ids_set = get_user_chats_file(email)
-        for chat_id in chat_ids_set:
-            for path2, _, files in os.walk(f"{USERS_DATA}{chat_id}"):
-                new_data.extend(map(lambda p: os.path.join(path2, p), files))
-        known_to_user = get_user_known_users(email)
-        for other_email in known_to_user:
-            new_data.append(f"known user profile picture|{USERS_DATA}{other_email}\\{other_email}_profile_picture.png")
-    # make a dictionary -> {file_path: file_data}
-    # also remember user_online_status_database (last seen and online)
-    known_to_user = get_user_known_users(email)
-    users_status: dict[str, int | datetime.datetime | str] = \
-        dict(((user, user_online_status_database.get(user)[1]) for user in known_to_user))
-    current_time = datetime.datetime.now()
-    for user in users_status:
-        if isinstance(users_status[user], datetime.datetime):
-            time_format = "%H:%M %m/%d/%Y" if (current_time - users_status[user]).days >= 1 else "%H:%M"
-            users_status[user] = f'Last Seen {users_status[user].strftime(time_format)}'
+    try:
+        new_data: list[str] = list(get_new_data_of(email))  # get new data and clear
+        if not sync_all:
+            add = []
+            remove = []
+            for i in range(len(new_data)):
+                path = new_data[i]
+                if os.path.isdir(path):
+                    # add all files in dir and sub-dirs
+                    for path2, _, files in os.walk(path):
+                        add.extend(map(lambda p: os.path.join(path2, p), files))  # (can't change during iteration)
+                    remove.append(i)  # remove the folder itself from new_data list (can't change during iteration)
+            for index in remove:
+                # move the item we want to remove to the end of the list and then pop it,
+                # better performance because if we remove an item that isn't the last all the items
+                # after it need to move 1 index back, unless we remove the last item in the list
+                new_data[-1], new_data[index] = new_data[index], new_data[-1]
+                new_data.pop()
+            new_data.extend(add)
+            del add, remove
         else:
-            users_status[user] = "Online"
-    file_name_data: dict[str, str] = {"users_status": pickle.dumps(users_status)}
-    for file in new_data:
-        # if it's a chat file, we need to lock it
-        if file.count("\\") == 4:
-            try:
-                chat_path = "\\".join(file.split("\\")[:-1])  # remove chat file, leave chat_id and data dir
-                if os.path.isdir(chat_path) and chat_path.endswith("\\data"):
+            # user metadata
+            # new_data = [f"{USERS_DATA}{email}\\known_users", f"{USERS_DATA}{email}\\{email}_profile_picture.png"]
+            new_data = [f"{USERS_DATA}{email}\\{file}" for file in os.listdir(f"{USERS_DATA}{email}\\")]
+            # user chats and groups
+            chat_ids_set = get_user_chats_file(email)
+            for chat_id in chat_ids_set:
+                for path2, _, files in os.walk(f"{USERS_DATA}{chat_id}"):
+                    new_data.extend(map(lambda p: os.path.join(path2, p), files))
+            known_to_user = get_user_known_users(email)
+            for other_email in known_to_user:
+                new_data.append(
+                    f"known user profile picture|{USERS_DATA}{other_email}\\{other_email}_profile_picture.png")
+        # make a dictionary -> {file_path: file_data}
+        # also remember user_online_status_database (last seen and online)
+        known_to_user = get_user_known_users(email)
+        users_status: dict[str, int | datetime.datetime | str] = \
+            dict(((user, user_online_status_database.get(user)[1]) for user in known_to_user))
+        current_time = datetime.datetime.now()
+        for user in users_status:
+            if isinstance(users_status[user], datetime.datetime):
+                time_format = "%H:%M %m/%d/%Y" if (current_time - users_status[user]).days >= 1 else "%H:%M"
+                users_status[user] = f'Last Seen {users_status[user].strftime(time_format)}'
+            else:
+                users_status[user] = "Online"
+        file_name_data: dict[str, str] = {"users_status": pickle.dumps(users_status)}
+        for file in new_data:
+            # if it's a chat file, we need to lock it
+            if file.count("\\") == 4:
+                try:
+                    chat_path = "\\".join(file.split("\\")[:-1])  # remove chat file, leave chat_id and data dir
+                    if os.path.isdir(chat_path) and chat_path.endswith("\\data"):
+                        file_path_for_user = "\\".join(file.split("\\")[2:])
+                        chat_id = file_path_for_user.split("\\")[0]
+                        block(f"{USERS_DATA}{chat_id}\\data\\not free")
+                        try:
+                            file_name_data[file_path_for_user] = read_from_file(file, "rb")
+                        finally:
+                            unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
+                        continue
+                except Exception as e:
+                    traceback.format_exception(e)
+            elif file.count("\\") == 3 and file.endswith("unread_msgs"):
+                try:
+                    block_path = "\\".join(file.split("\\")[:-1]) + "\\unread messages not free"
                     file_path_for_user = "\\".join(file.split("\\")[2:])
-                    chat_id = file_path_for_user.split("\\")[0]
-                    block(f"{USERS_DATA}{chat_id}\\data\\not free")
+                    block(block_path)
                     try:
                         file_name_data[file_path_for_user] = read_from_file(file, "rb")
                     finally:
-                        unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
+                        unblock(block_path)
                     continue
-            except Exception as e:
-                traceback.format_exception(e)
-        if os.path.isfile(file):
-            #                            remove Data\\Users_Data
-            file_path_for_user = "\\".join(file.split("\\")[2:])
-            file_name_data[file_path_for_user] = read_from_file(file, "rb")
-        elif file.startswith("known user profile picture|"):
-            real_file_path = "".join(file.split("known user profile picture|")[1:])
-            file_path_for_user = "\\".join(real_file_path.split("\\")[3:])
-            file_name_data[f"profile_pictures\\{file_path_for_user}"] = read_from_file(real_file_path, "rb")
-        elif file.startswith("remove - "):
-            file_name_data[" - ".join(file.split(" - ")[1:])] = "remove"
-        elif file == f"{USERS_DATA}{email}\\sync":
-            pass
-        else:
-            logging.debug(f"[Server]: error in 'sync' function, FileNotFound: '{file}'")
-    # pickle the dictionary
-    sync_res: bytes = pickle.dumps(file_name_data)
-    #
-    unblock(f"{USERS_DATA}{email}\\sync")
+                except Exception as e:
+                    traceback.format_exception(e)
+            if os.path.isfile(file):
+                #                            remove Data\\Users_Data
+                file_path_for_user = "\\".join(file.split("\\")[2:])
+                file_name_data[file_path_for_user] = read_from_file(file, "rb")
+            elif file.startswith("known user profile picture|"):
+                real_file_path = "".join(file.split("known user profile picture|")[1:])
+                file_path_for_user = "\\".join(real_file_path.split("\\")[3:])
+                file_name_data[f"profile_pictures\\{file_path_for_user}"] = read_from_file(real_file_path, "rb")
+            elif file.startswith("remove - "):
+                file_name_data[" - ".join(file.split(" - ")[1:])] = "remove"
+            elif file == f"{USERS_DATA}{email}\\sync":
+                pass
+            else:
+                logging.debug(f"[Server]: error in 'sync' function, FileNotFound: '{file}'")
+        # pickle the dictionary
+        sync_res: bytes = pickle.dumps(file_name_data)
+    finally:
+        unblock(f"{USERS_DATA}{email}\\sync")
     return sync_res
 
 
@@ -1115,18 +1182,19 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
                 cmd = request[: 30].decode().strip()
                 # decode the request only if it's not a file
                 request = request if cmd in stay_encoded else request.decode()
-                # TODO: add user in chat X + add a function to modify seen by lists of messages (call it for these msgs)
                 response = None
                 if cmd == "sync new":
                     request: str
                     response = sync(email)
                     response = f"{'sync new'.ljust(30)}".encode() + response
-                    sync_msg = True
                 elif cmd == "sync all":
                     request: str
-                    sync_msg = True
                     response = sync(email, sync_all=True)
                     response = cmd.ljust(30).encode() + response
+                elif cmd == "user in chat":
+                    request: str
+                    chat_id = request[30:]
+                    mark_as_seen(chat_id, email)
                 elif cmd == "msg":
                     request: str
                     len_chat_id = int(request[30: 45].strip())  # currently 20
@@ -1206,7 +1274,7 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
                     status, chat_id = create_new_group(client_ip_port[0], email, other_users_list, group_name)
                     response = request_response(cmd, "ok" if status else "not ok", chat_id)
                 else:
-                    msg = f"[Server]: '%s:%s' Logged In As '{email}-{username}' - sent unknown cmd {cmd}" % \
+                    msg = f"[Server]: '%s:%s' Logged In As '{email}-{username}' - sent unknown cmd '{cmd}'" % \
                           client_ip_port
                     print(msg)
                     logging.warning(msg)
@@ -1215,6 +1283,7 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
                 if response is not None:
                     client_socket.send_message(response)
     except Exception as err:
+        print(err)
         add_exception_for_ip(client_ip_port[0])
         if not isinstance(err, ConnectionError):
             username = "Unknown username" if "username" not in locals() else username
@@ -1298,14 +1367,13 @@ def main():
 
 
 def unblock_all():
-    chat_or_group_block_folders = ["users_block", "data\\not free"]
+    chat_or_group_block_folders = ["users_block", "data\\not free", "unread messages not free"]
     user_block_folders = ["chats block", "sync", "new data not free", "one_on_one_chats_block", "known_users_block"]
     for folder in os.listdir(USERS_DATA):
         if os.path.isdir(f"{USERS_DATA}{folder}"):
             if os.path.isfile(f"{folder}\\users"):  # group/chat
-                files_n_folders = set(os.listdir(f"{USERS_DATA}{folder}"))
                 for folder_name in chat_or_group_block_folders:
-                    if folder_name in files_n_folders:
+                    if os.path.isdir(f"{USERS_DATA}{folder}\\{folder_name}"):
                         shutil.rmtree(f"{USERS_DATA}{folder}\\{folder_name}")
             else:
                 files_n_folders = set(os.listdir(f"{USERS_DATA}{folder}"))

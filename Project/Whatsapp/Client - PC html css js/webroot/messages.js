@@ -104,3 +104,19 @@ photo_msg_row.appendChild(photo_msg_box);
 window.photo_msg_row = photo_msg_row;
 
 /* ------------------------------------------------------------------ */
+
+var add_remove_msg_row = document.createElement("div");
+add_remove_msg_row.className = "add_remove_msg_row";
+var add_remove_msg_box = document.createElement("div");
+add_remove_msg_box.className = "msg_box";
+var add_remove_msg_data = document.createElement("div");
+add_remove_msg_data.className = "msg_data";
+var add_remove_msg_text = document.createElement("div");
+add_remove_msg_text.className = "msg_text";
+add_remove_msg_data.appendChild(add_remove_msg_text);
+add_remove_msg_box.appendChild(add_remove_msg_data);
+add_remove_msg_row.appendChild(add_remove_msg_box);
+
+window.add_remove_msg_row = add_remove_msg_row;
+
+/* ------------------------------------------------------------------ */

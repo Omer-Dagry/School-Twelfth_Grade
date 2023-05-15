@@ -340,6 +340,14 @@ button:active {
     clear: both;
 }
 
+.add_remove_msg_row {
+    position: absolute;
+    left: 50%;
+    margin-left: 1%;
+    max-width: 55vh;
+    margin-bottom: 15px;
+}
+
 .msg_row {
     margin-left: 1%;
     max-width: 55vh;
@@ -374,6 +382,7 @@ button:active {
 .msg_image {
     max-width: 50vh;
     margin: 10px;
+    cursor: pointer;
 }
 
 .msg_file {
@@ -413,10 +422,6 @@ button:active {
 .msg_text {
     font-size: large;
     padding: 1px;
-}
-
-.my_msg_row .msg_data .msg_sender {
-    color: #3285b4;
 }
 
 #chat_actions {

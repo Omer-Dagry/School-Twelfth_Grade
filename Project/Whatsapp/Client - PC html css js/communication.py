@@ -433,7 +433,7 @@ class Communication:
 
     @staticmethod
     def delete_message_for_me(chat_id: str, message_index: int, sock: ClientEncryptedProtocolSocket) -> bool:
-        request = f"{'delete message for me'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{message_index}"
+        request = f"{'delete for me'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{message_index}"
         if not sock.send_message(request.encode()):
             showerror("Delete Message For Me Error", "Could not delete the message.")
             return False
@@ -441,8 +441,14 @@ class Communication:
 
     @staticmethod
     def delete_message_for_everyone(chat_id: str, message_index: int, sock: ClientEncryptedProtocolSocket) -> bool:
-        request = f"{'delete message for everyone'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{message_index}"
+        request = f"{'delete for everyone'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{message_index}"
         if not sock.send_message(request.encode()):
             showerror("Delete Message For Me Error", "Could not delete the message.")
             return False
         return True
+
+    @staticmethod
+    def mark_as_seen(sock: ClientEncryptedProtocolSocket, chat_id: str) -> None:
+        request = f"{'user in chat'.ljust(30)}{chat_id}"
+        if not sock.send_message(request.encode()):
+            showerror("User in chat Error", "Lost connection to server.")
