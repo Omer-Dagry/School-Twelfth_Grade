@@ -24,6 +24,7 @@ import traceback
 
 from typing import *
 from email.mime.text import MIMEText
+from DirectoryLock import block, unblock
 from SyncDB import SyncDatabase, FileDatabase
 from email.mime.multipart import MIMEMultipart
 from server_encrypted_protocol_socket import ServerEncryptedProtocolSocket
@@ -78,6 +79,8 @@ user_online_status_database = SyncDatabase(user_online_status_file_database, Fal
 # Others
 clients_sockets = []
 printing_lock = threading.Lock()
+sync_sockets_lock = threading.Lock()
+sync_sockets: dict[str, set[ServerEncryptedProtocolSocket]] = {}  # {email: [sync_sock, sync_sock, ...], ...}
 received_exception_from: dict[str, set[datetime.datetime]] = {}  # {ip: {time of exception (for each exception)}}
 blocked_ips: dict[str, datetime.datetime] = {}  # {ip: time of block}
 add_exception_lock = threading.Lock()
@@ -182,33 +185,6 @@ def watch_exception_dict():
         time.sleep(10)  # check every 10 seconds
 
 
-def block(path: str) -> bool:
-    """ :return: True to signal the "lock" is acquired """
-    """
-        create a folder "folder_name" to block another thread from touching a 
-        specific resource file of the user/chat because we are reading the file 
-        and then writing back and if someone does it at the same time with us 
-        something will be lost, so blocking like this allows to block only for 
-        this specific chat and not block all the clients threads, which is what we want
-    """
-    while True:
-        try:
-            os.makedirs(path, exist_ok=False)
-            break
-        except OSError:  # locked
-            time.sleep(0.0005)
-    return True
-
-
-def unblock(path: str) -> bool:
-    """ :return: True to signal the "lock" isn't acquired """
-    if not os.path.isdir(path):
-        logging.debug(f"The 'lock' is already unlocked. (path - '{path}')")
-        raise ValueError(f"The 'lock' is already unlocked. (path - '{path}')")
-    shutil.rmtree(path)
-    return False
-
-
 def add_chat_id_to_user_chats(user_email: str, chat_id: str) -> bool:
     """ add chat id to user chats file """
     if user_email not in email_password_database:
@@ -223,7 +199,7 @@ def add_chat_id_to_user_chats(user_email: str, chat_id: str) -> bool:
     chats_list.add(chat_id)
     write_to_file(f"{USERS_DATA}{user_email}\\chats", "wb", pickle.dumps(chats_list))
     unblock(f"{USERS_DATA}{user_email}\\chats block")
-    add_new_data_to(user_email, f"{USERS_DATA}{user_email}\\chats")
+    sync_new_data_with_client(user_email, f"{USERS_DATA}{user_email}\\chats")
     return True
 
 
@@ -242,7 +218,7 @@ def remove_chat_id_from_user_chats(user_email: str, chat_id: str) -> bool:
         chats_set.remove(chat_id)
     write_to_file(f"{USERS_DATA}{user_email}\\chats", "wb", pickle.dumps(chats_set))
     unblock(f"{USERS_DATA}{user_email}\\chats block")
-    add_new_data_to(user_email, f"{USERS_DATA}{user_email}\\chats")
+    sync_new_data_with_client(user_email, f"{USERS_DATA}{user_email}\\chats")
     return True
 
 
@@ -271,7 +247,7 @@ def add_user_to_group_users_file(email: str, chat_id: str) -> bool:
     users_set.add(email)
     write_to_file(f"{USERS_DATA}{chat_id}\\users", "wb", pickle.dumps(users_set))
     unblock(f"{USERS_DATA}{chat_id}\\users_block")
-    add_new_data_to(get_group_users(chat_id), f"{USERS_DATA}{chat_id}\\users")
+    sync_new_data_with_client(get_group_users(chat_id), f"{USERS_DATA}{chat_id}\\users")
     return True
 
 
@@ -289,7 +265,7 @@ def remove_user_from_group_users_file(email: str, chat_id: str) -> bool:
     users_set.remove(email)
     write_to_file(f"{USERS_DATA}{chat_id}\\users", "wb", pickle.dumps(users_set))
     unblock(f"{USERS_DATA}{chat_id}\\users_block")
-    add_new_data_to(get_group_users(chat_id), f"{USERS_DATA}{chat_id}\\users")
+    sync_new_data_with_client(get_group_users(chat_id), f"{USERS_DATA}{chat_id}\\users")
     return True
 
 
@@ -325,8 +301,8 @@ def is_user_in_chat(user_email: str, chat_id: str) -> bool:
     return True
 
 
-def add_new_data_to(emails: str | Iterable[str], new_data_paths: str | Iterable[str]) -> None:
-    """ add new file to user new_data file
+def sync_new_data_with_client(emails: str | Iterable[str], new_data_paths: str | Iterable[str]) -> None:
+    """ send modified/new files to online users
     :param emails: the emails of the users to add the new data to there new_data file
     :param new_data_paths: the paths to the new files / updated files
     """
@@ -334,43 +310,20 @@ def add_new_data_to(emails: str | Iterable[str], new_data_paths: str | Iterable[
         emails: set[str] = {emails}
     elif not isinstance(emails, set):  # some other type of iterable
         emails: set[str] = set(emails)
+    users_data_sync = False
     if isinstance(new_data_paths, str):
+        if new_data_paths == "|users_data":
+            users_data_sync = True
         new_data_paths: list[str] = [new_data_paths]
     for email in emails:
         if email not in email_password_database:
             continue
-        block(f"{USERS_DATA}{email}\\new data not free")
-        try:
-            os.makedirs(f"{USERS_DATA}{email}\\", exist_ok=True)
-            if not os.path.isfile(f"{USERS_DATA}{email}\\new_data"):
-                write_to_file(f"{USERS_DATA}{email}\\new_data", "wb", b"")
-            try:
-                new_data_list: set = pickle.loads(read_from_file(f"{USERS_DATA}{email}\\new_data", "rb"))
-            except EOFError:
-                new_data_list = set()
-            new_data_list.update(new_data_paths)
-            write_to_file(f"{USERS_DATA}{email}\\new_data", "wb", pickle.dumps(new_data_list))
-        finally:
-            unblock(f"{USERS_DATA}{email}\\new data not free")
-
-
-def get_new_data_of(email: str) -> set[str]:
-    """ get new_data of a user, AND CLEAR THE NEW DATA FILE ! """
-    if email not in email_password_database:
-        return set()
-    block(f"{USERS_DATA}{email}\\new data not free")
-    try:
-        if not os.path.isfile(f"{USERS_DATA}{email}\\new_data"):
-            write_to_file(f"{USERS_DATA}{email}\\new_data", "wb", b"")
-        try:
-            new_data_list: set = pickle.loads(read_from_file(f"{USERS_DATA}{email}\\new_data", "rb"))
-        except EOFError:
-            new_data_list = set()
-        # clear new data
-        write_to_file(f"{USERS_DATA}{email}\\new_data", "wb", b"")
-        return new_data_list
-    finally:
-        unblock(f"{USERS_DATA}{email}\\new data not free")
+        if email in sync_sockets:
+            for client_sync_socket in sync_sockets[email]:
+                if not users_data_sync:
+                    threading.Thread(target=sync, args=(email, client_sync_socket, False, new_data_paths)).start()
+                else:
+                    threading.Thread(target=sync, args=(email, client_sync_socket, False, [], True)).start()
 
 
 def add_one_on_one_chat(email_1: str, email_2: str):
@@ -386,7 +339,7 @@ def add_one_on_one_chat(email_1: str, email_2: str):
         one_on_one_set.add(email_2)
         write_to_file(f"{USERS_DATA}{email}\\one_on_one_chats", "wb", pickle.dumps(one_on_one_set))
         unblock(f"{USERS_DATA}{email}\\one_on_one_chats_block")
-        add_new_data_to(email, f"{USERS_DATA}{email}\\one_on_one_chats")
+        sync_new_data_with_client(email, f"{USERS_DATA}{email}\\one_on_one_chats")
 
 
 def get_one_on_one_chats_list_of(email: str) -> set[str]:
@@ -421,12 +374,12 @@ def known_to_each_other(emails: list[str]) -> None:
                 if email == email_2 or email_2 not in email_user_database:
                     continue
                 known_to_user.add(email_2)
-                add_new_data_to(
+                sync_new_data_with_client(
                     email, f"known user profile picture|{USERS_DATA}{email_2}\\{email_2}_profile_picture.png")
             write_to_file(f"{USERS_DATA}{email}\\known_users", "wb", pickle.dumps(known_to_user))
         finally:
             unblock(f"{USERS_DATA}{email}\\known_users_block")
-            add_new_data_to(email, f"{USERS_DATA}{email}\\known_users")
+            sync_new_data_with_client(email, f"{USERS_DATA}{email}\\known_users")
 
 
 def get_user_known_users(email: str) -> set[str]:
@@ -485,7 +438,7 @@ def create_new_chat(ip: str, user_created: str, with_user: str) -> tuple[bool, s
     add_one_on_one_chat(user_created, with_user)
     #
     known_to_each_other([with_user, user_created])
-    add_new_data_to([user_created, with_user], f"{USERS_DATA}{chat_id}")
+    sync_new_data_with_client([user_created, with_user], f"{USERS_DATA}{chat_id}")
     send_msg(ip, user_created, chat_id, f"{user_created} added {with_user}.", add_message=True)
     return True, chat_id
 
@@ -521,7 +474,7 @@ def create_new_group(ip: str, user_created: str, users: list[str], group_name: s
         add_chat_id_to_user_chats(email, chat_id)
         add_user_to_group_users_file(email, chat_id)
     known_to_each_other(users)
-    add_new_data_to(users, f"{USERS_DATA}{chat_id}")
+    sync_new_data_with_client(users, f"{USERS_DATA}{chat_id}")
     for user in users:
         if user != user_created:
             send_msg(ip, user_created, chat_id, f"{user_created} added {user}.", add_message=True)
@@ -543,9 +496,10 @@ def add_user_to_group(ip: str, from_user: str, add_user: str, group_id: str) -> 
     unread_msgs: dict = pickle.loads(read_from_file(f"{USERS_DATA}{group_id}\\unread_msgs", "rb"))
     unread_msgs[from_user] = 0
     write_to_file(f"{USERS_DATA}{group_id}\\unread_msgs", "wb", pickle.dumps(unread_msgs))
-    #
-    add_new_data_to(add_user, f"{USERS_DATA}{group_id}")  # make the entire chat as new data for the added user
-    add_new_data_to(group_users, f"{USERS_DATA}{group_id}\\users")  # only update the users file for the others
+    # make the entire chat as new data for the added user
+    sync_new_data_with_client(add_user, f"{USERS_DATA}{group_id}")
+    # only update the users file for the others
+    sync_new_data_with_client(group_users, f"{USERS_DATA}{group_id}\\users")
     send_msg(ip, from_user, group_id, f"{from_user} added {add_user}.", add_message=True)
     return True
 
@@ -565,15 +519,15 @@ def remove_user_from_group(ip: str, from_user: str, remove_user: str, group_id: 
     unread_msgs.pop(from_user)
     write_to_file(f"{USERS_DATA}{group_id}\\unread_msgs", "wb", pickle.dumps(unread_msgs))
     #
-    add_new_data_to(remove_user, f"{USERS_DATA}{remove_user}\\chats")
-    add_new_data_to(get_group_users(group_id), f"{USERS_DATA}{group_id}\\users")
-    add_new_data_to(remove_user, f"remove - {USERS_DATA}{group_id}")
+    sync_new_data_with_client(remove_user, [f"{USERS_DATA}{remove_user}\\chats", f"remove - {USERS_DATA}{group_id}"])
+    sync_new_data_with_client(get_group_users(group_id), f"{USERS_DATA}{group_id}\\users")
     send_msg(ip, from_user, group_id, f"{from_user} removed {remove_user}.", remove_msg=True)
     return True
 
 
 def send_msg(ip: str, from_user: str, chat_id: str, msg: str,
-             file_msg: bool = False, remove_msg: bool = False, add_message: bool = False) -> bool:
+             file_msg: bool = False, remove_msg: bool = False, add_message: bool = False) \
+        -> bool | tuple[bool, tuple[set, str]]:
     """ send message (to chat/group)
     :param ip: the ip of the client that sent the request
     :param from_user: the email of the user that sent the msg
@@ -630,13 +584,14 @@ def send_msg(ip: str, from_user: str, chat_id: str, msg: str,
         lock = unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
         # add the new file / updated file to the new data of all the users in the chat
         latest = latest + 1 if len(data) >= 800 or first_chat else latest
-        add_new_data_to(users_in_chat, f"{USERS_DATA}{chat_id}\\data\\chat\\{latest}")
-        return True
+        if not file_msg:
+            sync_new_data_with_client(users_in_chat, f"{USERS_DATA}{chat_id}\\data\\chat\\{latest}")
+        return True if not file_msg else (True, (users_in_chat, f"{USERS_DATA}{chat_id}\\data\\chat\\{latest}"))
     except Exception as e:
         add_exception_for_ip(ip)
         logging.warning(f"received exception while handling '{ip}' exception: "
                         f"{''.join(traceback.format_exception(e))} (user: '{from_user}', func: 'send_msg')")
-        return False
+        return False if not file_msg else (False, (set(), ""))
     finally:
         if lock:
             unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
@@ -668,8 +623,10 @@ def send_file(ip: str, from_user: str, chat_id: str, file_data: bytes, file_name
         with open(location + new_file_name, "wb") as file:
             file.write(file_data)
         #                                                       remove USERS_DATA
-        if send_msg(ip, from_user, chat_id, "\\".join((location + new_file_name).split("\\")[2:]), file_msg=True):
-            add_new_data_to(users_in_chat, location + new_file_name)
+        status, (users_in_chat, new_data) = \
+            send_msg(ip, from_user, chat_id, "\\".join((location + new_file_name).split("\\")[2:]), file_msg=True)
+        if status:
+            sync_new_data_with_client(users_in_chat, [location + new_file_name, new_data])
             return True
         else:
             os.remove(location + new_file_name)
@@ -708,7 +665,7 @@ def delete_msg_for_me(ip: str, from_user: str, chat_id: str, index_of_msg: int) 
             lock = unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
             return False
         lock = unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
-        add_new_data_to(from_user, f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}")
+        sync_new_data_with_client(from_user, f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}")
         return True
     except Exception as e:
         add_exception_for_ip(ip)
@@ -745,12 +702,12 @@ def delete_msg_for_everyone(ip: str, from_user: str, chat_id: str, index_of_msg:
                 #                                              file name
                 os.remove(f"{USERS_DATA}{chat_id}\\data\\files\\{msg[1]}")
                 # tell all the clients to remove this file on their side
-                add_new_data_to(users_in_chat, f"remove - {USERS_DATA}{chat_id}\\data\\files\\{msg[1]}")
+                sync_new_data_with_client(users_in_chat, f"remove - {USERS_DATA}{chat_id}\\data\\files\\{msg[1]}")
         else:
             lock = unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
             return False
         lock = unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
-        add_new_data_to(users_in_chat, f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}")
+        sync_new_data_with_client(users_in_chat, f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}")
         return True
     except Exception as e:
         add_exception_for_ip(ip)
@@ -775,7 +732,7 @@ def mark_as_seen(chat_id: str, user_email: str) -> None:
     unread_msgs_amount = unread_msgs[user_email]
     unread_msgs[user_email] = 0
     write_to_file(f"{USERS_DATA}{chat_id}\\unread_msgs", "wb", pickle.dumps(unread_msgs))
-    add_new_data_to(user_email, f"{USERS_DATA}{chat_id}\\unread_msgs")
+    sync_new_data_with_client(user_email, f"{USERS_DATA}{chat_id}\\unread_msgs") if unread_msgs_amount != 0 else None
     unblock(f"{USERS_DATA}{chat_id}\\unread messages not free")
     if unread_msgs_amount > 0:
         block(f"{USERS_DATA}{chat_id}\\data\\not free")
@@ -794,8 +751,8 @@ def mark_as_seen(chat_id: str, user_email: str) -> None:
                     unread_msgs_amount -= 1
                     if not added_to_new_data:
                         added_to_new_data = True
-                        add_new_data_to(users_in_chat,
-                                        f"{USERS_DATA}{chat_id}\\data\\chat\\{chat_files[current_file_pos]}")
+                        sync_new_data_with_client(
+                            users_in_chat, f"{USERS_DATA}{chat_id}\\data\\chat\\{chat_files[current_file_pos]}")
             current_file_pos += 1
         unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
 
@@ -805,9 +762,9 @@ def upload_profile_picture(email: str, picture_file: bytes) -> bool:
     write_to_file(f"{USERS_DATA}{email}\\{email}_profile_picture.png", "wb", picture_file)
     known_to_user = get_user_known_users(email)
     known_to_user.add(email)
-    add_new_data_to(email, f"{USERS_DATA}{email}\\{email}_profile_picture.png")
-    for user in known_to_user:
-        add_new_data_to(user, f"known user profile picture|{USERS_DATA}{email}\\{email}_profile_picture.png")
+    sync_new_data_with_client(email, f"{USERS_DATA}{email}\\{email}_profile_picture.png")
+    sync_new_data_with_client(
+        known_to_user, f"known user profile picture|{USERS_DATA}{email}\\{email}_profile_picture.png")
     return True
 
 
@@ -818,8 +775,7 @@ def update_group_photo(from_user: str, chat_id: str, picture_file: bytes) -> boo
         return False
     write_to_file(f"{USERS_DATA}\\{chat_id}\\group_profile_picture.png", "wb", picture_file)
     group_users = get_group_users(chat_id)
-    for user in group_users:
-        add_new_data_to(user, f"{USERS_DATA}\\{chat_id}\\group_profile_picture.png")
+    sync_new_data_with_client(group_users, f"{USERS_DATA}\\{chat_id}\\group_profile_picture.png")
     return True
 
 
@@ -881,7 +837,6 @@ def signup(username: str, email: str, password: str, client_sock: ServerEncrypte
         os.makedirs(f"{USERS_DATA}{email}", exist_ok=True)
         write_to_file(f"{USERS_DATA}{email}\\chats", "wb", b"")
         write_to_file(f"{USERS_DATA}{email}\\known_users", "wb", b"")
-        write_to_file(f"{USERS_DATA}{email}\\new_data", "wb", b"")
         write_to_file(f"{USERS_DATA}{email}\\one_on_one_chats", "wb", b"")
         write_to_file(
             f"{USERS_DATA}{email}\\{email}_profile_picture.png", "wb",
@@ -956,42 +911,48 @@ def login(email: str, password: str) -> bool:
     user_password_hashed_hash = email_password_database[email]
     if user_password_hashed_hash != hashlib.md5(password.encode()).hexdigest().lower():
         return False
-    if user_online_status_database[email][0] == "Online":
+    block(f"{USERS_DATA}{email}\\online status")
+    if email in user_online_status_database and user_online_status_database[email][0] == "Online":
         user_online_status_database[email] = ["Online", user_online_status_database[email][1] + 1]
     else:
         user_online_status_database[email] = ["Online", 1]
+        sync_new_data_with_client(get_user_known_users(email), f"|users_data")
+    unblock(f"{USERS_DATA}{email}\\online status")
     return True
 
 
-def sync(email: str, sync_all: bool = False) -> bytes:
+def sync(email: str, client_sync_sock: ServerEncryptedProtocolSocket,
+         sync_all: bool = False, new_data_paths: list[str] = None, sync_users_status: bool = False) -> None:
     """ send user all the requested files (those who are new or changed / all his files) """
     block(f"{USERS_DATA}{email}\\sync")
     try:
-        new_data: list[str] = list(get_new_data_of(email))  # get new data and clear
+        new_data = []
         if not sync_all:
-            add = []
-            remove = []
-            for i in range(len(new_data)):
-                path = new_data[i]
-                if os.path.isdir(path):
-                    # add all files in dir and sub-dirs
-                    for path2, _, files in os.walk(path):
-                        add.extend(map(lambda p: os.path.join(path2, p), files))  # (can't change during iteration)
-                    remove.append(i)  # remove the folder itself from new_data list (can't change during iteration)
-            for index in remove:
-                # move the item we want to remove to the end of the list and then pop it,
-                # better performance because if we remove an item that isn't the last all the items
-                # after it need to move 1 index back, unless we remove the last item in the list
-                new_data[-1], new_data[index] = new_data[index], new_data[-1]
-                new_data.pop()
-            new_data.extend(add)
-            del add, remove
+            if new_data_paths is None:
+                return
+            if new_data_paths:  # if the list isn't empty, can be empty when syncing users_status only
+                new_data = new_data_paths
+                add, remove = [], []
+                for i in range(len(new_data)):
+                    path = new_data[i]
+                    if os.path.isdir(path):
+                        # add all files in dir and sub-dirs
+                        for path2, _, files in os.walk(path):
+                            add.extend(map(lambda p: os.path.join(path2, p), files))  # (can't change during iteration)
+                        remove.append(i)  # remove the folder itself from new_data list (can't change during iteration)
+                for index in reversed(remove):
+                    # move the item we want to remove to the end of the list and then pop it,
+                    # better performance because if we remove an item that isn't the last all the items
+                    # after it need to move 1 index back, unless we remove the last item in the list
+                    if index != len(new_data) - 1:
+                        new_data[-1], new_data[index] = new_data[index], new_data[-1]
+                    new_data.pop()
+                new_data.extend(add)
+                del add, remove
         else:
             # user metadata
-            # new_data = [f"{USERS_DATA}{email}\\known_users", f"{USERS_DATA}{email}\\{email}_profile_picture.png"]
             new_data = [f"{USERS_DATA}{email}\\{file}" for file in os.listdir(f"{USERS_DATA}{email}\\")]
-            # user chats and groups
-            chat_ids_set = get_user_chats_file(email)
+            chat_ids_set = get_user_chats_file(email)  # user chats and groups
             for chat_id in chat_ids_set:
                 for path2, _, files in os.walk(f"{USERS_DATA}{chat_id}"):
                     new_data.extend(map(lambda p: os.path.join(path2, p), files))
@@ -1000,18 +961,19 @@ def sync(email: str, sync_all: bool = False) -> bytes:
                 new_data.append(
                     f"known user profile picture|{USERS_DATA}{other_email}\\{other_email}_profile_picture.png")
         # make a dictionary -> {file_path: file_data}
-        # also remember user_online_status_database (last seen and online)
-        known_to_user = get_user_known_users(email)
-        users_status: dict[str, int | datetime.datetime | str] = \
-            dict(((user, user_online_status_database.get(user)[1]) for user in known_to_user))
-        current_time = datetime.datetime.now()
-        for user in users_status:
-            if isinstance(users_status[user], datetime.datetime):
-                time_format = "%H:%M %m/%d/%Y" if (current_time - users_status[user]).days >= 1 else "%H:%M"
-                users_status[user] = f'Last Seen {users_status[user].strftime(time_format)}'
-            else:
-                users_status[user] = "Online"
-        file_name_data: dict[str, str] = {"users_status": pickle.dumps(users_status)}
+        file_name_data: dict[str, bytes | str] = {}
+        if sync_users_status or sync_all:
+            known_to_user = get_user_known_users(email)
+            users_status: dict[str, int | datetime.datetime | str] = \
+                dict(((user, user_online_status_database.get(user)[1]) for user in known_to_user))
+            current_time = datetime.datetime.now()
+            for user in users_status.keys():
+                if not isinstance(users_status[user], int):
+                    time_format = "%H:%M %m/%d/%Y" if (current_time - users_status[user]).days >= 1 else "%H:%M"
+                    users_status[user] = f'Last Seen {users_status[user].strftime(time_format)}'
+                else:
+                    users_status[user] = "Online"
+            file_name_data["users_status"] = pickle.dumps(users_status)
         for file in new_data:
             # if it's a chat file, we need to lock it
             if file.count("\\") == 4:
@@ -1056,9 +1018,18 @@ def sync(email: str, sync_all: bool = False) -> bytes:
                 logging.debug(f"[Server]: error in 'sync' function, FileNotFound: '{file}'")
         # pickle the dictionary
         sync_res: bytes = pickle.dumps(file_name_data)
+        # sync_res can be big, so it's more efficient to not concat them
+        client_sync_sock.send_message("sync".ljust(30).encode() + sync_res)
+    except Exception as e:
+        try:
+            ip, port = client_sync_sock.getpeername()
+            add_exception_for_ip(ip)
+        except (ConnectionError, socket.error):
+            pass
+        print(f"received exception in sync while handling '{email}' ex: {traceback.format_exception(e)}")
+        logging.warning(f"received exception in sync while handling '{email}' ex: {traceback.format_exception(e)}")
     finally:
         unblock(f"{USERS_DATA}{email}\\sync")
-    return sync_res
 
 
 def call_group(from_email: str, chat_id: str):
@@ -1071,10 +1042,11 @@ def call_group(from_email: str, chat_id: str):
            and for the other users send a "call message" with the port number
     """
     users_in_chat = get_group_users(chat_id)
-    online = []
-    for user in users_in_chat:
-        if user in user_online_status_database and user_online_status_database[user][0] == "Online":
-            online.append(user)
+    # online = []
+    # for user in users_in_chat:
+    #     if user in user_online_status_database and user_online_status_database[user][0] == "Online":
+    #         online.append(user)
+
     # TODO: finish this func
 
 
@@ -1105,6 +1077,8 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
             client_socket.settimeout(5)  # add timeout of 5 seconds, if there is no request within this time, close con
             try:
                 msg = client_socket.recv_message()
+                if msg == b"":
+                    break
             except socket.timeout:
                 add_exception_for_ip(client_ip_port[0])
                 client_socket.send_message(login_or_signup_response("login", "not ok", "Request Timed Out."))
@@ -1169,8 +1143,8 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
             username = email_user_database[email]
             password = None  # no need to save the password, set to None
             #
-            print(f"[Server]: '%s:%s' logged in as '{email}-{username}'." % client_ip_port)
-            logging.info(f"[Server]: '%s:%s' logged in as '{email} - {username}'." % client_ip_port)
+            msg = f"[Server]: '%s:%s' logged in as '{email}-{username}'." % client_ip_port
+            print(msg), logging.info(msg)
             #
             # handle client's requests until client disconnects
             stay_encoded = {"file", "upload profile picture", "upload group picture", "new group"}
@@ -1183,15 +1157,7 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
                 # decode the request only if it's not a file
                 request = request if cmd in stay_encoded else request.decode()
                 response = None
-                if cmd == "sync new":
-                    request: str
-                    response = sync(email)
-                    response = f"{'sync new'.ljust(30)}".encode() + response
-                elif cmd == "sync all":
-                    request: str
-                    response = sync(email, sync_all=True)
-                    response = cmd.ljust(30).encode() + response
-                elif cmd == "user in chat":
+                if cmd == "user in chat":
                     request: str
                     chat_id = request[30:]
                     mark_as_seen(chat_id, email)
@@ -1205,6 +1171,18 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
                     else:
                         ok = False
                     response = request_response(cmd, "ok" if ok else "not ok", "")
+                elif "this is a sync sock" in cmd:
+                    msg = f"[Server]: '%s:%s' logged in as '{email} - {username}'. is for syncing" % client_ip_port
+                    print(msg), logging.info(msg)
+                    if cmd.endswith("all"):
+                        sync(email, client_socket, sync_all=True)
+                    # add client sync sock to sync_sockets dict
+                    sync_sockets_lock.acquire()
+                    if email in sync_sockets:
+                        sync_sockets[email].add(client_socket)
+                    else:
+                        sync_sockets[email] = {client_socket}
+                    sync_sockets_lock.release()
                 elif cmd == "delete for everyone":
                     request: str
                     chat_id_len = int(request[30: 45].strip())
@@ -1283,21 +1261,30 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
                 if response is not None:
                     client_socket.send_message(response)
     except Exception as err:
-        print(err)
         add_exception_for_ip(client_ip_port[0])
         if not isinstance(err, ConnectionError):
             username = "Unknown username" if "username" not in locals() else username
             logging.warning(f"[Server]: error while handling '%s:%s' "
                             f"('{username}'): {''.join(traceback.format_exception(err))}" % client_ip_port)
     finally:
-        client_socket.close()
-        print(f"[Server]: Client '%s:%s' disconnected." % client_ip_port)
-        logging.info(f"[Server]: Client '%s:%s' disconnected." % client_ip_port)
-        if email in email_user_database and user_online_status_database[email][0] == "Online":
+        sync_sockets_lock.acquire()
+        if email in sync_sockets and client_socket in sync_sockets[email]:
+            sync_sockets[email].remove(client_socket)
+        sync_sockets_lock.release()
+        block(f"{USERS_DATA}{email}\\online status")
+        if email in user_online_status_database and user_online_status_database[email][0] == "Online":
             if user_online_status_database[email][1] == 1:
                 user_online_status_database[email] = ["Offline", datetime.datetime.now()]  # last seen
+                sync_new_data_with_client(get_user_known_users(email), f"|users_data")
             else:
-                user_online_status_database[email][1] -= 1  # reduce online count by 1 (each connection is 1)
+                # reduce online count by 1 (each connection is 1)
+                user_online_status_database[email] = ["Online", user_online_status_database[email][1] - 1]
+        unblock(f"{USERS_DATA}{email}\\online status")
+        #
+        client_socket.close()
+        username = "Unknown email" if email is None else email
+        print(f"[Server]: Client ({email = }) '%s:%s' disconnected." % client_ip_port)
+        logging.info(f"[Server]: Client '%s:%s' disconnected." % client_ip_port)
 
 
 def main():
@@ -1368,10 +1355,11 @@ def main():
 
 def unblock_all():
     chat_or_group_block_folders = ["users_block", "data\\not free", "unread messages not free"]
-    user_block_folders = ["chats block", "sync", "new data not free", "one_on_one_chats_block", "known_users_block"]
+    user_block_folders = ["chats block", "sync", "new data not free",
+                          "one_on_one_chats_block", "known_users_block", "online status"]
     for folder in os.listdir(USERS_DATA):
         if os.path.isdir(f"{USERS_DATA}{folder}"):
-            if os.path.isfile(f"{folder}\\users"):  # group/chat
+            if os.path.isfile(f"{USERS_DATA}{folder}\\users"):  # group/chat
                 for folder_name in chat_or_group_block_folders:
                     if os.path.isdir(f"{USERS_DATA}{folder}\\{folder_name}"):
                         shutil.rmtree(f"{USERS_DATA}{folder}\\{folder_name}")
@@ -1386,6 +1374,12 @@ if __name__ == '__main__':
     try:
         try:
             unblock_all()
+            for em in os.listdir(USERS_DATA):
+                if em not in user_online_status_database and "@" in em:
+                    user_online_status_database[em] = ["Offline", datetime.datetime.now()]
+            # for em in user_online_status_database.keys():
+            #     if user_online_status_database[em][0] == "Online":
+            #         user_online_status_database[em] = ["Offline", "Unknown"]
             main()
         except KeyboardInterrupt:
             pass
@@ -1394,6 +1388,3 @@ if __name__ == '__main__':
     finally:
         # send the app client's get ip email the server is down
         send_mail("project.twelfth.grade.get.ip@gmail.com", "server down", "")
-        for em in user_online_status_database.keys():
-            if user_online_status_database[em][1] == "Online":
-                user_online_status_database[em] = ["Offline", datetime.datetime.now()]

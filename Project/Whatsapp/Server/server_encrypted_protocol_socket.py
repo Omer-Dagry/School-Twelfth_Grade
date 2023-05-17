@@ -37,7 +37,10 @@ class ServerEncryptedProtocolSocket:
         data_length = b""
         while len(data_length) != 30:
             try:
-                data_length += self.__recvall(30 - len(data_length))
+                res = self.__recvall(30 - len(data_length))
+                data_length += res
+                if res == b"":  # connection closed
+                    return res
             except socket.timeout:
                 if data_length == b"":
                     return b""
@@ -45,7 +48,10 @@ class ServerEncryptedProtocolSocket:
         data = b""
         while len(data) != data_length:
             try:
-                data += self.__recvall(data_length - len(data))
+                res = self.__recvall(data_length - len(data))
+                data += res
+                if res == b"":  # connection closed
+                    return res
             except socket.timeout:
                 if data_length == b"":
                     return b""
@@ -91,7 +97,10 @@ class ServerEncryptedProtocolSocket:
     def __recvall(self, buffsize: int) -> bytes:
         data = b""
         while len(data) < buffsize:
-            data += self.__sock.recv(buffsize - len(data))
+            res = self.__sock.recv(buffsize - len(data))
+            data += res
+            if res == b"":  # connection closed
+                return res
         return data
 
     # Exchange the random aes key using server public key

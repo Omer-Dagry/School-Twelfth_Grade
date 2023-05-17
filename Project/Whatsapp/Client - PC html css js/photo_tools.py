@@ -7,16 +7,12 @@ from PIL import Image, ImageDraw
 def format_photo(path: os.PathLike | str):
     """ resizes the image and makes it round """
     # --------------------------- make image round ---------------------------
-    # Open the input image as numpy array, convert to RGB
     img = Image.open(path).convert("RGB")
     np_image = np.array(img)
-    # Create same size alpha layer with circle
     alpha = Image.new('L', img.size, 0)
     draw = ImageDraw.Draw(alpha)
     draw.pieslice(((0, 0), img.size), 0, 360, fill=255)
-    # Convert alpha Image to numpy array
     np_alpha = np.array(alpha)
-    # Add alpha layer to RGB
     np_image = np.dstack((np_image, np_alpha))
     # --------------------------- resize image ---------------------------
     img = Image.fromarray(np_image)

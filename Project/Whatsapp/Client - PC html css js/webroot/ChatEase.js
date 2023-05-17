@@ -451,7 +451,7 @@ function update(chat_id, chat_msgs) {
         }
     }
     load_msgs(new_messages);
-    if (scrollToBottom) chat.scrollBy(0, chat.scrollHeight);
+    if (scrollToBottom) setTimeout(function() { chat.scrollTo(0, chat.scrollHeight); }, 200);;
 }
 
 function adjust_msgs_input_width() {

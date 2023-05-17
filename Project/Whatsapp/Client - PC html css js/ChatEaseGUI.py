@@ -23,7 +23,8 @@ import traceback
 import email as email_lib
 # for .exe
 if not os.path.dirname(__file__).endswith("Client - PC html css js"):
-    os.chdir(os.path.dirname(__file__))
+    os.chdir(os.path.dirname(__file__))  # change working dir to were the .exe was unpacked in
+    # no stderr & stdout because the .exe is created without a console, so redirect it
     logfile = io.StringIO()
     sys.stdout = logfile
     sys.stderr = logfile
@@ -37,8 +38,6 @@ from communication import signup_request, send_confirmation_code, reset_password
 
 # Constants
 SERVER_PORT = 8820
-# SERVER_IP = "127.0.0.1"
-# SERVER_IP_PORT = None
 
 # Globals
 email: None | str = None
@@ -178,16 +177,14 @@ def get_username() -> str:
 def update(first_time_sync_mode: bool) -> None:
     """ syncs with the sever and updates the GUI """
     global sync_sock, stop
-    sync_new = "new"
-    sync_all = "all"
-    open_chat_id = ""
     while not stop:
         try:
-            new_data, modified_files, deleted_files = \
-                communication.sync(sync_sock, sync_all if first_time_sync_mode else sync_new)
+            # sends nothing, waits for sync msg from server
+            new_data, modified_files, deleted_files = communication.sync(sync_sock)
         except (ConnectionError, socket.error, UnicodeError):
             sync_sock.close()
-            status, sync_sock, reason = communication.login(verbose=False)
+            status, sync_sock, reason = \
+                communication.login_sync(verbose=False, sync_mode="all" if first_time_sync_mode else "new")
             if not status:
                 # TODO: display error (reason)
                 break
@@ -214,13 +211,9 @@ def update(first_time_sync_mode: bool) -> None:
             for file_path in deleted_files:
                 if os.path.isfile(file_path):
                     os.remove(file_path)
-        if first_time_sync_mode:
+        if first_time_sync_mode and new_data:
             os.makedirs(f"webroot\\{email}\\first sync done", exist_ok=True)
             first_time_sync_mode = False
-            time.sleep(2)
-        if len(modified_files) == 1:  # if there is no new data (only users_status), sleep an extra .2 seconds
-            time.sleep(0.2)
-        time.sleep(0.5)
 
 
 """                                   Communication Wrapper Functions                                                """
@@ -248,7 +241,7 @@ def login(email_: str, password_: str) -> tuple[bool, str]:
         password = password_
         start_app()  # start sync thread
         while not os.path.isdir(f"webroot\\{email}\\first sync done"):  # wait for first sync to finish
-            time.sleep(0.1)
+            time.sleep(0.01)
         return True, ""
     communication = None
     return False, username_or_reason
@@ -487,7 +480,8 @@ def close_program():
     stop = True
     if sync_thread is not None:
         sync_thread.join()
-        sync_sock.close()
+        if sync_sock is not None:
+            sync_sock.close()
         sync_thread = None
 
 
@@ -525,9 +519,11 @@ def get_server_ip() -> str | None:
 def start_app() -> None:
     global sync_thread, sync_sock, first_time_sync_all, stop
     os.makedirs(f"webroot\\{email}\\", exist_ok=True)
+    close_program()
     if sync_sock is not None:
         sync_sock.close()
-    status, sync_sock, reason = communication.login(verbose=False)
+    status, sync_sock, reason = \
+        communication.login_sync(verbose=False, sync_mode="all" if first_time_sync_all else "new")
     if not status:
         pass  # TODO: display error
         print("error restarting sync sock")
@@ -577,14 +573,17 @@ def main():
             pass
 
 
-# Server IP
+# More Constants
+# Server IP - try to get through clients shared email, if not ask from user
 SERVER_IP = get_server_ip()
 while SERVER_IP != "no" and \
         (SERVER_IP is None or SERVER_IP.count(".") != 3 or not
          all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split(".")))):
     SERVER_IP = easygui.enterbox("Please Enter Server IP: ", "Server IP")
-if SERVER_IP == "no":
+if SERVER_IP == "no":  # cancel run
     sys.exit(1)
+assert SERVER_IP.count(".") == 3 and all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split("."))), \
+    "Invalid Server IP"
 SERVER_IP_PORT = (SERVER_IP, SERVER_PORT)
 if __name__ == '__main__':
     main()

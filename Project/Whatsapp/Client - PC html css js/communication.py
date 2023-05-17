@@ -11,17 +11,17 @@ import shutil
 import socket
 
 from tkinter import *
+from typing import Literal
 from threading import Thread
 from tkinter import messagebox
-from typing import Literal
-
 from photo_tools import check_size
 from tkinter.filedialog import askopenfilename
 from client_encrypted_protocol_socket import ClientEncryptedProtocolSocket
 
 # Constants
 REMOVE = "remove"
-SYNC_MODES = ["new", "all"]
+USER_STATUS = "update users_status"
+SYNC_CODE = "sync".ljust(30).encode()
 
 
 def showerror(title: str | None, message: str | None, **options) -> None:
@@ -202,24 +202,26 @@ class Communication:
             print("Logged in Successfully.")
         return True, sock, response[6:]
 
-    def sync(self, sock: ClientEncryptedProtocolSocket, mode: str = "new") \
-            -> tuple[bool, list[str | os.PathLike], list[str | os.PathLike]]:
-        """  sync once
+    def login_sync(self, verbose: bool = True, sock: ClientEncryptedProtocolSocket | None = None,
+                   sync_mode: str = "all") -> tuple[bool, None | ClientEncryptedProtocolSocket, str]:
+        """ login & let the server know this connection is to sync data """
+        status, sock, reason = self.login(verbose=verbose, sock=sock)
+        if status:
+            sync_sock_notify_msg = f"{f'this is a sync sock {sync_mode}'.ljust(30)}".encode()
+            if not sock.send_message(sync_sock_notify_msg):
+                sock.close()
+                return False, None, "Error notifying the server about sync sock"
+        return status, sock, reason
 
+    def sync(self, sock: ClientEncryptedProtocolSocket) -> tuple[bool, list[str], list[str]]:
+        """  sync once
         :param sock: the socket to the server
-        :param mode: 'new' or 'all'
         :return: True if new data received else False, list of the modified/new files, list of deleted files/folders
         """
-        if mode not in SYNC_MODES:
-            raise ValueError(f"param 'mode' should be either 'new' or 'all', got '{mode}'")
-        if not sock.send_message(f"sync {mode}".ljust(30).encode()):
-            showerror("Sync Error", "Could not send sync request, lost connection to server.")
-            sock.close()
-            return False, [], []
-        response = sock.recv_message()
-        #                         cmd                  {}             str       bytes
+        response = sock.recv_message(timeout=1)
+        #                         cmd                  {}             str     bytes | str
         # response -> f"{'sync new/all'.ljust(30)}{empty-dict/dict[file_name, file_data]}"
-        if response[:30] != f"sync {mode}".ljust(30).encode():
+        if response[:30] != SYNC_CODE:
             return False, [], []
         try:
             files_dict = pickle.loads(response[30:])
