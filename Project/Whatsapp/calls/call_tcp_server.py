@@ -31,9 +31,7 @@ def broadcast_audio(data: bytes, sent_from: tuple):
     for addr, sock in clients.items():
         try:
             if addr != sent_from:
-                sent = 0
-                while sent < BUFFER_SIZE:
-                    sent = sock.send(data[sent:])
+                sock.sendall(data)
         except Exception:
             print(f"closed {addr} 2")
             remove.append(addr)

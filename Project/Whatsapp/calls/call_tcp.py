@@ -8,10 +8,10 @@ import traceback
 # Set up PyAudio
 CHUNK = 1024
 FORMAT = pyaudio.paInt16
-CHANNELS = 2
+CHANNELS = 1
 RATE = 44100
 # Set up the socket
-HOST = '89.138.239.215'
+HOST = '127.0.0.1'
 PORT = 8820
 BUFFER_SIZE = CHUNK * 4
 
