@@ -5,6 +5,7 @@ Mail: omerdagry@gmail.com
 Final Date:  (dd/mm/yyyy) TODO: add date, and copy this to all files
 ###############################################
 """
+import multiprocessing
 import os
 import ssl
 import sys
@@ -23,6 +24,7 @@ import threading
 import traceback
 
 from typing import *
+from CallsUDP import start_call_server
 from email.mime.text import MIMEText
 from DirectoryLock import block, unblock
 from SyncDB import SyncDatabase, FileDatabase
@@ -1032,22 +1034,40 @@ def sync(email: str, client_sync_sock: ServerEncryptedProtocolSocket,
         unblock(f"{USERS_DATA}{email}\\sync")
 
 
-def call_group(from_email: str, chat_id: str):
-    """ make a call to all the users in the chat - chat_id """
-    """
-        !!! open a thread to call this func !!!
+def call_group(from_email: str, chat_id: str) -> int | None:
+    """ make a call to all the users in the chat - chat_id
 
-        1. check if at least two of the users in the chat are connected
-        2. start a UDP server on port x and send the user that started the call the port,
-           and for the other users send a "call message" with the port number
+    :returns: the port of the server
     """
-    users_in_chat = get_group_users(chat_id)
-    # online = []
-    # for user in users_in_chat:
-    #     if user in user_online_status_database and user_online_status_database[user][0] == "Online":
-    #         online.append(user)
-
     # TODO: finish this func
+    users_in_chat = get_group_users(chat_id)
+    if from_email not in users_in_chat:
+        return None
+    clients_passwords: dict[str, str] = dict(((email, email_password_database[email]) for email in users_in_chat))
+    #
+    online = []
+    for user in users_in_chat:
+        if user in user_online_status_database and user_online_status_database[user][0] == "Online":
+            online.append(user)
+    #
+
+    port = 16400
+    tcp_server_sock = socket.socket()
+    while port <= 65535:
+        try:
+            tcp_server_sock.bind(("0.0.0.0", port))
+            break
+        except OSError:  # port taken
+            pass
+
+    #
+    # TODO: add a call to online users, and open a thread that will check every x seconds to check
+    #       if someone that is part of the call and was offline comes online
+    #
+
+    p = multiprocessing.Process(target=start_call_server, args=(tcp_server_sock, port, clients_passwords,), daemon=True)
+    p.start()
+    return port
 
 
 def login_or_signup_response(mode: str, status: str, reason: str) -> bytes:
@@ -1205,8 +1225,12 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
                     delete_msg_for_me(client_ip_port[0], email, chat_id, message_index)
                 elif cmd == "call":
                     request: str
-                    # TODO: finish
-                    pass
+                    chat_id = request[30:]
+                    port = call_group(email, chat_id)
+                    if port is None:
+                        response = request_response(cmd, "not ok", "Error")
+                    else:
+                        response = request_response(cmd, "ok", f"{port}")
                 elif cmd == "add user":
                     request: str
                     chat_id_len = int(request[30: 45].strip())
