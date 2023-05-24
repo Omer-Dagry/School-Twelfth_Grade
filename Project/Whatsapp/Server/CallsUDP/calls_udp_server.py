@@ -9,6 +9,7 @@ Date: 30/05/2023 (dd/mm/yyyy)
 import time
 import pickle
 import socket
+import logging
 import hashlib
 import traceback
 import multiprocessing
@@ -18,6 +19,12 @@ from multiprocessing.managers import DictProxy, SyncManager
 
 
 # Constants
+# logging
+LOG_DIR = 'log'
+LOG_LEVEL = logging.DEBUG
+LOG_FILE = LOG_DIR + "/ChatEase-Calls-Server.log"
+LOG_FORMAT = "%(levelname)s | %(asctime)s | %(processName)s | %(message)s"
+# Others
 CHUNK = 1024 * 8
 BUFFER_SIZE = CHUNK * 4
 
@@ -93,6 +100,7 @@ def disconnect_client(client_sock: socket.socket, addr: tuple[str, int], clients
         clients_socket_addr.pop(client_sock)
         client_sock_last_checkin.pop(client_sock)
         print(f"Calls server on {port = } - %s:%d Disconnected." % addr)
+        logging.info(f"Calls server on {port = } - %s:%d Disconnected." % addr)
 
 
 def handle_tcp_connections(tcp_server_socket: socket.socket, clients_ips: DictProxy,
@@ -110,6 +118,7 @@ def handle_tcp_connections(tcp_server_socket: socket.socket, clients_ips: DictPr
                     client: socket.socket
                     addr: tuple[str, int]
                     print(f"Calls server on {port = } - New Connection From %s:%d" % addr)
+                    logging.info(f"Calls server on {port = } - New Connection From %s:%d" % addr)
                     # check password
                     client.settimeout(0.05)
                     msg_length = int(recvall(client, 30).strip().decode())
@@ -122,6 +131,7 @@ def handle_tcp_connections(tcp_server_socket: socket.socket, clients_ips: DictPr
                             clients_passwords[username] == hashlib.md5(password.encode()).hexdigest().lower():
                         client.sendall(b"ok    ")
                         print(f"Calls server on {port = } - %s:%d Connected as '{username}'." % addr)
+                        logging.info(f"Calls server on {port = } - %s:%d Connected as '{username}'." % addr)
                         # allow receiving UDP messages from this ip
                         if addr[0] in clients_ips:
                             clients_ips[addr[0]] = clients_ips[addr[0]] + [addr[1]]
@@ -130,6 +140,7 @@ def handle_tcp_connections(tcp_server_socket: socket.socket, clients_ips: DictPr
                         clients_socket_addr[client] = addr
                         client_sock_last_checkin[client] = time.perf_counter()
                     else:
+                        logging.info(f"Calls server on {port = } - %s:%d sent wrong username or password." % addr)
                         client.sendall(b"not ok")
                         client.close()
             except Exception as err:
@@ -193,14 +204,18 @@ def start_call_server(tcp_server_sock: socket.socket, port: int, clients_passwor
     """ call this to start the server """
     global print
     print = print_
+    # logging configuration
+    logging.basicConfig(format=LOG_FORMAT, filename=LOG_FILE, level=LOG_LEVEL)
     try:
         print(f"Call server starting on {port = }.")
+        logging.info(f"Call server starting on {port = }.")
         with multiprocessing.Manager() as manager:  # type: SyncManager
             main(tcp_server_sock, port, clients_passwords, manager.dict(), manager.dict())
     except KeyboardInterrupt:
         pass
     finally:
         print(f"Call server on {port = } has ended.")
+        logging.info(f"Call server on {port = } has ended.")
 
 
 if __name__ == '__main__':
