@@ -2,9 +2,10 @@
 ###############################################
 Author: Omer Dagry
 Mail: omerdagry@gmail.com
-Date: 06/01/2023 (dd/mm/yyyy)
+Date: 30/05/2023 (dd/mm/yyyy)
 ###############################################
 """
+
 import os
 import pickle
 import shutil
@@ -16,7 +17,7 @@ from threading import Thread
 from tkinter import messagebox
 from photo_tools import check_size
 from tkinter.filedialog import askopenfilename
-from client_encrypted_protocol_socket import ClientEncryptedProtocolSocket
+from ClientSecureSocket import ClientEncryptedProtocolSocket
 
 # Constants
 REMOVE = "remove"
@@ -25,6 +26,7 @@ SYNC_CODE = "sync".ljust(30).encode()
 
 
 def showerror(title: str | None, message: str | None, **options) -> None:
+    """ display a little error window """
     print(f"Show error: {title = }: {message = }")
     Thread(target=messagebox.showerror, args=(title, message,), kwargs=options).start()
 
@@ -32,6 +34,7 @@ def showerror(title: str | None, message: str | None, **options) -> None:
 def signup_request(username: str, email: str, password: str, server_ip_port: tuple[str, int],
                    sock: ClientEncryptedProtocolSocket | None = None, return_status: bool = False) \
         -> tuple[bool, None | ClientEncryptedProtocolSocket] | tuple[bool, None | ClientEncryptedProtocolSocket, str]:
+    """ signup first step """
     # signup (length 30)|len username (max 40)|username|len email (length 10)|
     # email|password (fixed length - md5 hash length)
     signup_msg = f"{'signup'.ljust(30)}{str(len(username)).ljust(2)}" \
@@ -57,6 +60,7 @@ def signup_request(username: str, email: str, password: str, server_ip_port: tup
 
 def send_confirmation_code(sock: ClientEncryptedProtocolSocket, confirmation_code: str,
                            verbose: bool, signup_or_reset: Literal["signup", "reset"]) -> bool:
+    """ confirmation code (for signup and reset password) """
     confirmation_code_msg = sock.recv_message().decode()
     if confirmation_code_msg.strip() == "confirmation_code":
         if not sock.send_message(f"{'confirmation_code'.ljust(30)}{confirmation_code}".encode()):
@@ -86,7 +90,7 @@ def send_confirmation_code(sock: ClientEncryptedProtocolSocket, confirmation_cod
 def signup(username: str, email: str, password: str, server_ip_port: tuple[str, int], verbose: bool = True,
            sock: ClientEncryptedProtocolSocket | None = None, login_after: bool = True) \
         -> tuple[bool, None | ClientEncryptedProtocolSocket]:
-    """
+    """ signup full process
     :param username: the username
     :param email: the email of the user
     :param password: the md5 hash of the real password
@@ -113,6 +117,7 @@ def signup(username: str, email: str, password: str, server_ip_port: tuple[str, 
 
 def reset_password_request(username: str, email: str, server_ip_port: tuple[str, int]) \
         -> tuple[bool, ClientEncryptedProtocolSocket | None]:
+    """ reset password first step """
     sock = ClientEncryptedProtocolSocket()
     sock.connect(server_ip_port)
     if not sock.send_message(f"{'reset password'.ljust(30)}{str(len(email)).ljust(15)}{email}{username}".encode()):
@@ -128,6 +133,7 @@ def reset_password_request(username: str, email: str, server_ip_port: tuple[str,
 
 
 def reset_password_choose_password(sock: ClientEncryptedProtocolSocket, password: str) -> bool:
+    """ reset password last step """
     new_password_msg = sock.recv_message()
     if new_password_msg != f"{'new password'.ljust(30)}".encode():
         sock.close()
@@ -142,7 +148,7 @@ def reset_password_choose_password(sock: ClientEncryptedProtocolSocket, password
 
 def reset_password(username: str, email: str, server_ip_port: tuple[str, int], verbose: bool) \
         -> tuple[bool, ClientEncryptedProtocolSocket | None]:
-    """
+    """ reset password full process
     :return: the returned socket isn't logged in !!
     """
     status, sock = reset_password_request(username, email, server_ip_port)
@@ -158,6 +164,7 @@ def reset_password(username: str, email: str, server_ip_port: tuple[str, int], v
 
 
 class Communication:
+    """ a class that contains all the communications that require a username and password """
     def __init__(self, email: str, password: str, server_ip_port: tuple[str, int]) -> None:
         """
         :param email: the username
@@ -170,7 +177,7 @@ class Communication:
 
     def login(self, verbose: bool = True, sock: ClientEncryptedProtocolSocket | None = None) \
             -> tuple[bool, None | ClientEncryptedProtocolSocket, str]:
-        """
+        """ login
         :param verbose: if true signup will print info, if false it won't print info
         :param sock: an existing socket to use
         :return: status, sock, reason for status
@@ -260,6 +267,7 @@ class Communication:
 
     def upload_file(self, chat_id: str | int, filename: str = "", root: Tk = None,
                     delete_file: bool = False, send_file_active: list[bool] = None) -> None:
+        """ upload a file """
         upload_thread = Thread(
             target=self.upload_file_, args=(str(chat_id), filename, delete_file, send_file_active), daemon=True
         )
@@ -268,6 +276,7 @@ class Communication:
             root.destroy()
 
     def upload_file_(self, chat_id: str, filepath: str, delete_file: bool, send_file_active: list[bool]) -> None:
+        """ upload a file (don't call this func, call upload_file_) """
         if filepath == "":
             root = Tk()
             root.attributes('-topmost', True)  # Display the dialog in the foreground.
@@ -298,6 +307,7 @@ class Communication:
 
     @staticmethod
     def send_message(chat_id: str | int, msg: str, sock: ClientEncryptedProtocolSocket) -> bool:
+        """ send a message """
         if len(msg) > 5000:
             showerror("Message To Long", f"Message length is {len(msg)}, and the maximum is 4999")
             return False
@@ -314,6 +324,7 @@ class Communication:
 
     @staticmethod
     def familiarize_user_with(other_email: str, sock: ClientEncryptedProtocolSocket) -> bool:
+        """ search for a user that isn't "known" to me, and make him "known" to me """
         request = f"{'familiarize user with'.ljust(30)}{other_email}".encode()
         if not sock.send_message(request):
             showerror(f"Failed to familiarize user", "lost connection to server.")
@@ -326,6 +337,7 @@ class Communication:
 
     @staticmethod
     def new_chat(other_email: str, sock: ClientEncryptedProtocolSocket) -> bool:
+        """ create a new chat (1 on 1) """
         request = f"{'new chat'.ljust(30)}{other_email}".encode()
         if not sock.send_message(request):
             showerror(f"Failed to create new chat with '{other_email}'", "lost connection to server.")
@@ -338,6 +350,7 @@ class Communication:
 
     @staticmethod
     def new_group(other_emails: list[str], group_name: str, sock: ClientEncryptedProtocolSocket) -> tuple[bool, str]:
+        """ create new group """
         request = f"{'new chat'.ljust(30)}{group_name}".encode() + pickle.dumps(other_emails)
         if not sock.send_message(request):
             showerror(f"Failed to create new group", "lost connection to server.")
@@ -351,6 +364,7 @@ class Communication:
 
     @staticmethod
     def add_user_to_group(other_email: str, chat_id: str, sock: ClientEncryptedProtocolSocket) -> bool:
+        """ add a user to group """
         request = f"{'add user'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{other_email}".encode()
         if not sock.send_message(request):
             showerror(f"Failed to add '{other_email}' to group", "lost connection to server.")
@@ -363,6 +377,7 @@ class Communication:
 
     @staticmethod
     def remove_user_from_group(other_email: str, chat_id: str, sock: ClientEncryptedProtocolSocket) -> bool:
+        """ remove a user from the group """
         request = f"{'remove user'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{other_email}".encode()
         if not sock.send_message(request):
             showerror(f"Failed to remove '{other_email}' from group", "lost connection to server.")
@@ -373,15 +388,25 @@ class Communication:
             return False
         return True
 
-    def make_call(self, chat_id: str) -> bool:
-        # go to 'users' file of this chat and make call to users
-        # OR
-        # change the way a call works and call the chat_id and the server
-        # will handle who to call
-        # TODO: finish
-        raise NotImplementedError
+    def make_call(self, chat_id: str) -> int | None:
+        """
+        send a request to the server to start a server for this call and
+        notify the other users in the chat, and return the port for this call
+        """
+        ok, sock, _ = self.login(verbose=False)
+        if not ok:
+            raise ValueError("email or password incorrect, could not login to upload file")
+        if not sock.send_message(f"{'call'.ljust(30)}{chat_id}".encode()):
+            showerror(f"Failed to make a call", "lost connection to server.")
+            return None
+        port_message = sock.recv_message().decode()
+        if "not ok" in port_message:
+            showerror(f"Failed to make a call", "server error.")
+            return None
+        return int(port_message.split("ok      ")[1])
 
     def upload_profile_picture(self, path_to_picture: os.PathLike | str = None) -> bool:
+        """ upload profile picture """
         if path_to_picture is None:  # ask for file
             file_types = [("PNG", "*.png"), ("JPG", "*.jpg"), ("JPEG", "*.jpeg")]
             root = Tk()
@@ -408,6 +433,7 @@ class Communication:
         return True
 
     def upload_group_picture(self, chat_id: str, path_to_picture: os.PathLike | str = None) -> bool:
+        """ upload group picture """
         if path_to_picture is None:  # ask for file
             file_types = [("PNG", "*.png"), ("JPG", "*.jpg"), ("JPEG", "*.jpeg")]
             root = Tk()
@@ -435,6 +461,7 @@ class Communication:
 
     @staticmethod
     def delete_message_for_me(chat_id: str, message_index: int, sock: ClientEncryptedProtocolSocket) -> bool:
+        """ delete message for me """
         request = f"{'delete for me'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{message_index}"
         if not sock.send_message(request.encode()):
             showerror("Delete Message For Me Error", "Could not delete the message.")
@@ -443,6 +470,7 @@ class Communication:
 
     @staticmethod
     def delete_message_for_everyone(chat_id: str, message_index: int, sock: ClientEncryptedProtocolSocket) -> bool:
+        """ delete message for everyone """
         request = f"{'delete for everyone'.ljust(30)}{str(len(chat_id)).ljust(15)}{chat_id}{message_index}"
         if not sock.send_message(request.encode()):
             showerror("Delete Message For Me Error", "Could not delete the message.")
@@ -451,6 +479,7 @@ class Communication:
 
     @staticmethod
     def mark_as_seen(sock: ClientEncryptedProtocolSocket, chat_id: str) -> None:
+        """ mark all the messages in the chat as seen """
         request = f"{'user in chat'.ljust(30)}{chat_id}"
         if not sock.send_message(request.encode()):
             showerror("User in chat Error", "Lost connection to server.")
