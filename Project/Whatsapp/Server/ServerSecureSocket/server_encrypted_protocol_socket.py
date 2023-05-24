@@ -11,7 +11,7 @@ from __future__ import annotations
 import rsa
 import socket
 
-from aes import AESCipher
+from .aes import AESCipher
 
 
 class AESKeyMissing(Exception):
@@ -19,6 +19,7 @@ class AESKeyMissing(Exception):
 
 
 class ServerEncryptedProtocolSocket:
+    """ a wrapped socket with encryption and special send & recv """
     def __init__(self, my_public_key: rsa.PublicKey, my_private_key: rsa.PrivateKey,
                  family: socket.AddressFamily | int = None, type: socket.SocketKind | int = None,
                  proto: int = None, fileno: int | None = None, sock: socket.socket = None):
@@ -38,6 +39,7 @@ class ServerEncryptedProtocolSocket:
     # Public:
 
     def recv_message(self, timeout: int = None) -> bytes:
+        """ receive 1 full message """
         if self.__aes_cipher is None:
             raise AESKeyMissing("aes_cipher is None, please call connect before calling recv_message")
         current_timeout = self.__sock.timeout
@@ -67,6 +69,7 @@ class ServerEncryptedProtocolSocket:
         return self.__aes_cipher.decrypt(data)
 
     def send_message(self, data: bytes) -> bool:
+        """ send 1 message """
         if self.__aes_cipher is None:
             raise AESKeyMissing("aes_cipher is None, please call connect before calling send_message")
         try:
@@ -113,6 +116,7 @@ class ServerEncryptedProtocolSocket:
 
     # Exchange the random aes key using server public key
     def __exchange_aes_key(self) -> None:
+        """ send the connection this server public key and then receive the AES encryption key """
         my_public_key_bytes = self.__my_public_key.save_pkcs1("PEM")
         self.__sock.sendall(f"{len(my_public_key_bytes)}".ljust(30).encode() + my_public_key_bytes)
         aes_key_len = int(self.__recvall(30).decode().strip())

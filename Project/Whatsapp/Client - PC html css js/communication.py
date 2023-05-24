@@ -90,15 +90,7 @@ def send_confirmation_code(sock: ClientEncryptedProtocolSocket, confirmation_cod
 def signup(username: str, email: str, password: str, server_ip_port: tuple[str, int], verbose: bool = True,
            sock: ClientEncryptedProtocolSocket | None = None, login_after: bool = True) \
         -> tuple[bool, None | ClientEncryptedProtocolSocket]:
-    """ signup full process
-    :param username: the username
-    :param email: the email of the user
-    :param password: the md5 hash of the real password
-    :param server_ip_port: a tuple of the server IP and port
-    :param verbose: if true signup will print info, if false it won't print info
-    :param sock: an existing socket to use
-    :param login_after: whether to login after signing up or not
-    """
+    """ signup full process """
     status, sock = signup_request(username, email, password, server_ip_port, sock)
     if not status:
         return False, None
@@ -148,9 +140,7 @@ def reset_password_choose_password(sock: ClientEncryptedProtocolSocket, password
 
 def reset_password(username: str, email: str, server_ip_port: tuple[str, int], verbose: bool) \
         -> tuple[bool, ClientEncryptedProtocolSocket | None]:
-    """ reset password full process
-    :return: the returned socket isn't logged in !!
-    """
+    """ reset password full process, the returned socket isn't logged in !! """
     status, sock = reset_password_request(username, email, server_ip_port)
     if not status:
         return False, None
@@ -177,11 +167,7 @@ class Communication:
 
     def login(self, verbose: bool = True, sock: ClientEncryptedProtocolSocket | None = None) \
             -> tuple[bool, None | ClientEncryptedProtocolSocket, str]:
-        """ login
-        :param verbose: if true signup will print info, if false it won't print info
-        :param sock: an existing socket to use
-        :return: status, sock, reason for status
-        """
+        """ login """
         # login (length 30)     len email (length 10)   email    password (fixed length - md5 hash length)
         login_msg = f"{'login'.ljust(30)}{str(len(self.__email)).ljust(15)}{self.__email}{self.__password}".encode()
         if sock is None:
@@ -221,8 +207,8 @@ class Communication:
         return status, sock, reason
 
     def sync(self, sock: ClientEncryptedProtocolSocket) -> tuple[bool, list[str], list[str]]:
-        """  sync once
-        :param sock: the socket to the server
+        """ sync once
+        :param sock: this sock must be logged in using login_sync
         :return: True if new data received else False, list of the modified/new files, list of deleted files/folders
         """
         response = sock.recv_message(timeout=1)
@@ -403,7 +389,7 @@ class Communication:
         if "not ok" in port_message:
             showerror(f"Failed to make a call", "server error.")
             return None
-        return int(port_message.split("ok      ")[1])
+        return int(port_message.split("ok")[1].strip())
 
     def upload_profile_picture(self, path_to_picture: os.PathLike | str = None) -> bool:
         """ upload profile picture """

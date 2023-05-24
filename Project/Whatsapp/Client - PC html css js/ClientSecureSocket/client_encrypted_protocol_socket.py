@@ -10,10 +10,11 @@ import os
 import rsa
 import socket
 
-from aes import AESCipher
+from .aes import AESCipher
 
 
 class ClientEncryptedProtocolSocket:
+    """ a wrapped socket with encryption and special send & recv """
     def __init__(self, family: socket.AddressFamily | int = None, type: socket.SocketKind | int = None,
                  proto: int = None, fileno: int | None = None):
         kwargs = {"family": family, "type": type, "proto": proto, "fileno": fileno}
@@ -26,6 +27,7 @@ class ClientEncryptedProtocolSocket:
     # Public:
 
     def recv_message(self, timeout: int = None) -> bytes:
+        """ receive 1 full message """
         current_timeout = self.__sock.timeout
         self.settimeout(timeout)
         data_length = b""
@@ -53,6 +55,7 @@ class ClientEncryptedProtocolSocket:
         return self.__aes_cipher.decrypt(data)
 
     def send_message(self, data: bytes) -> bool:
+        """ send 1 message """
         try:
             data = self.__aes_cipher.encrypt(data)
             self.__sock.sendall(f"{len(data)}".ljust(30).encode())
@@ -95,6 +98,7 @@ class ClientEncryptedProtocolSocket:
 
     # Exchange the random aes key using server public key
     def __exchange_aes_key(self) -> None:
+        """ receive from the server his public key and then send the AES encryption key """
         server_public_key_len = int(self.__recvall(30).decode().strip())
         server_public_key = rsa.PublicKey.load_pkcs1(self.__recvall(server_public_key_len), "PEM")
         #

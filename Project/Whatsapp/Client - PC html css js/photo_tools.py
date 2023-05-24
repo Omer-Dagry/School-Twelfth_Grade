@@ -1,11 +1,3 @@
-"""
-###############################################
-Author: Omer Dagry
-Mail: omerdagry@gmail.com
-Date: 30/05/2023 (dd/mm/yyyy)
-###############################################
-"""
-
 import os
 import numpy as np
 

@@ -88,6 +88,7 @@ received_exception_from: dict[str, set[datetime.datetime]] = {}  # {ip: {time of
 blocked_ips: dict[str, datetime.datetime] = {}  # {ip: time of block}
 add_exception_lock = threading.Lock()
 blocked_client_lock = threading.Lock()
+ongoing_calls: dict[str, multiprocessing.Process] = {}  # chat_id: the process of the call server
 
 # Create All Needed Directories
 os.makedirs(f"{SERVER_DATA}", exist_ok=True)
@@ -96,6 +97,7 @@ os.makedirs(LOG_DIR, exist_ok=True)
 
 
 def print(*values: object, sep: str | None = " ", end: str | None = "\n"):
+    """ a wrapper around print to ensure the prints won't get mixed with each other """
     printing_lock.acquire()
     print_(*values, sep=sep, end=end)
     printing_lock.release()
@@ -895,9 +897,9 @@ def reset_password(email: str, username: str, client_sock: ServerEncryptedProtoc
     if msg[: 30].strip() != "new password":
         return False, ""
     # extract password
-    password = msg[30:]
+    password = msg[30:]  # the md5 of the password
     # set new password
-    email_password_database[email] = hashlib.md5(password.encode()).hexdigest().lower()
+    email_password_database[email] = hashlib.md5(password.encode()).hexdigest().lower()  # md5 again
     print(f"reset password attempt successful - email: '{email}', username: '{username}'.")
     logging.info(f"reset password attempt successful - email: '{email}', username: '{username}'.")
     return True, "Password changed successfully."
@@ -1038,11 +1040,13 @@ def sync(email: str, client_sync_sock: ServerEncryptedProtocolSocket,
 def call_group(from_email: str, chat_id: str) -> int | None:
     """ make a call to all the users in the chat - chat_id
 
-    :returns: the port of the server
+    :returns: the port of the call server
     """
     # TODO: finish this func
     users_in_chat = get_group_users(chat_id)
     if from_email not in users_in_chat:
+        return None
+    if chat_id in ongoing_calls and ongoing_calls[chat_id].is_alive():  # there is an active call for this chat
         return None
     clients_passwords: dict[str, str] = dict(((email, email_password_database[email]) for email in users_in_chat))
     #
@@ -1059,15 +1063,20 @@ def call_group(from_email: str, chat_id: str) -> int | None:
             tcp_server_sock.bind(("0.0.0.0", port))
             break
         except OSError:  # port taken
-            pass
+            port += 1
+    if port > 65535:
+        return None
+    tcp_server_sock.listen()
 
     #
     # TODO: add a call to online users, and open a thread that will check every x seconds to check
     #       if someone that is part of the call and was offline comes online
     #
 
-    p = multiprocessing.Process(target=start_call_server, args=(tcp_server_sock, port, clients_passwords,), daemon=True)
+    p = multiprocessing.Process(target=start_call_server, args=(tcp_server_sock, port, clients_passwords, print))
     p.start()
+    ongoing_calls[chat_id] = p
+    print(f"New call server started on {port = }")
     return port
 
 
@@ -1313,6 +1322,7 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
 
 
 def main():
+    """ generate private & public key, start server sock, start watch exception thread, accept new clients """
     # logging configuration
     logging.basicConfig(format=LOG_FORMAT, filename=LOG_FILE, level=LOG_LEVEL)
     # generate public & private rsa keys, and start the server
@@ -1379,6 +1389,7 @@ def main():
 
 
 def unblock_all():
+    """ unblock all file locks (called when server starts) """
     chat_or_group_block_folders = ["users_block", "data\\not free", "unread messages not free"]
     user_block_folders = ["chats block", "sync", "new data not free",
                           "one_on_one_chats_block", "known_users_block", "online status"]
@@ -1413,3 +1424,5 @@ if __name__ == '__main__':
     finally:
         # send the app client's get ip email the server is down
         send_mail("project.twelfth.grade.get.ip@gmail.com", "server down", "")
+        for pr in ongoing_calls.values():
+            pr.kill()
