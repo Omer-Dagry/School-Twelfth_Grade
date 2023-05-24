@@ -2,9 +2,10 @@
 ###############################################
 Author: Omer Dagry
 Mail: omerdagry@gmail.com
-Date: 06/01/2023 (dd/mm/yyyy)
+Date: 30/05/2023 (dd/mm/yyyy)
 ###############################################
 """
+
 import io
 import os
 import sys
@@ -32,7 +33,7 @@ if not os.path.dirname(__file__).endswith("Client - PC html css js"):
 import eel
 
 from communication import Communication as Com
-from client_encrypted_protocol_socket import ClientEncryptedProtocolSocket
+from ClientSecureSocket import ClientEncryptedProtocolSocket
 from communication import signup_request, send_confirmation_code, reset_password_request, reset_password_choose_password
 
 

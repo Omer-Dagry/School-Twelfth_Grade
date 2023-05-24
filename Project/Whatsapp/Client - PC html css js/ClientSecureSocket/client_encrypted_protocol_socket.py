@@ -1,3 +1,11 @@
+"""
+###############################################
+Author: Omer Dagry
+Mail: omerdagry@gmail.com
+Date: 30/05/2023 (dd/mm/yyyy)
+###############################################
+"""
+
 import os
 import rsa
 import socket
@@ -86,15 +94,9 @@ class ClientEncryptedProtocolSocket:
         return data
 
     # Exchange the random aes key using server public key
-    def __recvall_no_encryption(self, buffsize: int) -> bytes:
-        data = b""
-        while len(data) < buffsize:
-            data += self.__sock.recv(buffsize - len(data))
-        return data
-
     def __exchange_aes_key(self) -> None:
-        server_public_key_len = int(self.__recvall_no_encryption(30).decode().strip())
-        server_public_key = rsa.PublicKey.load_pkcs1(self.__recvall_no_encryption(server_public_key_len), "PEM")
+        server_public_key_len = int(self.__recvall(30).decode().strip())
+        server_public_key = rsa.PublicKey.load_pkcs1(self.__recvall(server_public_key_len), "PEM")
         #
         enc_key = rsa.encrypt(self.__aes_key, server_public_key)
         self.__sock.sendall(f"{len(enc_key)}".ljust(30).encode() + enc_key)

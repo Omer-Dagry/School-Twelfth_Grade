@@ -1,3 +1,11 @@
+"""
+###############################################
+Author: Omer Dagry
+Mail: omerdagry@gmail.com
+Date: 30/05/2023 (dd/mm/yyyy)
+###############################################
+"""
+
 from __future__ import annotations
 
 import rsa
@@ -104,16 +112,10 @@ class ServerEncryptedProtocolSocket:
         return data
 
     # Exchange the random aes key using server public key
-    def __recvall_no_encryption(self, buffsize: int) -> bytes:
-        data = b""
-        while len(data) < buffsize:
-            data += self.__sock.recv(buffsize - len(data))
-        return data
-
     def __exchange_aes_key(self) -> None:
         my_public_key_bytes = self.__my_public_key.save_pkcs1("PEM")
         self.__sock.sendall(f"{len(my_public_key_bytes)}".ljust(30).encode() + my_public_key_bytes)
-        aes_key_len = int(self.__recvall_no_encryption(30).decode().strip())
-        aes_key_encrypted = self.__recvall_no_encryption(aes_key_len)
+        aes_key_len = int(self.__recvall(30).decode().strip())
+        aes_key_encrypted = self.__recvall(aes_key_len)
         self.__aes_key = rsa.decrypt(aes_key_encrypted, self.__my_private_key)
         self.__aes_cipher = AESCipher(self.__aes_key)
