@@ -16,7 +16,7 @@ import multiprocessing
 import concurrent.futures
 
 from multiprocessing.managers import DictProxy, SyncManager
-
+from ServerSecureSocket import ServerEncryptedProtocolSocket
 
 # Constants
 # logging
@@ -66,7 +66,8 @@ def receive_audio_and_broadcast(server_socket: socket.socket, clients_ips: DictP
         pass
 
 
-def accept(server_socket: socket.socket) -> tuple[socket.socket, tuple[str, int]] | tuple[None, None]:
+def accept(server_socket: ServerEncryptedProtocolSocket) \
+        -> tuple[ServerEncryptedProtocolSocket, tuple[str, int]] | tuple[None, None]:
     """ accept a client with a timeout of 1 sec """
     server_socket.settimeout(1)
     try:
@@ -76,18 +77,7 @@ def accept(server_socket: socket.socket) -> tuple[socket.socket, tuple[str, int]
     return client, addr
 
 
-def recvall(sock: socket.socket, bufsize: int):
-    """ recv bufsize from sock """
-    data = b""
-    while len(data) < bufsize:
-        res = sock.recv(bufsize - len(data))
-        data += res
-        if res == b"":  # connection closed
-            return res
-    return data
-
-
-def disconnect_client(client_sock: socket.socket, addr: tuple[str, int], clients_ips: DictProxy,
+def disconnect_client(client_sock: ServerEncryptedProtocolSocket, addr: tuple[str, int], clients_ips: DictProxy,
                       clients_socket_addr: dict, client_sock_last_checkin: dict, port: int) -> None:
     """ close connection with client & remove from all databases """
     if (time.perf_counter() - client_sock_last_checkin[client_sock]) > 12:
@@ -103,33 +93,32 @@ def disconnect_client(client_sock: socket.socket, addr: tuple[str, int], clients
         logging.info(f"Calls server on {port = } - %s:%d Disconnected." % addr)
 
 
-def handle_tcp_connections(tcp_server_socket: socket.socket, clients_ips: DictProxy,
+def handle_tcp_connections(tcp_server_socket: ServerEncryptedProtocolSocket, clients_ips: DictProxy,
                            clients_passwords: dict[str, str], port: int) -> None:
     """ handle TCP connections with clients """
     try:
-        clients_socket_addr: dict[socket.socket, tuple[str, int]] = {}
-        client_sock_last_checkin: dict[socket.socket, float] = {}
+        clients_socket_addr: dict[ServerEncryptedProtocolSocket, tuple[str, int]] = {}
+        client_sock_last_checkin: dict[ServerEncryptedProtocolSocket, float] = {}
         last_msg = time.perf_counter()
         one_client: None | float = None
         while (time.perf_counter() - last_msg) < 20 and (one_client is None or (time.perf_counter() - one_client) < 15):
             try:
                 client, addr = accept(tcp_server_socket)
                 if client is not None and addr is not None:
-                    client: socket.socket
+                    client: ServerEncryptedProtocolSocket
                     addr: tuple[str, int]
                     print(f"Calls server on {port = } - New Connection From %s:%d" % addr)
                     logging.info(f"Calls server on {port = } - New Connection From %s:%d" % addr)
                     # check password
                     client.settimeout(0.05)
-                    msg_length = int(recvall(client, 30).strip().decode())
                     try:
-                        username, password = pickle.loads(recvall(client, msg_length))  # type: str, str
+                        username, password = pickle.loads(client.recv_message())  # type: str, str
                     except pickle.PickleError:
                         username = ""
                         password = ""
                     if username in clients_passwords and \
                             clients_passwords[username] == hashlib.md5(password.encode()).hexdigest().lower():
-                        client.sendall(b"ok    ")
+                        client.send_message(b"ok    ")
                         print(f"Calls server on {port = } - %s:%d Connected as '{username}'." % addr)
                         logging.info(f"Calls server on {port = } - %s:%d Connected as '{username}'." % addr)
                         # allow receiving UDP messages from this ip
@@ -141,7 +130,7 @@ def handle_tcp_connections(tcp_server_socket: socket.socket, clients_ips: DictPr
                         client_sock_last_checkin[client] = time.perf_counter()
                     else:
                         logging.info(f"Calls server on {port = } - %s:%d sent wrong username or password." % addr)
-                        client.sendall(b"not ok")
+                        client.send_message(b"not ok")
                         client.close()
             except Exception as err:
                 traceback.format_exception(err)
@@ -152,7 +141,7 @@ def handle_tcp_connections(tcp_server_socket: socket.socket, clients_ips: DictPr
                 one_client = None
             for client, addr in list(clients_socket_addr.items()):
                 try:
-                    msg = client.recv(2)
+                    msg = client.recv_message()
                     if msg == b"hi":
                         client_sock_last_checkin[client] = time.perf_counter()
                     else:
@@ -165,7 +154,7 @@ def handle_tcp_connections(tcp_server_socket: socket.socket, clients_ips: DictPr
         pass
 
 
-def main(tcp_server_sock: socket.socket, port: int, clients_passwords: dict[str, str],
+def main(tcp_server_sock: ServerEncryptedProtocolSocket, port: int, clients_passwords: dict[str, str],
          clients_ips: DictProxy, clients: DictProxy):
     """ start all the processes and call handle_tcp_connections
     
@@ -200,7 +189,8 @@ def main(tcp_server_sock: socket.socket, port: int, clients_passwords: dict[str,
         receive_process2.kill()
 
 
-def start_call_server(tcp_server_sock: socket.socket, port: int, clients_passwords: dict[str, str], print_):
+def start_call_server(tcp_server_sock: ServerEncryptedProtocolSocket,
+                      port: int, clients_passwords: dict[str, str], print_):
     """ call this to start the server """
     global print
     print = print_

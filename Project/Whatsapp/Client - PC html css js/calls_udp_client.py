@@ -7,11 +7,13 @@ Date: 30/05/2023 (dd/mm/yyyy)
 """
 
 import time
-import socket
 import pickle
+import socket
 import hashlib
 import pyaudio
 import threading
+
+from ClientSecureSocket import ClientEncryptedProtocolSocket
 
 
 # Constants
@@ -69,18 +71,17 @@ def send_sound(stream: pyaudio.Stream, client_socket: socket.socket, server_addr
 def handle_tcp_connection(server_addr: tuple[str, int], email: str, password: str):
     """ the TCP connection to the server """
     global connected, stop
-    tcp_sock = socket.socket()
+    tcp_sock = ClientEncryptedProtocolSocket()
     tcp_sock.connect(server_addr)
     connected = True
     try:
-        data = pickle.dumps([email, password])
-        tcp_sock.sendall(f"{len(data)}".ljust(30).encode() + data)
-        if tcp_sock.recv(6) != b"ok    ":
+        tcp_sock.send_message(pickle.dumps([email, password]))
+        if tcp_sock.recv_message() != b"ok    ":
             print("Failed to connect to call.")
             raise ConnectionError
         print("Connected to call.")
         while True:
-            tcp_sock.sendall(b"hi")
+            tcp_sock.send_message(b"hi")
             time.sleep(5)
     except (ConnectionError, socket.error):
         pass

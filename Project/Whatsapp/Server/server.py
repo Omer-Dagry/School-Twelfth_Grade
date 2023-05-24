@@ -25,10 +25,10 @@ import traceback
 import multiprocessing
 
 from typing import *
-from CallsUDP import start_call_server
 from email.mime.text import MIMEText
 from DirectoryLock import block, unblock
 from SyncDB import SyncDatabase, FileDatabase
+from calls_udp_server import start_call_server
 from email.mime.multipart import MIMEMultipart
 from ServerSecureSocket import ServerEncryptedProtocolSocket
 
@@ -89,6 +89,8 @@ blocked_ips: dict[str, datetime.datetime] = {}  # {ip: time of block}
 add_exception_lock = threading.Lock()
 blocked_client_lock = threading.Lock()
 ongoing_calls: dict[str, multiprocessing.Process] = {}  # chat_id: the process of the call server
+my_public_key: rsa.PublicKey | None = None
+my_private_key: rsa.PrivateKey | None = None
 
 # Create All Needed Directories
 os.makedirs(f"{SERVER_DATA}", exist_ok=True)
@@ -1057,12 +1059,14 @@ def call_group(from_email: str, chat_id: str) -> int | None:
     #
 
     port = 16400
-    tcp_server_sock = socket.socket()
+    tcp_server_sock = ServerEncryptedProtocolSocket(my_public_key, my_private_key)
     while port <= 65535:
         try:
             tcp_server_sock.bind(("0.0.0.0", port))
             break
         except OSError:  # port taken
+            tcp_server_sock.close()
+            tcp_server_sock = ServerEncryptedProtocolSocket(my_public_key, my_private_key)
             port += 1
     if port > 65535:
         return None
@@ -1325,6 +1329,7 @@ def main():
     """ generate private & public key, start server sock, start watch exception thread, accept new clients """
     # logging configuration
     logging.basicConfig(format=LOG_FORMAT, filename=LOG_FILE, level=LOG_LEVEL)
+    global my_public_key, my_private_key
     # generate public & private rsa keys, and start the server
     print("generating private and public keys")
     my_public_key, my_private_key = rsa.newkeys(2048, poolsize=os.cpu_count())

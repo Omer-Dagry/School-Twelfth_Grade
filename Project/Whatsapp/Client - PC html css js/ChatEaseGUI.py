@@ -37,7 +37,7 @@ if not os.path.dirname(__file__).endswith("Client - PC html css js"):
 # import eel only after handling stdout and stderr
 import eel
 
-from CallsUDP import join_call
+from calls_udp_client import join_call
 from communication import Communication as Com
 from ClientSecureSocket import ClientEncryptedProtocolSocket
 from communication import signup_request, send_confirmation_code, reset_password_request, reset_password_choose_password
