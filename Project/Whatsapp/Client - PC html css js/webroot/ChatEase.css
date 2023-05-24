@@ -1,3 +1,4 @@
+                                        /* Animations */
 @keyframes slideInLeft {
     0% { transform: translateX(-200%); }
     100% { transform: translateX(0); }
@@ -28,6 +29,8 @@
     100% { opacity: 1; transform: translateX(0) translateY(0); }
 }
 
+                                        /* Tags */
+
 dialog {
     border-radius: 10px;
 }
@@ -47,6 +50,8 @@ button:active {
     opacity: 0.7;
 }
 
+                                        /* Text selection */
+
 .enable_text_selection {
     user-select: text; /* standard syntax */
     -webkit-user-select: text; /* webkit (safari, chrome) browsers */
@@ -63,13 +68,15 @@ button:active {
     -ms-user-select: none; /* IE10+ */
 }
 
-#hang_up_call_btn {
+#hang_up_call_btn {  /* hang up call btn */
     position: absolute;
     top: 10px;
     left: calc(50% - 100px);
     width: 100px;
     max-height: 30px;
 }
+
+                                        /* Layout */
 
 #box {
     margin-top: 5vh;
@@ -82,6 +89,8 @@ button:active {
     display: grid;
     grid-template-columns: 370px 2px 4fr;
 }
+
+                                        /* Left side */
 
 #left {
     color: white;
@@ -166,7 +175,7 @@ button:active {
     border-radius: 5px;
     border-color: rgb(33, 170, 33);
 }
-
+/* Chat list & user list - create new chat/group */
 .chats_list {
     overflow: hidden;
     overflow-y: scroll;
@@ -209,7 +218,7 @@ button:active {
     animation: 1s slideInRight;
     transition: all .2s ease-in-out;
 }
-
+/* Chat button - profile picture, last msg etc.. */
 .chat {
     display: block;
     max-width: 100%;
@@ -272,13 +281,13 @@ button:active {
     border-color: black;
 }
 
-#left_right_sep {
+#left_right_sep { /* Seperator between the left side to the right side */
     border-left: 2px solid black;
     height: 90vh;
     min-height: 600px;
     animation: 1s slideInTop;
 }
-
+                                        /* Right side */
 #right {
     background-image: url("imgs/chat_bg.png");
     background-size: contain;
@@ -289,7 +298,7 @@ button:active {
     display: grid;
     grid-template-rows: 65px 12fr;
 }
-
+/* status bar */
 #chat_status_box {
     background-color: #202C33;
 }
@@ -335,7 +344,7 @@ button:active {
     transform: translateX(-40%) translateY(-10%);
     cursor: pointer;
 } #call_btn:active {opacity: 0.7;}
-
+/* The chat itself */
 #chat {
     padding-top: 80px;
     margin-top: 2px;
@@ -431,7 +440,7 @@ button:active {
     font-size: large;
     padding: 1px;
 }
-
+/* Chat actions - send msgs, record audio etc.. */
 #chat_actions {
     display: inline;
     text-align: center;
@@ -554,7 +563,7 @@ button:active {
 } #record_msg:active {opacity: 0.7;}
 
 
-                    /* Scrollbar Style */
+                                        /* Scrollbar Style */
 ::-webkit-scrollbar {
     width: 10px;
 }

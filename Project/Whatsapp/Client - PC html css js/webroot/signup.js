@@ -7,6 +7,7 @@ function toggle_password_visibility() {
 }
 
 function display_msg(msg_, type="error") {
+    // display message about the status of the signup
     let msg = document.getElementById("msg");
     if (msg === null) {
         msg = document.createElement("div");
@@ -20,6 +21,7 @@ function display_msg(msg_, type="error") {
 }
 
 async function signup_request() {
+    // signup request (first stage)
     signup_btn.onclick = null;
     let email = email_input.value, password = password_input.value, username = username_input.value;
     let [status, reason] = await eel.signup_stage1(email, password, username)();
@@ -41,6 +43,7 @@ async function signup_request() {
 }
 
 async function signup_confirmation_code() {
+    // signup confirmation code stage
     submit_btn.onclick = null;
     let confirmation_code = confirmation_code_input.value;
     let status = await eel.signup_stage2(confirmation_code)();
@@ -60,14 +63,15 @@ async function signup_confirmation_code() {
 }
 
 
-// document.onkeydown = function (e) {
-//     if (e.key === "F1" || e.key === "F3" || e.key === "F5" || 
-//         e.key === "F7" || e.key === "F12") {
-//         return false; 
-//     }
-// };
+document.onkeydown = function (e) {
+    if (e.key === "F1" || e.key === "F3" || e.key === "F5" || 
+        e.key === "F7" || e.key === "F12") {
+        return false; 
+    }
+};
 
 
+                                /* Globals */
 var email_box = document.getElementById("email_box");
 var username_box = document.getElementById("username_box");
 var password_box = document.getElementById("password_box");
