@@ -63,6 +63,14 @@ button:active {
     -ms-user-select: none; /* IE10+ */
 }
 
+#hang_up_call_btn {
+    position: absolute;
+    top: 10px;
+    left: calc(50% - 100px);
+    width: 100px;
+    max-height: 30px;
+}
+
 #box {
     margin-top: 5vh;
     margin-left: 3vh;
@@ -341,8 +349,8 @@ button:active {
 }
 
 .add_remove_msg_row {
-    position: absolute;
-    left: 50%;
+    position: relative;
+    left: 35%;
     margin-left: 1%;
     max-width: 55vh;
     margin-bottom: 15px;

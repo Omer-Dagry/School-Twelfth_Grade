@@ -501,6 +501,12 @@ function message_options(msg_index, full_sender, seen_by, deleted_for_all) {
     let read_receipts = document.createElement("button");
     read_receipts.innerHTML = "Read receipts";  // TODO: change to icon
     popup.appendChild(read_receipts);
+    //
+    let close = document.createElement("button");
+    close.innerHTML = "Close";
+    close.addEventListener("click", function() { popup.close(); });
+    popup.appendChild(close);
+    //
     document.getElementsByTagName("body")[0].prepend(popup);
     popup.showModal();
 }
@@ -801,7 +807,40 @@ function display_recording_options(rec_file_path, chat_id) {
 // end of recordings functions
 
 async function make_call() {
-    await eel.make_call(get_open_chat_id());
+    if (document.getElementById("hang_up_call_btn") !== null) {
+        alert("Already in a call, hang up to start a new one.");
+        return;
+    }
+    let chat_id = get_open_chat_id();
+    if (chat_id !== "") {
+        let status = await eel.make_call(chat_id)();
+        if (status) {
+            let hang_up_call_btn = document.createElement("button");
+            hang_up_call_btn.innerHTML = "Hang Up";
+            hang_up_call_btn.id = "hang_up_call_btn";
+            hang_up_call_btn.addEventListener("click", async function() {
+                await eel.hang_up_call()();
+                hang_up_call_btn.remove();
+            });
+            let body = document.getElementsByTagName("body")[0];
+            body.prepend(hang_up_call_btn);
+            async function check_call_status() {
+                // checks if the call is still running
+                let is_running = await eel.check_ongoing_call()();
+                console.log(is_running);
+                if (is_running) setTimeout(check_call_status, 2500);
+                else {
+                    let hang_up_call_btn = document.getElementById("hang_up_call_btn");
+                    if (hang_up_call_btn !== null) {
+                        hang_up_call_btn.remove();
+                        alert("Call ended");
+                    }
+                }
+            }
+            await check_call_status();
+        } 
+        else alert("Call failed.");
+    }
 }
 
 async function upload_profile_picture() {

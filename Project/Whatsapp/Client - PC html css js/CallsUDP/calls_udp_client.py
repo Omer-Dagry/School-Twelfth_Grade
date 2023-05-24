@@ -29,6 +29,7 @@ connected = False
 
 
 def get_sound(stream: pyaudio.Stream, client_socket: socket.socket):
+    """ a loop to get UDP audio packets from the server """
     global stop
     data = b""
     while not stop:
@@ -47,6 +48,7 @@ def get_sound(stream: pyaudio.Stream, client_socket: socket.socket):
 
 
 def send_sound(stream: pyaudio.Stream, client_socket: socket.socket, server_addr: tuple[str, int]):
+    """ a loop to send UDP audio packets to the server """
     global stop
     while not stop:
         # Read audio data from the stream
@@ -64,18 +66,19 @@ def send_sound(stream: pyaudio.Stream, client_socket: socket.socket, server_addr
         time.sleep(0.02)
 
 
-def handle_tcp_connection(server_addr: tuple[str, int], username: str, password: str):
+def handle_tcp_connection(server_addr: tuple[str, int], email: str, password: str):
+    """ the TCP connection to the server """
     global connected, stop
     tcp_sock = socket.socket()
     tcp_sock.connect(server_addr)
     connected = True
     try:
-        data = pickle.dumps([username, password])
+        data = pickle.dumps([email, password])
         tcp_sock.sendall(f"{len(data)}".ljust(30).encode() + data)
         if tcp_sock.recv(6) != b"ok    ":
-            print("Wrong Username or Password")
+            print("Failed to connect to call.")
             raise ConnectionError
-        print("Connected To Server.")
+        print("Connected to call.")
         while True:
             tcp_sock.sendall(b"hi")
             time.sleep(5)
@@ -84,15 +87,20 @@ def handle_tcp_connection(server_addr: tuple[str, int], username: str, password:
     except KeyboardInterrupt:
         pass
     finally:
-        print("Disconnected From Server.")
         stop = True
         tcp_sock.close()
 
 
-def join_call(server_addr: tuple[str, int], username: str, password: str):
+def join_call(server_addr: tuple[str, int], email: str, password: str):
+    """
+        calls all the needed functions and start the PyAudio stream
+        open a process when calling this function
+    """
     global stop
     #
-    tcp_connection_thread = threading.Thread(target=handle_tcp_connection, args=(server_addr, username, password,))
+    tcp_connection_thread = threading.Thread(
+        target=handle_tcp_connection, args=(server_addr, email, password,), daemon=True
+    )
     tcp_connection_thread.start()
     #
     while not connected:

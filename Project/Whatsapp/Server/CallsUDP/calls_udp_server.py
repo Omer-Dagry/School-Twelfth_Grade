@@ -81,7 +81,7 @@ def recvall(sock: socket.socket, bufsize: int):
 
 
 def disconnect_client(client_sock: socket.socket, addr: tuple[str, int], clients_ips: DictProxy,
-                      clients_socket_addr: dict, client_sock_last_checkin: dict) -> None:
+                      clients_socket_addr: dict, client_sock_last_checkin: dict, port: int) -> None:
     """ close connection with client & remove from all databases """
     if (time.perf_counter() - client_sock_last_checkin[client_sock]) > 12:
         if len(clients_ips[addr[0]]) == 1:
@@ -92,11 +92,11 @@ def disconnect_client(client_sock: socket.socket, addr: tuple[str, int], clients
             clients_ips[addr[0]] = ports
         clients_socket_addr.pop(client_sock)
         client_sock_last_checkin.pop(client_sock)
-        print("%s:%d Disconnected." % addr)
+        print(f"Calls server on {port = } - %s:%d Disconnected." % addr)
 
 
 def handle_tcp_connections(tcp_server_socket: socket.socket, clients_ips: DictProxy,
-                           clients_passwords: dict[str, str]) -> None:
+                           clients_passwords: dict[str, str], port: int) -> None:
     """ handle TCP connections with clients """
     try:
         clients_socket_addr: dict[socket.socket, tuple[str, int]] = {}
@@ -109,7 +109,7 @@ def handle_tcp_connections(tcp_server_socket: socket.socket, clients_ips: DictPr
                 if client is not None and addr is not None:
                     client: socket.socket
                     addr: tuple[str, int]
-                    print("New Connection From %s:%d" % addr)
+                    print(f"Calls server on {port = } - New Connection From %s:%d" % addr)
                     # check password
                     client.settimeout(0.05)
                     msg_length = int(recvall(client, 30).strip().decode())
@@ -121,7 +121,7 @@ def handle_tcp_connections(tcp_server_socket: socket.socket, clients_ips: DictPr
                     if username in clients_passwords and \
                             clients_passwords[username] == hashlib.md5(password.encode()).hexdigest().lower():
                         client.sendall(b"ok    ")
-                        print(f"%s:%d Connected as '{username}'." % addr)
+                        print(f"Calls server on {port = } - %s:%d Connected as '{username}'." % addr)
                         # allow receiving UDP messages from this ip
                         if addr[0] in clients_ips:
                             clients_ips[addr[0]] = clients_ips[addr[0]] + [addr[1]]
@@ -137,7 +137,7 @@ def handle_tcp_connections(tcp_server_socket: socket.socket, clients_ips: DictPr
                 #
             if one_client is None and len(clients_socket_addr) == 1:
                 one_client = time.perf_counter()
-            else:
+            elif len(clients_socket_addr) != 1:
                 one_client = None
             for client, addr in list(clients_socket_addr.items()):
                 try:
@@ -145,10 +145,11 @@ def handle_tcp_connections(tcp_server_socket: socket.socket, clients_ips: DictPr
                     if msg == b"hi":
                         client_sock_last_checkin[client] = time.perf_counter()
                     else:
-                        disconnect_client(client, addr, clients_ips, clients_socket_addr, client_sock_last_checkin)
+                        disconnect_client(
+                            client, addr, clients_ips, clients_socket_addr, client_sock_last_checkin, port)
                     last_msg = time.perf_counter()
                 except (socket.timeout, ConnectionError, socket.error):
-                    disconnect_client(client, addr, clients_ips, clients_socket_addr, client_sock_last_checkin)
+                    disconnect_client(client, addr, clients_ips, clients_socket_addr, client_sock_last_checkin, port)
     except KeyboardInterrupt:
         pass
 
@@ -182,19 +183,24 @@ def main(tcp_server_sock: socket.socket, port: int, clients_passwords: dict[str,
 
     try:
         # the tcp connections to the clients
-        handle_tcp_connections(tcp_server_sock, clients_ips, clients_passwords)
+        handle_tcp_connections(tcp_server_sock, clients_ips, clients_passwords, port)
     finally:
         receive_process.kill()
         receive_process2.kill()
 
 
-def start_call_server(tcp_server_sock: socket.socket, port: int, clients_passwords: dict[str, str]):
+def start_call_server(tcp_server_sock: socket.socket, port: int, clients_passwords: dict[str, str], print_):
     """ call this to start the server """
+    global print
+    print = print_
     try:
+        print(f"Call server starting on {port = }.")
         with multiprocessing.Manager() as manager:  # type: SyncManager
             main(tcp_server_sock, port, clients_passwords, manager.dict(), manager.dict())
     except KeyboardInterrupt:
         pass
+    finally:
+        print(f"Call server on {port = } has ended.")
 
 
 if __name__ == '__main__':
@@ -202,4 +208,6 @@ if __name__ == '__main__':
     s.bind(("0.0.0.0", 16400))
     s.listen()
     start_call_server(
-        s, 16400, {"omer": hashlib.md5(hashlib.md5("omer".encode()).hexdigest().lower().encode()).hexdigest().lower()})
+        s, 16400, {"omer": hashlib.md5(hashlib.md5("omer".encode()).hexdigest().lower().encode()).hexdigest().lower()},
+        print
+    )
