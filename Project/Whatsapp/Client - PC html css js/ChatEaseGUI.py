@@ -186,7 +186,7 @@ def update(first_time_sync_mode: bool) -> None:
     while not stop:
         try:
             # sends nothing, waits for sync msg from server
-            new_data, modified_files, deleted_files = communication.sync(sync_sock)
+            new_data, modified_files, deleted_files, ongoing_calls = communication.sync(sync_sock)
         except (ConnectionError, socket.error, UnicodeError):
             sync_sock.close()
             status, sync_sock, reason = \
@@ -204,7 +204,7 @@ def update(first_time_sync_mode: bool) -> None:
                 open_chat_id = ""
             if open_chat_id != "":
                 # let the server know that the user saw all the messages in the chat
-                communication.mark_as_seen(sync_sock, open_chat_id)
+                mark_as_seen(open_chat_id)
                 for file_path in modified_files:
                     if open_chat_id == file_path.split("\\")[2] and file_path in open_chat_files:
                         try:
@@ -217,12 +217,25 @@ def update(first_time_sync_mode: bool) -> None:
             for file_path in deleted_files:
                 if os.path.isfile(file_path):
                     os.remove(file_path)
+            if ongoing_calls.keys():
+                # update GUI about new calls
+                for group_name, port in ongoing_calls.items():
+                    print(group_name, port)
+                    eel.ongoing_call(group_name, port)()
+                    print("called ongoing call")
         if first_time_sync_mode and new_data:
             os.makedirs(f"webroot\\{email}\\first sync done", exist_ok=True)
             first_time_sync_mode = False
 
 
 """                                   Communication Wrapper Functions                                                """
+
+
+@eel.expose
+def mark_as_seen(open_chat_id: str) -> None:
+    """ let the server know that the user saw all the messages in the chat """
+    if sync_sock is not None and open_chat_id is not None and open_chat_id != "":
+        communication.mark_as_seen(sync_sock, open_chat_id)
 
 
 @eel.expose
@@ -368,6 +381,7 @@ def new_chat(other_email: str) -> bool:
 @eel.expose
 def new_group(other_emails: list[str], group_name: str) -> bool:
     """ create a new group """
+    print(other_emails, group_name)
     return communication.new_group(other_emails, group_name, sock)[0]
 
 
@@ -399,6 +413,19 @@ def make_call(chat_id: str) -> bool:
     )
     call_process.start()
     return True
+
+
+@eel.expose
+def answer_call(port: int) -> None:
+    global call_process
+    if call_process is not None:
+        call_process.kill()
+        call_process = None
+    call_process = multiprocessing.Process(
+        # TODO:             change to SERVER_IP
+        target=join_call, args=(("127.0.0.1", port), email, password,), daemon=True
+    )
+    call_process.start()
 
 
 @eel.expose

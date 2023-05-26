@@ -408,6 +408,7 @@ async function load_chat(chat_name, chat_id, chat_type, users) {
         status_bar_last_seen.innerHTML = "";
         current_chat_other_email = "";
         status_bar_picture.onclick = function () { upload_group_picture(chat_id) };
+        status_bar_picture.style.cursor = "pointer";
     }
     else {
         let other_user_email;
@@ -417,6 +418,7 @@ async function load_chat(chat_name, chat_id, chat_type, users) {
         status_bar_last_seen.innerHTML = await eel.get_user_last_seen(other_user_email)();
         current_chat_other_email = other_user_email;  // in order to update every 1 second
         status_bar_picture.onclick = null;
+        status_bar_picture.style.cursor = "context-menu";
     }
     last_msg_index = 0;
     chat.chat_id = chat_id;
@@ -426,6 +428,7 @@ async function load_chat(chat_name, chat_id, chat_type, users) {
     status_bar_name.innerHTML = chat_name;
     chat.scrollTo(0, chat.scrollHeight);
     setTimeout(function() { chat.scrollTo(0, chat.scrollHeight); }, 200);
+    await eel.mark_as_seen(get_open_chat_id())();
 }
 async function load_more_msgs() {
     // if the user scrolled to the top of the chat this function will be called
@@ -518,7 +521,7 @@ function message_options(msg_index, full_sender, seen_by, deleted_for_all) {
     // messages options - delete for me/all , read receipts
     let popup = document.createElement("dialog");
     let delete_for_me = document.createElement("button");
-    delete_for_me.innerHTML = "Delete for me";  // TODO: change to icon
+    delete_for_me.innerHTML = "Delete for me";
     delete_for_me.addEventListener("click", async function() {
         popup.close();
         document.getElementsByTagName("body")[0].removeChild(popup);
@@ -527,7 +530,7 @@ function message_options(msg_index, full_sender, seen_by, deleted_for_all) {
     popup.appendChild(delete_for_me);
     if (full_sender === email && !deleted_for_all) {
         let delete_for_all = document.createElement("button");
-        delete_for_all.innerHTML = "Delete for all";  // TODO: change to icon
+        delete_for_all.innerHTML = "Delete for all";
         delete_for_all.addEventListener("click", async function() {
             popup.close();
             document.getElementsByTagName("body")[0].removeChild(popup);
@@ -536,7 +539,7 @@ function message_options(msg_index, full_sender, seen_by, deleted_for_all) {
         popup.appendChild(delete_for_all);
     }
     let read_receipts = document.createElement("button");
-    read_receipts.innerHTML = "Read receipts";  // TODO: change to icon
+    read_receipts.innerHTML = "Read receipts";  // TODO: implement read receipts
     popup.appendChild(read_receipts);
     //
     let close = document.createElement("button");
@@ -865,6 +868,34 @@ function display_recording_options(rec_file_path, chat_id) {
 }
 // end of recordings functions
 
+async function add_hang_up_btn_and_check_call_status() {
+    // add a button on the top that allows to hang up
+    // also checks if the call ended, if so removes the button
+    // and alerts the user
+    let hang_up_call_btn = document.createElement("button");
+    hang_up_call_btn.innerHTML = "Hang Up";
+    hang_up_call_btn.id = "hang_up_call_btn";
+    hang_up_call_btn.addEventListener("click", async function() {
+        await eel.hang_up_call()();
+        hang_up_call_btn.remove();
+    });
+    let body = document.getElementsByTagName("body")[0];
+    body.prepend(hang_up_call_btn);
+    async function check_call_status() {
+        // checks if the call is still running
+        let is_running = await eel.check_ongoing_call()();
+        if (is_running) setTimeout(check_call_status, 2500);
+        else {
+            let hang_up_call_btn = document.getElementById("hang_up_call_btn");
+            if (hang_up_call_btn !== null) {
+                hang_up_call_btn.remove();
+                alert("Call ended");
+            }
+        }
+    }
+    check_call_status();
+}
+
 async function make_call() {
     // start a call with the current chat/group
     if (document.getElementById("hang_up_call_btn") !== null) {
@@ -874,33 +905,46 @@ async function make_call() {
     let chat_id = get_open_chat_id();
     if (chat_id !== "") {
         let status = await eel.make_call(chat_id)();
-        if (status) {
-            let hang_up_call_btn = document.createElement("button");
-            hang_up_call_btn.innerHTML = "Hang Up";
-            hang_up_call_btn.id = "hang_up_call_btn";
-            hang_up_call_btn.addEventListener("click", async function() {
-                await eel.hang_up_call()();
-                hang_up_call_btn.remove();
-            });
-            let body = document.getElementsByTagName("body")[0];
-            body.prepend(hang_up_call_btn);
-            async function check_call_status() {
-                // checks if the call is still running
-                let is_running = await eel.check_ongoing_call()();
-                console.log(is_running);
-                if (is_running) setTimeout(check_call_status, 2500);
-                else {
-                    let hang_up_call_btn = document.getElementById("hang_up_call_btn");
-                    if (hang_up_call_btn !== null) {
-                        hang_up_call_btn.remove();
-                        alert("Call ended");
-                    }
-                }
-            }
-            await check_call_status();
-        } 
+        if (status) add_hang_up_btn_and_check_call_status();
         else alert("Call failed.");
     }
+}
+
+function ongoing_call(group_name, port) {
+    // show a popup and let the user decide
+    // if he wants to answer the call or ignore
+    let popup = document.createElement("dialog");
+    let group_name_label = document.createElement("h1");
+    group_name_label.innerHTML = group_name;
+    let answer = document.createElement("button");
+    answer.innerHTML = "Answer Call";
+    answer.addEventListener("click", async function() {
+        popup.close();
+        popup.remove();
+        if (document.getElementById("hang_up_call_btn") !== null) {  // there is an ongoing call
+            let what_to_do = prompt("Already in a call, do you want to hang up? [y/n] ");
+            while (what_to_do != null && 
+                   (what_to_do == "" || !what_to_do.replace(/\s/g, '').length) &&
+                   what_to_do !== "y" && what_to_do !== "Y" && what_to_do !== "yes" && what_to_do !== "YES" &&
+                   what_to_do !== "n" && what_to_do !== "N" && what_to_do !== "no" && what_to_do !== "NO"
+            ) {
+                what_to_do = prompt("Already in a call, do you want to hang up? [y/n] ");
+            }
+            if (what_to_do !== "y" && what_to_do !== "Y" && what_to_do !== "yes" && what_to_do !== "YES"){
+                return;
+            } else eel.hang_up_call()();
+        }
+        await eel.answer_call(port)();
+        add_hang_up_btn_and_check_call_status();
+    });
+    let ignore = document.createElement("button");
+    ignore.innerHTML = "Ignore Call";
+    ignore.addEventListener("click", function() { popup.close(); popup.remove(); });
+    popup.appendChild(group_name_label);
+    popup.appendChild(answer);
+    popup.appendChild(ignore);
+    document.getElementsByTagName("body")[0].prepend(popup);
+    popup.showModal();
 }
 
 async function upload_profile_picture() {
@@ -1018,7 +1062,7 @@ var call_options_window;
 eel.expose(get_open_chat_id);
 eel.expose(update);
 eel.expose(display_recording_options);
-eel.expose(main);
+eel.expose(ongoing_call);
 
 main();
 

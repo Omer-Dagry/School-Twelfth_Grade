@@ -20,6 +20,7 @@ from tkinter.filedialog import askopenfilename
 from ClientSecureSocket import ClientEncryptedProtocolSocket
 
 # Constants
+CALL = "call|"
 REMOVE = "remove"
 USER_STATUS = "update users_status"
 SYNC_CODE = "sync".ljust(30).encode()
@@ -132,7 +133,7 @@ def reset_password_choose_password(sock: ClientEncryptedProtocolSocket, password
         return False
     sock.send_message(f"{'new password'.ljust(30)}{password}".encode())
     reset_password_status = sock.recv_message()
-    if "not ok" in reset_password_status.decode():
+    if "not ok" in reset_password_status.decode() or reset_password_status == b"":
         sock.close()
         return False
     return True
@@ -206,7 +207,7 @@ class Communication:
                 return False, None, "Error notifying the server about sync sock"
         return status, sock, reason
 
-    def sync(self, sock: ClientEncryptedProtocolSocket) -> tuple[bool, list[str], list[str]]:
+    def sync(self, sock: ClientEncryptedProtocolSocket) -> tuple[bool, list[str], list[str], dict[str, int]]:
         """ sync once
         :param sock: this sock must be logged in using login_sync
         :return: True if new data received else False, list of the modified/new files, list of deleted files/folders
@@ -215,7 +216,7 @@ class Communication:
         #                         cmd                  {}             str     bytes | str
         # response -> f"{'sync new/all'.ljust(30)}{empty-dict/dict[file_name, file_data]}"
         if response[:30] != SYNC_CODE:
-            return False, [], []
+            return False, [], [], {}
         try:
             files_dict = pickle.loads(response[30:])
         except EOFError:
@@ -223,7 +224,9 @@ class Communication:
         if files_dict:
             deleted_files_path: list[str | os.PathLike] = []
             modified_files_path: list[str | os.PathLike] = []
+            ongoing_calls: dict[str, int] = {}
             for file_path, file_data in files_dict.items():
+                file_data: bytes
                 if file_path.startswith(self.__email):
                     file_path = f"webroot\\{file_path}"
                 else:
@@ -232,7 +235,7 @@ class Communication:
                 # a remove message will be after a request of a client
                 # to delete message for everyone, if the message is a file
                 # in order to delete the file on the clients side
-                if file_data != REMOVE:
+                if file_data != REMOVE and CALL not in file_path:
                     modified_files_path.append(file_path)
                     for _ in range(2):
                         try:
@@ -241,15 +244,18 @@ class Communication:
                             break
                         except FileNotFoundError:
                             os.makedirs("\\".join(file_path.split("\\")[:-1]))
+                elif CALL in file_path:
+                    file_data: str
+                    ongoing_calls["|".join(file_data.split("|")[2:])] = int(file_data.split("|")[1])
                 elif os.path.isfile(file_path):  # a file was deleted in a chat
                     deleted_files_path.append(file_path)
                     os.remove(file_path)
                 elif os.path.isdir(file_path):  # the user was removed from the chat
                     deleted_files_path.append(file_path)
                     shutil.rmtree(file_path)
-            return True, modified_files_path, deleted_files_path
+            return True, modified_files_path, deleted_files_path, ongoing_calls
         else:
-            return False, [], []
+            return False, [], [], {}
 
     def upload_file(self, chat_id: str | int, filename: str = "", root: Tk = None,
                     delete_file: bool = False, send_file_active: list[bool] = None) -> None:
@@ -303,7 +309,7 @@ class Communication:
             showerror("Failed to send message", f"Could not send the message, lost connection to server.")
             return False
         status_msg = sock.recv_message().decode()
-        if "not ok" in status_msg:
+        if "not ok" in status_msg or status_msg == "":
             showerror("Failed to send message", f"Could not send the message, server error.")
             return False
         return True
@@ -316,7 +322,7 @@ class Communication:
             showerror(f"Failed to familiarize user", "lost connection to server.")
             return False
         response = sock.recv_message()
-        if "not ok" in response.decode():
+        if "not ok" in response.decode() or response == b"":
             # showerror(f"Failed to familiarize user", response.split(b"not ok")[1].decode())
             return False
         return True
@@ -329,7 +335,7 @@ class Communication:
             showerror(f"Failed to create new chat with '{other_email}'", "lost connection to server.")
             return False
         response = sock.recv_message()
-        if "not ok" in response.decode():
+        if "not ok" in response.decode() or response == b"":
             showerror(f"Failed to create new chat with '{other_email}'", "server error.")
             return False
         return True
@@ -337,12 +343,13 @@ class Communication:
     @staticmethod
     def new_group(other_emails: list[str], group_name: str, sock: ClientEncryptedProtocolSocket) -> tuple[bool, str]:
         """ create new group """
-        request = f"{'new chat'.ljust(30)}{group_name}".encode() + pickle.dumps(other_emails)
+        request = f"{'new group'.ljust(30)}{str(len(group_name)).ljust(15)}{group_name}".encode() + \
+                  pickle.dumps(other_emails)
         if not sock.send_message(request):
             showerror(f"Failed to create new group", "lost connection to server.")
             return False, ""
         response = sock.recv_message().decode()
-        if "not ok" in response:
+        if "not ok" in response or response == "":
             showerror(f"Failed to create new group", "server error.")
             return False, ""
         chat_id = response.split("ok")[-1].strip()
@@ -356,7 +363,7 @@ class Communication:
             showerror(f"Failed to add '{other_email}' to group", "lost connection to server.")
             return False
         status_msg = sock.recv_message()
-        if "not ok" in status_msg.decode():
+        if "not ok" in status_msg.decode() or status_msg == b"":
             showerror(f"Failed to add '{other_email}' to group", "server error.")
             return False
         return True
@@ -369,7 +376,7 @@ class Communication:
             showerror(f"Failed to remove '{other_email}' from group", "lost connection to server.")
             return False
         status_msg = sock.recv_message()
-        if "not ok" in status_msg.decode():
+        if "not ok" in status_msg.decode() or status_msg == b"":
             showerror(f"Failed to remove '{other_email}' from group", "server error.")
             return False
         return True
@@ -386,7 +393,7 @@ class Communication:
             showerror(f"Failed to make a call", "lost connection to server.")
             return None
         port_message = sock.recv_message().decode()
-        if "not ok" in port_message:
+        if "not ok" in port_message or port_message == "":
             showerror(f"Failed to make a call", "server error.")
             return None
         return int(port_message.split("ok")[1].strip())
