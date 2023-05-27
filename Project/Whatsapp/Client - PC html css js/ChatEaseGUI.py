@@ -77,7 +77,9 @@ def get_all_chat_ids() -> str:
         chat_ids.remove("profile_pictures")
     if "recordings" in chat_ids:
         chat_ids.remove("recordings")
-    #       [chat_id, [chat_name, last_message, time, chat_type (group or the email of the user the chat is with)]
+    # {chat_id,
+    #  [chat_name, last_message, time, chat_type - group or the email of the other user, users, num_of_unread_msgs]
+    #  }
     chat_id_last_msg_and_time: dict[str, list[str, str, str, str]] = {}
     for chat_id in chat_ids:
         try:
@@ -101,7 +103,16 @@ def get_all_chat_ids() -> str:
             else:
                 msg = ""
             msg_time = last_msg[-1]
-            chat_id_last_msg_and_time[chat_id] = [chat_name, msg, msg_time, chat_type, users]
+            number_of_unread_msgs = 0
+            if os.path.isfile(f"webroot\\{email}\\{chat_id}\\unread_msgs"):
+                with open(f"webroot\\{email}\\{chat_id}\\unread_msgs", "rb") as f:
+                    try:
+                        unread_msgs_dict: dict = pickle.loads(f.read())
+                    except EOFError:
+                        unread_msgs_dict = {}
+                if email in unread_msgs_dict:
+                    number_of_unread_msgs = unread_msgs_dict[email]
+            chat_id_last_msg_and_time[chat_id] = [chat_name, msg, msg_time, chat_type, users, number_of_unread_msgs]
         except FileNotFoundError:
             pass
     return json.dumps(chat_id_last_msg_and_time)
@@ -353,7 +364,7 @@ def send_file(chat_id: str, file_path: str) -> None:
 def send_message(message: str, chat_id: str) -> bool:
     """ send a message """
     global sock
-    if chat_id == "":
+    if chat_id == "" or message == "" or message is None or chat_id is None:
         return False
     res = communication.send_message(chat_id, message, sock)
     if not res:
@@ -460,13 +471,13 @@ def upload_group_picture(chat_id: str) -> bool:
 
 
 @eel.expose
-def delete_message_for_me(chat_id: str, message_index: int):
+def delete_message_for_me(chat_id: str, message_index: int) -> bool:
     """ delete a message for yourself """
     return communication.delete_message_for_me(chat_id, message_index, sock)
 
 
 @eel.expose
-def delete_message_for_everyone(chat_id: str, message_index: int):
+def delete_message_for_everyone(chat_id: str, message_index: int) -> bool:
     """ delete a message for everyone """
     return communication.delete_message_for_everyone(chat_id, message_index, sock)
 

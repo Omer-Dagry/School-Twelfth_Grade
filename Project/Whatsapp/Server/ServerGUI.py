@@ -95,7 +95,7 @@ def start_gui():
     root.minsize(600, 400)
     root.geometry("1400x600")
     root.configure(bg="black")
-    root.columnconfigure((0, 1), minsize=400, weight=2)
+    root.columnconfigure((0, 1), minsize=500, weight=2)
     root.columnconfigure((2, 3), weight=1)
     root.rowconfigure(2, weight=5)
     #
@@ -105,14 +105,14 @@ def start_gui():
     reload_server_btn = Button(root, text="Reload Server", width=12, bg="black", fg="white", cursor="hand2",
                                command=lambda: reload_server_and_start_again(start_stop_server_btn))
     reload_server_btn.grid(row=0, column=1, sticky="news")
-    server_console = ScrolledText(root, bg="black", fg="white")
+    server_console = ScrolledText(root, bg="black", fg="white", font=("Helvetica", 18))
     server_console.grid(row=1, rowspan=2, column=0, columnspan=2, sticky="news")
     server_console.configure(state=DISABLED)
     server_console.tag_configure("red", foreground="red")
     #
     online_clients_label = Label(root, text="Online Users", bg="black", fg="white")
     online_clients_label.grid(row=0, column=2, sticky="news")
-    online_clients_text = ScrolledText(root, bg="black", fg="white")
+    online_clients_text = ScrolledText(root, bg="black", fg="white", font=18)
     online_clients_text.grid(row=1, rowspan=2, column=2, sticky="news")
     online_clients_text.configure(state=DISABLED)
     blocked_ips_label = Label(root, text="Blocked IPs", bg="black", fg="white")
@@ -122,7 +122,7 @@ def start_gui():
     remove_blocked_ip_btn = Button(root, text="Remove from blocked IPs", bg="black", fg="white", cursor="hand2",
                                    command=lambda: remove_blocked_ip(remove_blocked_ip_entry))
     remove_blocked_ip_btn.grid(row=1, column=4, sticky="news")
-    blocked_ips_text = ScrolledText(root, bg="black", fg="white")
+    blocked_ips_text = ScrolledText(root, bg="black", fg="white", font=18)
     blocked_ips_text.grid(row=2, column=3, columnspan=2, sticky="news")
     blocked_ips_text.configure(state=DISABLED)
     #

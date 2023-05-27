@@ -554,7 +554,7 @@ def remove_user_from_group(ip: str, from_user: str, remove_user: str, group_id: 
 
 def send_msg(ip: str, from_user: str, chat_id: str, msg: str,
              file_msg: bool = False, remove_msg: bool = False, add_message: bool = False) \
-        -> bool | tuple[bool, tuple[set, str]]:
+        -> bool | tuple[bool, tuple[set, list[str]]]:
     """ send message (to chat/group)
     :param ip: the ip of the client that sent the request
     :param from_user: the email of the user that sent the msg
@@ -569,7 +569,7 @@ def send_msg(ip: str, from_user: str, chat_id: str, msg: str,
     # 3 types: regular msg / file msg (if it's a file) / remove msg (if someone removed someone)
     msg_type = "msg" if not file_msg and not remove_msg and not remove_msg and not add_message else \
         "file" if file_msg else "remove" if remove_msg else "add" if add_message else None
-    if msg_type is None:
+    if msg_type is None or (msg_type == "msg" and msg == ""):
         return False
     lock = block(f"{USERS_DATA}{chat_id}\\data\\not free")
     try:
@@ -604,17 +604,20 @@ def send_msg(ip: str, from_user: str, chat_id: str, msg: str,
         except EOFError:
             unread_msgs = {}
         for user in unread_msgs.keys():
-            unread_msgs[user] += 1
+            if user != from_user:
+                unread_msgs[user] += 1
         write_to_file(f"{USERS_DATA}{chat_id}\\unread_msgs", "wb", pickle.dumps(unread_msgs))
         unblock(f"{USERS_DATA}{chat_id}\\unread messages not free")
         # when finished remove the folder
         lock = unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
         # add the new file / updated file to the new data of all the users in the chat
         latest = latest + 1 if len(data) >= 800 or first_chat else latest
+        sync_paths = [f"{USERS_DATA}{chat_id}\\unread_msgs", f"{USERS_DATA}{chat_id}\\data\\chat\\{latest}"]
         if not file_msg:
-            sync_new_data_with_client(users_in_chat, f"{USERS_DATA}{chat_id}\\data\\chat\\{latest}")
-        return True if not file_msg else (True, (users_in_chat, f"{USERS_DATA}{chat_id}\\data\\chat\\{latest}"))
+            sync_new_data_with_client(users_in_chat, sync_paths)
+        return True if not file_msg else (True, (users_in_chat, sync_paths))
     except Exception as e:
+        traceback.print_exception(e)
         add_exception_for_ip(ip)
         logging.warning(f"received exception while handling '{ip}' exception: "
                         f"{''.join(traceback.format_exception(e))} (user: '{from_user}', func: 'send_msg')")
@@ -639,10 +642,10 @@ def send_file(ip: str, from_user: str, chat_id: str, file_data: bytes, file_name
         location = f"{USERS_DATA}{chat_id}\\data\\files\\"
         # if there is already a file with this name, create new name
         if os.path.isfile(location + file_name):
-            new_file_name = ".".join(file_name.split(".")[:-1]) + "_1" + file_name.split(".")[-1]
+            new_file_name = ".".join(file_name.split(".")[:-1]) + "_1." + file_name.split(".")[-1]
             i = 2
             while os.path.isfile(location + new_file_name):
-                new_file_name = ".".join(file_name.split(".")[:-1]) + f"_{i}" + file_name.split(".")[-1]
+                new_file_name = ".".join(file_name.split(".")[:-1]) + f"_{i}." + file_name.split(".")[-1]
                 i += 1
         else:
             new_file_name = file_name
@@ -653,12 +656,13 @@ def send_file(ip: str, from_user: str, chat_id: str, file_data: bytes, file_name
         status, (users_in_chat, new_data) = \
             send_msg(ip, from_user, chat_id, "\\".join((location + new_file_name).split("\\")[2:]), file_msg=True)
         if status:
-            sync_new_data_with_client(users_in_chat, [location + new_file_name, new_data])
+            sync_new_data_with_client(users_in_chat, [location + new_file_name, *new_data])
             return True
         else:
             os.remove(location + new_file_name)
             return False
     except Exception as e:
+        traceback.print_exception(e)
         add_exception_for_ip(ip)
         logging.warning(f"received while handling '{ip}' exception: "
                         f"{''.join(traceback.format_exception(e))} (user: '{from_user}', func: 'send_file')")
@@ -695,6 +699,7 @@ def delete_msg_for_me(ip: str, from_user: str, chat_id: str, index_of_msg: int) 
         sync_new_data_with_client(from_user, f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}")
         return True
     except Exception as e:
+        traceback.print_exception(e)
         add_exception_for_ip(ip)
         logging.debug(f"received while handling '{ip}' exception: "
                       f"{''.join(traceback.format_exception(e))} (user: '{from_user}', func: 'delete_msg_for_me')")
@@ -720,16 +725,17 @@ def delete_msg_for_everyone(ip: str, from_user: str, chat_id: str, index_of_msg:
             data = {}
         # msg -> [from_user, msg, msg_type, deleted_for, delete_for_all, seen by, time]
         msg = data.get(index_of_msg)
-        if msg is not None and msg[0] == from_user:
+        if msg is not None and msg[0] == from_user and not msg[4]:
+            path_to_file = msg[1]
             msg[1] = "This Message Was Deleted."
             msg[4] = True
             data[index_of_msg] = msg
             write_to_file(f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}", "wb", pickle.dumps(data))
             if msg[2] == "file":  # file msg, remove the file as well
                 #                                              file name
-                os.remove(f"{USERS_DATA}{chat_id}\\data\\files\\{msg[1]}")
+                os.remove(f"{USERS_DATA}{path_to_file}")
                 # tell all the clients to remove this file on their side
-                sync_new_data_with_client(users_in_chat, f"remove - {USERS_DATA}{chat_id}\\data\\files\\{msg[1]}")
+                sync_new_data_with_client(users_in_chat, f"remove - {USERS_DATA}{path_to_file}")
         else:
             lock = unblock(f"{USERS_DATA}{chat_id}\\data\\not free")
             return False
@@ -737,6 +743,7 @@ def delete_msg_for_everyone(ip: str, from_user: str, chat_id: str, index_of_msg:
         sync_new_data_with_client(users_in_chat, f"{USERS_DATA}{chat_id}\\data\\chat\\{file_number}")
         return True
     except Exception as e:
+        traceback.print_exception(e)
         add_exception_for_ip(ip)
         logging.debug(f"received while handling '{ip}' exception: {''.join(traceback.format_exception(e))} "
                       f"(user: '{from_user}', func: 'delete_msg_for_everyone')")
@@ -1048,7 +1055,8 @@ def sync(email: str, client_sync_sock: ServerEncryptedProtocolSocket,
             elif file.startswith("call|"):
                 file_name_data[file] = file
             elif file.startswith("remove - "):
-                file_name_data[" - ".join(file.split(" - ")[1:])] = "remove"
+                #                          remove the "remove - "      remove Data\\Users_Data
+                file_name_data["\\".join(" - ".join(file.split(" - ")[1:]).split("\\")[2:])] = "remove"
             elif file == f"{USERS_DATA}{email}\\sync":
                 pass
             else:
@@ -1058,6 +1066,7 @@ def sync(email: str, client_sync_sock: ServerEncryptedProtocolSocket,
         # sync_res can be big, so it's more efficient to not concat them
         client_sync_sock.send_message("sync".ljust(30).encode() + sync_res)
     except Exception as e:
+        traceback.print_exception(e)
         try:
             ip, port = client_sync_sock.getpeername()
             add_exception_for_ip(ip)
@@ -1350,7 +1359,7 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
                 if response is not None:
                     client_socket.send_message(response)
     except Exception as err:
-        # traceback.print_exception(err)
+        traceback.print_exception(e)
         add_exception_for_ip(client_ip_port[0])
         if not isinstance(err, ConnectionError):
             username = "Unknown username" if "username" not in locals() else username
@@ -1397,7 +1406,7 @@ def main():
         external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
         send_mail("project.twelfth.grade.get.ip@gmail.com", "server up", f"server_ip={external_ip}")
     except Exception as e:
-        traceback.format_exception(e)
+        traceback.print_exception(e)
     #
     # exception watch thread
     watch_exception_dict_thread = threading.Thread(target=watch_exception_dict, daemon=True)

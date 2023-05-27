@@ -264,11 +264,11 @@ async function load_chat_buttons() {
     if (document.contains(chats_list)) {
         // {chat_id: [chat_name, last_msg, time, chat_type]}
         let chat_ids = JSON.parse(await eel.get_all_chat_ids()());
-        let chat_id, chat_name, last_message, time, chat_type, users;
+        let chat_id, chat_name, last_message, time, chat_type, users, number_of_unread_msgs;
         let picture_path;
         let chat_box;
         for (chat_id in chat_ids) {
-            [chat_name, last_message, time, chat_type, users] = chat_ids[chat_id];
+            [chat_name, last_message, time, chat_type, users, number_of_unread_msgs] = chat_ids[chat_id];
             if (document.getElementById(chat_id) != null) { // already exists
                 chat_box = document.getElementById(chat_id);
                 if (chat_box.getElementsByClassName("chat-last-message")[0].innerHTML !== last_message 
@@ -279,7 +279,17 @@ async function load_chat_buttons() {
                     changed = true;
                     changed_buttons.push(chat_box);
                 }
-                continue;   
+                let chat_name = chat_box.getElementsByClassName("chat-name")[0];
+                if (number_of_unread_msgs !== 0) {
+                    chat_name.style.color = "#0b721c";
+                    if (chat_name.innerHTML.includes(" - (")) {
+                        chat_name.innerHTML = chat_name.innerHTML.split(" - ")[0] + ` - (${number_of_unread_msgs})`;
+                    } else chat_name.innerHTML = chat_name.innerHTML + ` - (${number_of_unread_msgs})`;
+                } else {
+                    chat_name.style.color = "white";
+                    if (chat_name.innerHTML.includes(" - (")) chat_name.innerHTML = chat_name.innerHTML.split(" - ")[0];
+                }
+                continue;
             }
             changed = true;
             if (chat_type === "group") {
@@ -472,18 +482,35 @@ function update(chat_id, chat_msgs) {
             new_messages[msg_index] = [from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time];
             continue;
         }
+        msg_row = document.getElementById(`msg_${msg_index}`);
         // old message that has been changed
         if (deleted_for.includes(email)) {
-            msg_row = document.getElementById(`msg_${msg_index}`);
             if (msg_row !== null) {
                 msg_row.remove();
             }
-        } else if (deleted_for_all) {
-            msg_row = document.getElementById(`msg_${msg_index}`);
+        } else if (deleted_for_all && msg_type === "msg") {
             if (msg_row !== null) {
                 msg_row.getElementsByClassName("msg_text")[0].innerHTML = msg;  // This message was deleted.
                 if (from_user === email) msg_row.getElementsByClassName("my_msg_box")[0].style.backgroundColor = "#232323";
                 else msg_row.getElementsByClassName("msg_box")[0].style.backgroundColor = "#232323";
+            }
+        } else if (msg_row !== null && deleted_for_all && msg_type === "file" && 
+                   msg_row.getElementsByClassName("msg_image").length === 1) {
+            msg_row.getElementsByClassName("msg_image")[0].remove();
+            if (from_user === email) {
+                msg_row.getElementsByClassName("my_msg_box")[0].remove();
+                let my_msg_box = window.my_msg_row.getElementsByClassName("my_msg_box")[0].cloneNode(true);
+                my_msg_box.getElementsByClassName("msg_text")[0].innerHTML = msg;
+                msg_row.appendChild(my_msg_box);
+                msg_row.getElementsByClassName("my_msg_box")[0].style.backgroundColor = "#232323";
+            } else {
+                msg_row.getElementsByClassName("msg_box")[0].remove();
+                let msg_box = window.msg_row.getElementsByClassName("msg_box")[0].cloneNode(true);
+                msg_box.getElementsByClassName("msg_text")[0].innerHTML = msg;
+                msg_box.getElementsByClassName("msg_sender")[0].innerHTML = from_user;
+                msg_row.appendChild(msg_box);
+                msg_row.getElementsByClassName("msg_box")[0].style.backgroundColor = "#232323";
+                msg_row.getElementsByClassName("msg_box")[0].style.backgroundColor = "#232323";
             }
         }
     }
@@ -516,7 +543,7 @@ function get_open_chat_id() {
 
 
                                     /* Messages */
-// TODO: implement func
+
 function message_options(msg_index, full_sender, seen_by, deleted_for_all) {
     // messages options - delete for me/all , read receipts
     let popup = document.createElement("dialog");
@@ -645,15 +672,35 @@ function add_msg(from, sender, msg, time, msg_index, msg_type, deleted_for,
                     break;
                 }
             }
+            let voice_recording = msg.toLowerCase().endsWith(".wav") ? true : false;
             if (display_file) {
                 let photo_row = from == "me" ? window.my_photo_msg_row.cloneNode(true) : window.photo_msg_row.cloneNode(true);
                 photo_row.getElementsByClassName("msg_image")[0].src = `${email}/${msg}`;
+                photo_row.id = `msg_${msg_index}`;
                 photo_row.getElementsByClassName("msg_image")[0].onclick = async function () { await eel.start_file(`${email}/${msg}`); };
                 append_to_chat(position, photo_row);
                 photo_row.addEventListener("contextmenu", function() { message_options(msg_index, full_sender, seen_by, deleted_for_all); }) // right click
+            } else if (voice_recording) {
+                let file_row = from == "me" ? window.my_photo_msg_row.cloneNode(true) : window.photo_msg_row.cloneNode(true);
+                file_row.getElementsByClassName("msg_image")[0].remove();
+                file_row.id = `msg_${msg_index}`;
+                let recording_options_box = document.createElement("audio");
+                recording_options_box.controls = true;
+                recording_options_box.id = "audio_player";
+                let audio_file = document.createElement("source");
+                audio_file.src = `${email}/${msg}`;
+                audio_file.id = "audio_file";
+                audio_file.type = "audio/wav";
+                recording_options_box.appendChild(audio_file);
+                if (from == "me") file_row.getElementsByClassName("my_msg_box")[0].appendChild(recording_options_box);
+                else file_row.getElementsByClassName("msg_box")[0].appendChild(recording_options_box);
+
+                append_to_chat(position, file_row);
+                file_row.addEventListener("contextmenu", function() { message_options(msg_index, full_sender, seen_by, deleted_for_all); }) // right click
             } else {
                 let file_row = from == "me" ? window.my_photo_msg_row.cloneNode(true) : window.photo_msg_row.cloneNode(true);
                 file_row.getElementsByClassName("msg_image")[0].className = "msg_file";
+                file_row.id = `msg_${msg_index}`;
                 let file_name = msg.split("/");
                 file_name = file_name[file_name.length - 1];
                 file_row.getElementsByClassName("msg_file")[0].alt = file_name;
@@ -743,6 +790,7 @@ async function send_message() {
     let input_bar = document.getElementById("msg_input");
     let msg = input_bar.value;
     input_bar.value = "";  // clear input bar
+    input_bar.focus();
     let ok = await eel.send_message(msg, get_open_chat_id())();
     if (!ok && input_bar.value === "") input_bar.value = msg;
 }
@@ -769,7 +817,6 @@ async function new_chat(other_email) {
     await eel.new_chat(other_email)();
 }
 async function new_group(other_emails, group_name) {
-    console.log(`new group ${other_emails}`)
     await eel.new_group(other_emails, group_name)();
 }
 function new_group_or_chat() {
@@ -792,12 +839,14 @@ function new_group_or_chat() {
 }
 
 
-async function add_user_to_group() {
+async function add_user_to_group() {  // TODO create a button for this and implement function
+    // popup with all known users - group users and select the user to add
     // await eel.add_user_to_group(other_email, get_open_chat_id());
 }
 
 
-async function remove_user_from_group() {
+async function remove_user_from_group() {  // TODO create a button for this and implement function
+    // popup with all group users and select the user to remove
     // await eel.remove_user_from_group(other_email, get_open_chat_id());
 }
 
@@ -955,14 +1004,6 @@ async function upload_group_picture(chat_id) {
     await eel.upload_group_picture(chat_id)();
 }
 
-async function delete_message_for_me() {
-    // await eel.delete_message_for_me(chat_id, message_index);
-}
-
-async function delete_message_for_everyone() {
-    // await eel.delete_message_for_everyone(chat_id, message_index);
-}
-
 
                                     /* Main Setup */
 
@@ -1069,5 +1110,6 @@ main();
 
 /*                                    TODOS
 1. need to add buttons for adding & removing users when a chat is 'group'
+   and implement the functions to select the users to remove/add
 2. messages options - seen list?
 */
