@@ -5,6 +5,8 @@ Mail: omerdagry@gmail.com
 Date: 30/05/2023 (dd/mm/yyyy)
 ###############################################
 """
+
+import os
 import sys
 import time
 import server
@@ -91,7 +93,7 @@ def start_gui():
     root = Tk()
     # root configuration
     root.title("Server GUI")
-    root.iconbitmap("favicon.ico")
+    root.iconbitmap(os.path.dirname(__file__) + "\\favicon.ico")
     root.minsize(600, 400)
     root.geometry("1400x600")
     root.configure(bg="black")
@@ -201,4 +203,5 @@ def main():
 
 
 if __name__ == '__main__':
+    multiprocessing.freeze_support()
     main()

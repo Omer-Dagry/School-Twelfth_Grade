@@ -59,6 +59,11 @@ BLOCK_TIME = 60 * 5
 BLOCK_AFTER_X_EXCEPTIONS = 100
 EXCEPTIONS_WINDOW_TIME = 60 * 5
 
+# Create All Needed Directories
+os.makedirs(f"{SERVER_DATA}", exist_ok=True)
+os.makedirs(f"{USERS_DATA}", exist_ok=True)
+os.makedirs(LOG_DIR, exist_ok=True)
+
 # Globals
 print_ = print
 # File DBs
@@ -93,11 +98,6 @@ blocked_client_lock = threading.Lock()
 ongoing_calls: dict[str, multiprocessing.Process] = {}  # chat_id: the process of the call server
 my_public_key: rsa.PublicKey | None = None
 my_private_key: rsa.PrivateKey | None = None
-
-# Create All Needed Directories
-os.makedirs(f"{SERVER_DATA}", exist_ok=True)
-os.makedirs(f"{USERS_DATA}", exist_ok=True)
-os.makedirs(LOG_DIR, exist_ok=True)
 
 
 def print(*values: object, sep: str | None = " ", end: str | None = "\n"):
@@ -1359,7 +1359,7 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
                 if response is not None:
                     client_socket.send_message(response)
     except Exception as err:
-        traceback.print_exception(e)
+        traceback.print_exception(err)
         add_exception_for_ip(client_ip_port[0])
         if not isinstance(err, ConnectionError):
             username = "Unknown username" if "username" not in locals() else username
