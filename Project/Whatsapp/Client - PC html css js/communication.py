@@ -49,7 +49,12 @@ def signup_request(username: str, email: str, password: str, server_ip_port: tup
             showerror("Signup Error", "Could not send signup request, lost connection to server.")
             return False, None
         return False, None, "Lost connection to server !"
-    response = sock.recv_message().decode()
+    try:
+        response = sock.recv_message().decode()
+    except (ConnectionError, socket.error):
+        if not return_status:
+            return True, sock
+        return False, None, "Lost connection to server."
     if response != "signup".ljust(30):
         if not return_status:
             return False, None
@@ -62,7 +67,10 @@ def signup_request(username: str, email: str, password: str, server_ip_port: tup
 def send_confirmation_code(sock: ClientEncryptedProtocolSocket, confirmation_code: str,
                            verbose: bool, signup_or_reset: Literal["signup", "reset"]) -> bool:
     """ confirmation code (for signup and reset password) """
-    confirmation_code_msg = sock.recv_message().decode()
+    try:
+        confirmation_code_msg = sock.recv_message().decode()
+    except (ConnectionError, socket.error):
+        return False
     if confirmation_code_msg.strip() == "confirmation_code":
         if not sock.send_message(f"{'confirmation_code'.ljust(30)}{confirmation_code}".encode()):
             showerror(
@@ -75,7 +83,10 @@ def send_confirmation_code(sock: ClientEncryptedProtocolSocket, confirmation_cod
         return False
     # signup (length 30)   status (length 6)   reason
     # reset password (length 30)   status (length 6)   reason
-    response = sock.recv_message().decode()
+    try:
+        response = sock.recv_message().decode()
+    except (ConnectionError, socket.error):
+        return False
     if (response[:30].strip() != "signup" and signup_or_reset == "signup") or \
             (response[:30].strip() != "reset password" and signup_or_reset == "reset"):
         return False
@@ -118,7 +129,10 @@ def reset_password_request(username: str, email: str, server_ip_port: tuple[str,
             "Reset Password Error", "Could not send reset password request, lost connection to server.")
         sock.close()
         return False, None
-    response = sock.recv_message().decode()
+    try:
+        response = sock.recv_message().decode()
+    except (ConnectionError, socket.error):
+        return False, None
     if response != "reset password".ljust(30):
         sock.close()
         return False, None
@@ -127,12 +141,18 @@ def reset_password_request(username: str, email: str, server_ip_port: tuple[str,
 
 def reset_password_choose_password(sock: ClientEncryptedProtocolSocket, password: str) -> bool:
     """ reset password last step """
-    new_password_msg = sock.recv_message()
+    try:
+        new_password_msg = sock.recv_message()
+    except (ConnectionError, socket.error):
+        return False
     if new_password_msg != f"{'new password'.ljust(30)}".encode():
         sock.close()
         return False
     sock.send_message(f"{'new password'.ljust(30)}{password}".encode())
-    reset_password_status = sock.recv_message()
+    try:
+        reset_password_status = sock.recv_message()
+    except (ConnectionError, socket.error):
+        return False
     if "not ok" in reset_password_status.decode() or reset_password_status == b"":
         sock.close()
         return False
@@ -182,7 +202,10 @@ class Communication:
             sock.close()
             return False, None, "Lost connection to server."
         # login (length 30)   status (length 6)   reason
-        response = sock.recv_message().decode()
+        try:
+            response = sock.recv_message().decode()
+        except (ConnectionError, socket.error):
+            return False, None, "Lost connection to server."
         if response[:30].strip() != "login":
             return False, None, "Error"
         response = response[30:]
@@ -308,7 +331,10 @@ class Communication:
         if not sock.send_message(request):
             showerror("Failed to send message", f"Could not send the message, lost connection to server.")
             return False
-        status_msg = sock.recv_message().decode()
+        try:
+            status_msg = sock.recv_message().decode()
+        except (ConnectionError, socket.error):
+            return False
         if "not ok" in status_msg or status_msg == "":
             showerror("Failed to send message", f"Could not send the message, server error.")
             return False
@@ -321,7 +347,10 @@ class Communication:
         if not sock.send_message(request):
             showerror(f"Failed to familiarize user", "lost connection to server.")
             return False
-        response = sock.recv_message()
+        try:
+            response = sock.recv_message()
+        except (ConnectionError, socket.error):
+            return False
         if "not ok" in response.decode() or response == b"":
             # showerror(f"Failed to familiarize user", response.split(b"not ok")[1].decode())
             return False
@@ -334,7 +363,10 @@ class Communication:
         if not sock.send_message(request):
             showerror(f"Failed to create new chat with '{other_email}'", "lost connection to server.")
             return False
-        response = sock.recv_message()
+        try:
+            response = sock.recv_message()
+        except (ConnectionError, socket.error):
+            return False
         if "not ok" in response.decode() or response == b"":
             showerror(f"Failed to create new chat with '{other_email}'", "server error.")
             return False
@@ -348,7 +380,10 @@ class Communication:
         if not sock.send_message(request):
             showerror(f"Failed to create new group", "lost connection to server.")
             return False, ""
-        response = sock.recv_message().decode()
+        try:
+            response = sock.recv_message().decode()
+        except (ConnectionError, socket.error):
+            return False, ""
         if "not ok" in response or response == "":
             showerror(f"Failed to create new group", "server error.")
             return False, ""
@@ -362,7 +397,10 @@ class Communication:
         if not sock.send_message(request):
             showerror(f"Failed to add '{other_email}' to group", "lost connection to server.")
             return False
-        status_msg = sock.recv_message()
+        try:
+            status_msg = sock.recv_message()
+        except (ConnectionError, socket.error):
+            return False
         if "not ok" in status_msg.decode() or status_msg == b"":
             showerror(f"Failed to add '{other_email}' to group", "server error.")
             return False
@@ -375,7 +413,10 @@ class Communication:
         if not sock.send_message(request):
             showerror(f"Failed to remove '{other_email}' from group", "lost connection to server.")
             return False
-        status_msg = sock.recv_message()
+        try:
+            status_msg = sock.recv_message()
+        except (ConnectionError, socket.error):
+            return False
         if "not ok" in status_msg.decode() or status_msg == b"":
             showerror(f"Failed to remove '{other_email}' from group", "server error.")
             return False
@@ -392,7 +433,10 @@ class Communication:
         if not sock.send_message(f"{'call'.ljust(30)}{chat_id}".encode()):
             showerror(f"Failed to make a call", "lost connection to server.")
             return None
-        port_message = sock.recv_message().decode()
+        try:
+            port_message = sock.recv_message().decode()
+        except (ConnectionError, socket.error):
+            return None
         if "not ok" in port_message or port_message == "":
             showerror(f"Failed to make a call", "server error.")
             return None
