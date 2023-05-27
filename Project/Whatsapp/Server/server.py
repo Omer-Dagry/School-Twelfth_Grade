@@ -30,6 +30,7 @@ from DirectoryLock import block, unblock
 from SyncDB import SyncDatabase, FileDatabase
 from calls_udp_server import start_call_server
 from email.mime.multipart import MIMEMultipart
+from multiprocessing.managers import DictProxy
 from ServerSecureSocket import ServerEncryptedProtocolSocket
 
 
@@ -86,6 +87,7 @@ sync_sockets_lock = threading.Lock()
 sync_sockets: dict[str, set[ServerEncryptedProtocolSocket]] = {}  # {email: [sync_sock, sync_sock, ...], ...}
 received_exception_from: dict[str, set[datetime.datetime]] = {}  # {ip: {time of exception (for each exception)}}
 blocked_ips: dict[str, datetime.datetime] = {}  # {ip: time of block}
+online_clients: dict[str, None] = {}  # {email: None, email2: None, ...}
 add_exception_lock = threading.Lock()
 blocked_client_lock = threading.Lock()
 ongoing_calls: dict[str, multiprocessing.Process] = {}  # chat_id: the process of the call server
@@ -946,6 +948,7 @@ def login(email: str, password: str) -> bool:
         if email in user_online_status_database and user_online_status_database[email][0] == "Online":
             user_online_status_database[email] = ["Online", user_online_status_database[email][1] + 1]
         else:
+            online_clients[email] = None
             user_online_status_database[email] = ["Online", 1]
             sync_new_data_with_client(get_user_known_users(email), f"|users_data")
     finally:
@@ -1362,6 +1365,8 @@ def handle_client(client_socket: ServerEncryptedProtocolSocket, client_ip_port: 
         try:
             if email in user_online_status_database and user_online_status_database[email][0] == "Online":
                 if user_online_status_database[email][1] == 1:
+                    if email in online_clients:
+                        online_clients.pop(email)
                     user_online_status_database[email] = ["Offline", datetime.datetime.now()]  # last seen
                     sync_new_data_with_client(get_user_known_users(email), f"|users_data")
                 else:
@@ -1462,23 +1467,52 @@ def unblock_all():
                         shutil.rmtree(f"{USERS_DATA}{folder}\\{folder_name}")
 
 
-if __name__ == '__main__':
+def start(online_clients_: dict[str] | DictProxy = None,
+          blocked_ips_: dict[str, datetime.datetime] | DictProxy = None,
+          print_queue: multiprocessing.Queue = None) -> None:
+    """
+        call this function to enter the process of starting the server
+        (this function will block until server exists)
+    """
+    global online_clients, blocked_ips, print
     try:
         try:
             unblock_all()
+            #
             for em in os.listdir(USERS_DATA):
                 if em not in user_online_status_database and "@" in em:
                     user_online_status_database[em] = ["Offline", datetime.datetime.now()]
             for em in user_online_status_database.keys():
                 if user_online_status_database[em][0] == "Online":
                     user_online_status_database[em] = ["Offline", datetime.datetime.now()]
+            #
+            if online_clients_ is not None:
+                online_clients = online_clients_
+            if blocked_ips is not None:
+                blocked_ips = blocked_ips_
+            if print_queue is not None:
+                class STDRedirect:
+                    def __init__(self, std_type):
+                        assert std_type == "stdout" or std_type == "stderr"
+                        self.std_type = std_type
+
+                    def write(self, data):
+                        print_queue.put((self.std_type, data))
+                sys.stdout = STDRedirect("stdout")
+                sys.stderr = STDRedirect("stderr")
+            #
             main()
         except KeyboardInterrupt:
             pass
     except KeyboardInterrupt:  # exit nicely on KeyboardInterrupt
         pass
     finally:
+        print("Server is down")
         # send the app client's get ip email the server is down
         send_mail("project.twelfth.grade.get.ip@gmail.com", "server down", "")
         for pr in ongoing_calls.values():
             pr.kill()
+
+
+if __name__ == '__main__':
+    start()
