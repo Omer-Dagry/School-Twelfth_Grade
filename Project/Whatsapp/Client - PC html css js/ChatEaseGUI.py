@@ -672,17 +672,17 @@ def main():
             pass
 
 
-# More Constants
-# Server IP - try to get through clients shared email, if not ask from user
-SERVER_IP = get_server_ip()
-while SERVER_IP != "no" and \
-        (SERVER_IP is None or SERVER_IP.count(".") != 3 or not
-         all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split(".")))):
-    SERVER_IP = easygui.enterbox("Please Enter Server IP: ", "Server IP")
-if SERVER_IP == "no":  # cancel run
-    sys.exit(1)
-assert SERVER_IP.count(".") == 3 and all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split("."))), \
-    "Invalid Server IP"
-SERVER_IP_PORT = (SERVER_IP, SERVER_PORT)
 if __name__ == '__main__':
+    # More Constants
+    # Server IP - try to get through clients shared email, if not ask from user
+    SERVER_IP = None  # get_server_ip()
+    while SERVER_IP != "no" and \
+            (SERVER_IP is None or SERVER_IP.count(".") != 3 or not
+            all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split(".")))):
+        SERVER_IP = easygui.enterbox("Please Enter Server IP: ", "Server IP")
+    if SERVER_IP == "no":  # cancel run
+        sys.exit(1)
+    assert SERVER_IP.count(".") == 3 and all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split("."))), \
+        "Invalid Server IP"
+    SERVER_IP_PORT = (SERVER_IP, SERVER_PORT)
     main()
