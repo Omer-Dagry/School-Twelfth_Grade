@@ -420,7 +420,7 @@ def make_call(chat_id: str) -> bool:
         call_process = None
     call_process = multiprocessing.Process(
         # TODO:             change to SERVER_IP
-        target=join_call, args=(("127.0.0.1", call_server_port), email, password,), daemon=True
+        target=join_call, args=((SERVER_IP, call_server_port), email, password,), daemon=True
     )
     call_process.start()
     return True
@@ -434,7 +434,7 @@ def answer_call(port: int) -> None:
         call_process = None
     call_process = multiprocessing.Process(
         # TODO:             change to SERVER_IP
-        target=join_call, args=(("127.0.0.1", port), email, password,), daemon=True
+        target=join_call, args=((SERVER_IP, port), email, password,), daemon=True
     )
     call_process.start()
 
