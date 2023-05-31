@@ -2,6 +2,7 @@
 # to use it - 'pip install -r requirements.txt '
 
 eel
+rsa
 numpy
 pillow
 pyaudio
