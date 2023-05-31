@@ -6,6 +6,7 @@ Date: 30/05/2023 (dd/mm/yyyy)
 ###############################################
 """
 
+import sys
 import time
 import pickle
 import socket
@@ -190,10 +191,19 @@ def main(tcp_server_sock: ServerEncryptedProtocolSocket, port: int, clients_pass
 
 
 def start_call_server(tcp_server_sock: ServerEncryptedProtocolSocket,
-                      port: int, clients_passwords: dict[str, str], print_):
+                      port: int, clients_passwords: dict[str, str], print_queue: multiprocessing.Queue):
     """ call this to start the server """
-    global print
-    print = print_
+    if print_queue is not None:
+        class STDRedirect:
+            def __init__(self, std_type):
+                assert std_type == "stdout" or std_type == "stderr"
+                self.std_type = std_type
+
+            def write(self, data):
+                print_queue.put((self.std_type, data))
+
+        sys.stdout = STDRedirect("stdout")
+        sys.stderr = STDRedirect("stderr")
     # logging configuration
     logging.basicConfig(format=LOG_FORMAT, filename=LOG_FILE, level=LOG_LEVEL)
     try:

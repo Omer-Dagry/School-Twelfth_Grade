@@ -66,6 +66,7 @@ os.makedirs(LOG_DIR, exist_ok=True)
 
 # Globals
 print_ = print
+print_queue = None
 # File DBs
 # email_password_file_database -> {email: password, another email: password, ...}
 email_password_file_database = FileDatabase(f"{SERVER_DATA}email_password", ignore_existing=True)
@@ -1112,7 +1113,7 @@ def call_group(from_email: str, chat_id: str) -> int | None:
         return None
     tcp_server_sock.listen()
 
-    p = multiprocessing.Process(target=start_call_server, args=(tcp_server_sock, port, clients_passwords, print))
+    p = multiprocessing.Process(target=start_call_server, args=(tcp_server_sock, port, clients_passwords, print_queue))
     p.start()
     ongoing_calls[chat_id] = p
     print(f"New call server started on {port = }")
@@ -1478,12 +1479,13 @@ def unblock_all():
 
 def start(online_clients_: dict[str] | DictProxy = None,
           blocked_ips_: dict[str, datetime.datetime] | DictProxy = None,
-          print_queue: multiprocessing.Queue = None) -> None:
+          print_queue_: multiprocessing.Queue = None) -> None:
     """
         call this function to enter the process of starting the server
         (this function will block until server exists)
     """
-    global online_clients, blocked_ips, print
+    global online_clients, blocked_ips, print, print_queue
+    print_queue = print_queue_
     try:
         try:
             unblock_all()
@@ -1499,14 +1501,14 @@ def start(online_clients_: dict[str] | DictProxy = None,
                 online_clients = online_clients_
             if blocked_ips is not None:
                 blocked_ips = blocked_ips_
-            if print_queue is not None:
+            if print_queue_ is not None:
                 class STDRedirect:
                     def __init__(self, std_type):
                         assert std_type == "stdout" or std_type == "stderr"
                         self.std_type = std_type
 
                     def write(self, data):
-                        print_queue.put((self.std_type, data))
+                        print_queue_.put((self.std_type, data))
                 sys.stdout = STDRedirect("stdout")
                 sys.stderr = STDRedirect("stderr")
             #
