@@ -7,6 +7,7 @@ function toggle_password_visibility() {
 }
 
 async function login() {
+    // login request
     let login_btn = document.getElementById("login_btn");
     login_btn.onclick = null;
     let email_input = document.getElementById("email_input");
@@ -31,9 +32,9 @@ async function login() {
 }
 
 
-// document.onkeydown = function (e) {
-//     if (e.key === "F1" || e.key === "F3" || e.key === "F5" || 
-//         e.key === "F7" || e.key === "F12") {
-//         return false;
-//     }
-// };
+document.onkeydown = function (e) {
+    if (e.key === "F1" || e.key === "F3" || e.key === "F5" || 
+        e.key === "F7" || e.key === "F12") {
+        return false;
+    }
+};

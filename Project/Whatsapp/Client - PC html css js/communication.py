@@ -20,6 +20,7 @@ from tkinter.filedialog import askopenfilename
 from ClientSecureSocket import ClientEncryptedProtocolSocket
 
 # Constants
+CALL = "call|"
 REMOVE = "remove"
 USER_STATUS = "update users_status"
 SYNC_CODE = "sync".ljust(30).encode()
@@ -48,7 +49,12 @@ def signup_request(username: str, email: str, password: str, server_ip_port: tup
             showerror("Signup Error", "Could not send signup request, lost connection to server.")
             return False, None
         return False, None, "Lost connection to server !"
-    response = sock.recv_message().decode()
+    try:
+        response = sock.recv_message().decode()
+    except (ConnectionError, socket.error):
+        if not return_status:
+            return True, sock
+        return False, None, "Lost connection to server."
     if response != "signup".ljust(30):
         if not return_status:
             return False, None
@@ -61,7 +67,10 @@ def signup_request(username: str, email: str, password: str, server_ip_port: tup
 def send_confirmation_code(sock: ClientEncryptedProtocolSocket, confirmation_code: str,
                            verbose: bool, signup_or_reset: Literal["signup", "reset"]) -> bool:
     """ confirmation code (for signup and reset password) """
-    confirmation_code_msg = sock.recv_message().decode()
+    try:
+        confirmation_code_msg = sock.recv_message().decode()
+    except (ConnectionError, socket.error):
+        return False
     if confirmation_code_msg.strip() == "confirmation_code":
         if not sock.send_message(f"{'confirmation_code'.ljust(30)}{confirmation_code}".encode()):
             showerror(
@@ -74,7 +83,10 @@ def send_confirmation_code(sock: ClientEncryptedProtocolSocket, confirmation_cod
         return False
     # signup (length 30)   status (length 6)   reason
     # reset password (length 30)   status (length 6)   reason
-    response = sock.recv_message().decode()
+    try:
+        response = sock.recv_message().decode()
+    except (ConnectionError, socket.error):
+        return False
     if (response[:30].strip() != "signup" and signup_or_reset == "signup") or \
             (response[:30].strip() != "reset password" and signup_or_reset == "reset"):
         return False
@@ -90,15 +102,7 @@ def send_confirmation_code(sock: ClientEncryptedProtocolSocket, confirmation_cod
 def signup(username: str, email: str, password: str, server_ip_port: tuple[str, int], verbose: bool = True,
            sock: ClientEncryptedProtocolSocket | None = None, login_after: bool = True) \
         -> tuple[bool, None | ClientEncryptedProtocolSocket]:
-    """ signup full process
-    :param username: the username
-    :param email: the email of the user
-    :param password: the md5 hash of the real password
-    :param server_ip_port: a tuple of the server IP and port
-    :param verbose: if true signup will print info, if false it won't print info
-    :param sock: an existing socket to use
-    :param login_after: whether to login after signing up or not
-    """
+    """ signup full process """
     status, sock = signup_request(username, email, password, server_ip_port, sock)
     if not status:
         return False, None
@@ -125,7 +129,10 @@ def reset_password_request(username: str, email: str, server_ip_port: tuple[str,
             "Reset Password Error", "Could not send reset password request, lost connection to server.")
         sock.close()
         return False, None
-    response = sock.recv_message().decode()
+    try:
+        response = sock.recv_message().decode()
+    except (ConnectionError, socket.error):
+        return False, None
     if response != "reset password".ljust(30):
         sock.close()
         return False, None
@@ -134,13 +141,19 @@ def reset_password_request(username: str, email: str, server_ip_port: tuple[str,
 
 def reset_password_choose_password(sock: ClientEncryptedProtocolSocket, password: str) -> bool:
     """ reset password last step """
-    new_password_msg = sock.recv_message()
+    try:
+        new_password_msg = sock.recv_message()
+    except (ConnectionError, socket.error):
+        return False
     if new_password_msg != f"{'new password'.ljust(30)}".encode():
         sock.close()
         return False
     sock.send_message(f"{'new password'.ljust(30)}{password}".encode())
-    reset_password_status = sock.recv_message()
-    if "not ok" in reset_password_status.decode():
+    try:
+        reset_password_status = sock.recv_message()
+    except (ConnectionError, socket.error):
+        return False
+    if "not ok" in reset_password_status.decode() or reset_password_status == b"":
         sock.close()
         return False
     return True
@@ -148,9 +161,7 @@ def reset_password_choose_password(sock: ClientEncryptedProtocolSocket, password
 
 def reset_password(username: str, email: str, server_ip_port: tuple[str, int], verbose: bool) \
         -> tuple[bool, ClientEncryptedProtocolSocket | None]:
-    """ reset password full process
-    :return: the returned socket isn't logged in !!
-    """
+    """ reset password full process, the returned socket isn't logged in !! """
     status, sock = reset_password_request(username, email, server_ip_port)
     if not status:
         return False, None
@@ -177,11 +188,7 @@ class Communication:
 
     def login(self, verbose: bool = True, sock: ClientEncryptedProtocolSocket | None = None) \
             -> tuple[bool, None | ClientEncryptedProtocolSocket, str]:
-        """ login
-        :param verbose: if true signup will print info, if false it won't print info
-        :param sock: an existing socket to use
-        :return: status, sock, reason for status
-        """
+        """ login """
         # login (length 30)     len email (length 10)   email    password (fixed length - md5 hash length)
         login_msg = f"{'login'.ljust(30)}{str(len(self.__email)).ljust(15)}{self.__email}{self.__password}".encode()
         if sock is None:
@@ -195,7 +202,10 @@ class Communication:
             sock.close()
             return False, None, "Lost connection to server."
         # login (length 30)   status (length 6)   reason
-        response = sock.recv_message().decode()
+        try:
+            response = sock.recv_message().decode()
+        except (ConnectionError, socket.error):
+            return False, None, "Lost connection to server."
         if response[:30].strip() != "login":
             return False, None, "Error"
         response = response[30:]
@@ -220,16 +230,16 @@ class Communication:
                 return False, None, "Error notifying the server about sync sock"
         return status, sock, reason
 
-    def sync(self, sock: ClientEncryptedProtocolSocket) -> tuple[bool, list[str], list[str]]:
-        """  sync once
-        :param sock: the socket to the server
+    def sync(self, sock: ClientEncryptedProtocolSocket) -> tuple[bool, list[str], list[str], dict[str, int]]:
+        """ sync once
+        :param sock: this sock must be logged in using login_sync
         :return: True if new data received else False, list of the modified/new files, list of deleted files/folders
         """
         response = sock.recv_message(timeout=1)
         #                         cmd                  {}             str     bytes | str
         # response -> f"{'sync new/all'.ljust(30)}{empty-dict/dict[file_name, file_data]}"
         if response[:30] != SYNC_CODE:
-            return False, [], []
+            return False, [], [], {}
         try:
             files_dict = pickle.loads(response[30:])
         except EOFError:
@@ -237,7 +247,9 @@ class Communication:
         if files_dict:
             deleted_files_path: list[str | os.PathLike] = []
             modified_files_path: list[str | os.PathLike] = []
+            ongoing_calls: dict[str, int] = {}
             for file_path, file_data in files_dict.items():
+                file_data: bytes
                 if file_path.startswith(self.__email):
                     file_path = f"webroot\\{file_path}"
                 else:
@@ -246,7 +258,7 @@ class Communication:
                 # a remove message will be after a request of a client
                 # to delete message for everyone, if the message is a file
                 # in order to delete the file on the clients side
-                if file_data != REMOVE:
+                if file_data != REMOVE and CALL not in file_path:
                     modified_files_path.append(file_path)
                     for _ in range(2):
                         try:
@@ -255,15 +267,18 @@ class Communication:
                             break
                         except FileNotFoundError:
                             os.makedirs("\\".join(file_path.split("\\")[:-1]))
+                elif CALL in file_path:
+                    file_data: str
+                    ongoing_calls["|".join(file_data.split("|")[2:])] = int(file_data.split("|")[1])
                 elif os.path.isfile(file_path):  # a file was deleted in a chat
                     deleted_files_path.append(file_path)
                     os.remove(file_path)
                 elif os.path.isdir(file_path):  # the user was removed from the chat
                     deleted_files_path.append(file_path)
                     shutil.rmtree(file_path)
-            return True, modified_files_path, deleted_files_path
+            return True, modified_files_path, deleted_files_path, ongoing_calls
         else:
-            return False, [], []
+            return False, [], [], {}
 
     def upload_file(self, chat_id: str | int, filename: str = "", root: Tk = None,
                     delete_file: bool = False, send_file_active: list[bool] = None) -> None:
@@ -316,8 +331,11 @@ class Communication:
         if not sock.send_message(request):
             showerror("Failed to send message", f"Could not send the message, lost connection to server.")
             return False
-        status_msg = sock.recv_message().decode()
-        if "not ok" in status_msg:
+        try:
+            status_msg = sock.recv_message().decode()
+        except (ConnectionError, socket.error):
+            return False
+        if "not ok" in status_msg or status_msg == "":
             showerror("Failed to send message", f"Could not send the message, server error.")
             return False
         return True
@@ -329,8 +347,11 @@ class Communication:
         if not sock.send_message(request):
             showerror(f"Failed to familiarize user", "lost connection to server.")
             return False
-        response = sock.recv_message()
-        if "not ok" in response.decode():
+        try:
+            response = sock.recv_message()
+        except (ConnectionError, socket.error):
+            return False
+        if "not ok" in response.decode() or response == b"":
             # showerror(f"Failed to familiarize user", response.split(b"not ok")[1].decode())
             return False
         return True
@@ -342,8 +363,11 @@ class Communication:
         if not sock.send_message(request):
             showerror(f"Failed to create new chat with '{other_email}'", "lost connection to server.")
             return False
-        response = sock.recv_message()
-        if "not ok" in response.decode():
+        try:
+            response = sock.recv_message()
+        except (ConnectionError, socket.error):
+            return False
+        if "not ok" in response.decode() or response == b"":
             showerror(f"Failed to create new chat with '{other_email}'", "server error.")
             return False
         return True
@@ -351,12 +375,16 @@ class Communication:
     @staticmethod
     def new_group(other_emails: list[str], group_name: str, sock: ClientEncryptedProtocolSocket) -> tuple[bool, str]:
         """ create new group """
-        request = f"{'new chat'.ljust(30)}{group_name}".encode() + pickle.dumps(other_emails)
+        request = f"{'new group'.ljust(30)}{str(len(group_name)).ljust(15)}{group_name}".encode() + \
+                  pickle.dumps(other_emails)
         if not sock.send_message(request):
             showerror(f"Failed to create new group", "lost connection to server.")
             return False, ""
-        response = sock.recv_message().decode()
-        if "not ok" in response:
+        try:
+            response = sock.recv_message().decode()
+        except (ConnectionError, socket.error):
+            return False, ""
+        if "not ok" in response or response == "":
             showerror(f"Failed to create new group", "server error.")
             return False, ""
         chat_id = response.split("ok")[-1].strip()
@@ -369,8 +397,11 @@ class Communication:
         if not sock.send_message(request):
             showerror(f"Failed to add '{other_email}' to group", "lost connection to server.")
             return False
-        status_msg = sock.recv_message()
-        if "not ok" in status_msg.decode():
+        try:
+            status_msg = sock.recv_message()
+        except (ConnectionError, socket.error):
+            return False
+        if "not ok" in status_msg.decode() or status_msg == b"":
             showerror(f"Failed to add '{other_email}' to group", "server error.")
             return False
         return True
@@ -382,8 +413,11 @@ class Communication:
         if not sock.send_message(request):
             showerror(f"Failed to remove '{other_email}' from group", "lost connection to server.")
             return False
-        status_msg = sock.recv_message()
-        if "not ok" in status_msg.decode():
+        try:
+            status_msg = sock.recv_message()
+        except (ConnectionError, socket.error):
+            return False
+        if "not ok" in status_msg.decode() or status_msg == b"":
             showerror(f"Failed to remove '{other_email}' from group", "server error.")
             return False
         return True
@@ -399,11 +433,14 @@ class Communication:
         if not sock.send_message(f"{'call'.ljust(30)}{chat_id}".encode()):
             showerror(f"Failed to make a call", "lost connection to server.")
             return None
-        port_message = sock.recv_message().decode()
-        if "not ok" in port_message:
+        try:
+            port_message = sock.recv_message().decode()
+        except (ConnectionError, socket.error):
+            return None
+        if "not ok" in port_message or port_message == "":
             showerror(f"Failed to make a call", "server error.")
             return None
-        return int(port_message.split("ok      ")[1])
+        return int(port_message.split("ok")[1].strip())
 
     def upload_profile_picture(self, path_to_picture: os.PathLike | str = None) -> bool:
         """ upload profile picture """

@@ -7,6 +7,7 @@ function toggle_password_visibility() {
 }
 
 function display_msg(msg_, type="error") {
+    // display message about the status of the reset password
     let msg = document.getElementById("msg");
     if (msg === null) {
         msg = document.createElement("div");
@@ -20,6 +21,7 @@ function display_msg(msg_, type="error") {
 }
 
 async function reset_password_request() {
+    // make a request to reset password
     reset_password_btn.onclick = null;
     let email = email_input.value, username = username_input.value;
     let status = await eel.reset_password_stage1(email, username)();
@@ -41,6 +43,7 @@ async function reset_password_request() {
 }
 
 async function reset_password_confirmation_and_send_pass() {
+    // send the confirmation code and new password
     submit_btn.onclick = null;
     let confirmation_code = confirmation_code_input.value, password = password_input.value;
     let status = await eel.reset_password_stage2(confirmation_code, password)();
@@ -60,14 +63,15 @@ async function reset_password_confirmation_and_send_pass() {
 }
 
 
-// document.onkeydown = function (e) {
-//     if (e.key === "F1" || e.key === "F3" || e.key === "F5" || 
-//         e.key === "F7" || e.key === "F12") {
-//         return false;
-//     }
-// };
+document.onkeydown = function (e) {
+    if (e.key === "F1" || e.key === "F3" || e.key === "F5" || 
+        e.key === "F7" || e.key === "F12") {
+        return false;
+    }
+};
 
 
+                                /* Globals */
 var email_box = document.getElementById("email_box");
 var username_box = document.getElementById("username_box");
 var reset_password_btn = document.getElementById("reset_password_btn");

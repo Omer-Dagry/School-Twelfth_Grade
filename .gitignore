@@ -5,3 +5,4 @@ Project/Whatsapp/package.json
 Project/Whatsapp/package-lock.json
 Project/Whatsapp/Server/Data
 __pycache__/
+*.log

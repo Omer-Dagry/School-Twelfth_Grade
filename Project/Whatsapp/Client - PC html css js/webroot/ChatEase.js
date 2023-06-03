@@ -1,11 +1,14 @@
                             /* General use functions */
 function assert(condition, message) {
+    // implementation of assert like in python
     if (!condition) throw "Assertion failed - " + message;
 }
 function sleep(ms) {
+    // implementation of time.sleep
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 function elementInViewport(el) {
+    // checks if you can see the entire element or some/all of it is hidden
     var top = el.offsetTop;
     var left = el.offsetLeft;
     var width = el.offsetWidth;
@@ -28,7 +31,8 @@ function elementInViewport(el) {
 
                                 /* Chat Buttons */
 // new chat/group
-function get_all_checked_users_emails() {
+function get_all_selected_users_emails() {
+    // returns all the users that the user selected in order to create a new group/chat
     let checked_users = [];
     let children = [].slice.call(users_list.getElementsByClassName("chat"));
     let user;
@@ -40,7 +44,8 @@ function get_all_checked_users_emails() {
     }
     return checked_users;
 }
-function get_last_checked_user() {
+function get_last_selected_user() {
+    // returns the last selected user
     let children = [].slice.call(users_list.getElementsByClassName("chat"));
     let user;
     for (let index in children) {
@@ -49,14 +54,15 @@ function get_last_checked_user() {
     }
     return null;
 }
-function check_user(other_email, user_box_div) {
+function select_user(other_email, user_box_div) {
+    // select a user
     let checkbox = document.getElementById(other_email);
     if (users_list.childElementCount > 1) {
         if (!checkbox.checked) {
             users_list.insertBefore(user_box_div.sep, users_list.children[2]);
             users_list.insertBefore(user_box_div, user_box_div.sep);
         } else {
-            let before_element = get_last_checked_user();
+            let before_element = get_last_selected_user();
             if (before_element == null) users_list.appendChild(user_box_div.sep);
             else users_list.insertBefore(user_box_div.sep, before_element);
             users_list.insertBefore(user_box_div, user_box_div.sep);
@@ -69,6 +75,7 @@ function check_user(other_email, user_box_div) {
 
 // sort chats
 function sort_chats_by_date(chat_buttons, search_key) {
+    // sorts the chats by the date of last msg
     let keys, chat_button;
     chat_buttons.sort(function(a, b) {
         return new Date(a.getElementsByClassName("chat-last-message-time")[0].innerHTML) - 
@@ -90,6 +97,7 @@ function sort_chats_by_date(chat_buttons, search_key) {
 
 // search (in chats/users)
 function chat_search(do_anyway=false, changed_buttons=[]) {
+    // search a chat - by date, by last msg, by name, by group/chat
     if (!document.getElementById("left").contains(chats_list)) {
         user_search();
         return
@@ -127,6 +135,7 @@ function chat_search(do_anyway=false, changed_buttons=[]) {
     sort_chats_by_date(do_anyway ? changed_buttons : chat_buttons, search_key);
 }
 function user_search() {
+    // search a user, by email
     if (document.getElementById("left").contains(chats_list)) {
         chat_search();
         return
@@ -163,6 +172,7 @@ function user_search() {
     }
 }
 function search() {
+    // calls user_search / chat_search depends on what is currently on screen
     if (document.getElementById("left").contains(chats_list)) chat_search();
     else user_search();
 }
@@ -170,6 +180,8 @@ function search() {
 // load chats/user buttons & toggle chats and users
 function chat_box_left(chat_picture_path, chat_name, last_message, 
     last_message_time, chat_id, chat_type, users) {
+    // create new chat box and append to chat list
+
     // the div of the entire chat box
     let chat_box_div = document.createElement("div");
     chat_box_div.className = "chat";
@@ -211,6 +223,8 @@ function chat_box_left(chat_picture_path, chat_name, last_message,
     return chat_box_div;
 }
 function user_box_left(user_picture_path, other_email) {
+    // create new user box and append to user list
+
     // the div of the entire user box
     let user_box_div = document.createElement("div");
     user_box_div.className = "chat";
@@ -241,19 +255,20 @@ function user_box_left(user_picture_path, other_email) {
     // save refrence to sep
     user_box_div.sep = user_sep;
     // add event listener
-    user_box_div.addEventListener("click", function() { check_user(other_email, user_box_div) });
+    user_box_div.addEventListener("click", function() { select_user(other_email, user_box_div) });
 }
 async function load_chat_buttons() {
+    // calls chat_box_left for every chat
     let changed = false;
     let changed_buttons = [];
     if (document.contains(chats_list)) {
         // {chat_id: [chat_name, last_msg, time, chat_type]}
         let chat_ids = JSON.parse(await eel.get_all_chat_ids()());
-        let chat_id, chat_name, last_message, time, chat_type, users;
+        let chat_id, chat_name, last_message, time, chat_type, users, number_of_unread_msgs;
         let picture_path;
         let chat_box;
         for (chat_id in chat_ids) {
-            [chat_name, last_message, time, chat_type, users] = chat_ids[chat_id];
+            [chat_name, last_message, time, chat_type, users, number_of_unread_msgs] = chat_ids[chat_id];
             if (document.getElementById(chat_id) != null) { // already exists
                 chat_box = document.getElementById(chat_id);
                 if (chat_box.getElementsByClassName("chat-last-message")[0].innerHTML !== last_message 
@@ -264,7 +279,17 @@ async function load_chat_buttons() {
                     changed = true;
                     changed_buttons.push(chat_box);
                 }
-                continue;   
+                let chat_name = chat_box.getElementsByClassName("chat-name")[0];
+                if (number_of_unread_msgs !== 0) {
+                    chat_name.style.color = "#0b721c";
+                    if (chat_name.innerHTML.includes(" - (")) {
+                        chat_name.innerHTML = chat_name.innerHTML.split(" - ")[0] + ` - (${number_of_unread_msgs})`;
+                    } else chat_name.innerHTML = chat_name.innerHTML + ` - (${number_of_unread_msgs})`;
+                } else {
+                    chat_name.style.color = "white";
+                    if (chat_name.innerHTML.includes(" - (")) chat_name.innerHTML = chat_name.innerHTML.split(" - ")[0];
+                }
+                continue;
             }
             changed = true;
             if (chat_type === "group") {
@@ -282,6 +307,7 @@ async function load_chat_buttons() {
     setTimeout(load_chat_buttons, 100);  // update again in 100 milliseconds
 }
 async function load_users_buttons() {
+    // calls user_box_left for every user
     users_list.innerHTML = "";
     users_list.appendChild(create_new_chat_or_group);
     users_list.appendChild(search_for_non_familiar_user);
@@ -294,6 +320,7 @@ async function load_users_buttons() {
     }
 }
 function toggle_chats_users() {
+    // toggle between chat list & user list
     let left_side = document.getElementById("left");
     if (left_side.contains(chats_list)) {
         left_side.removeChild(chats_list);
@@ -316,6 +343,8 @@ function reset_chat_and_status_bar() {
     status_bar_last_seen.innerHTML = "";
 }
 function change_chat_visibility(visibility) {
+    // change chat visibility, if a chat is open and his button is clicked again, it
+    // will become hidden, click again to make it visible
     if (visibility === "hidden") {
         chat.style.visibility = "hidden";
         status_bar_picture.style.visibility = "hidden";
@@ -331,6 +360,9 @@ function change_chat_visibility(visibility) {
 
 // load messages (initial load, load when reaching the top of the chat, update - for changed msgs)
 async function load_msgs(chat_msgs, position = "END") {
+    // loads a max of 800 msgs, this is the initial load of the chat
+    // if a user scrolls to the top of the chat and there are more messages
+    // they will be loaded, I choose to do this like that because it's more efficient
     let from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time;
     let keys = [];
     for (let key in chat_msgs) {
@@ -364,12 +396,15 @@ async function load_msgs(chat_msgs, position = "END") {
     }
 }
 async function update_last_seen() {
+    // updates the last seen status of current chat (only for 1 on 1 chats)
     if (current_chat_other_email != "") {
         status_bar_last_seen.innerHTML = await eel.get_user_last_seen(current_chat_other_email)();
     }
     setTimeout(update_last_seen, 1_000);
 }
 async function load_chat(chat_name, chat_id, chat_type, users) {
+    // changes the elements that need to be change and calls the initial load
+    // of messages, changes the picture and the event listeners
     document.getElementById("msg_input").focus();
     if (chat_id == chat.chat_id) {
         change_chat_visibility(chat.style.visibility == "visible" ? "hidden" : "visible");
@@ -383,6 +418,7 @@ async function load_chat(chat_name, chat_id, chat_type, users) {
         status_bar_last_seen.innerHTML = "";
         current_chat_other_email = "";
         status_bar_picture.onclick = function () { upload_group_picture(chat_id) };
+        status_bar_picture.style.cursor = "pointer";
     }
     else {
         let other_user_email;
@@ -392,6 +428,7 @@ async function load_chat(chat_name, chat_id, chat_type, users) {
         status_bar_last_seen.innerHTML = await eel.get_user_last_seen(other_user_email)();
         current_chat_other_email = other_user_email;  // in order to update every 1 second
         status_bar_picture.onclick = null;
+        status_bar_picture.style.cursor = "context-menu";
     }
     last_msg_index = 0;
     chat.chat_id = chat_id;
@@ -401,8 +438,12 @@ async function load_chat(chat_name, chat_id, chat_type, users) {
     status_bar_name.innerHTML = chat_name;
     chat.scrollTo(0, chat.scrollHeight);
     setTimeout(function() { chat.scrollTo(0, chat.scrollHeight); }, 200);
+    await eel.mark_as_seen(get_open_chat_id())();
 }
 async function load_more_msgs() {
+    // if the user scrolled to the top of the chat this function will be called
+    // it will ask the python for older messages in this chat, if there are
+    // it will load another 800 messages
     chat.scrollBy(0, 20);
     let chat_msgs = JSON.parse(await eel.get_more_msgs()());
     if (Object.keys(chat_msgs).length === 0) return;  // no more messages
@@ -416,13 +457,19 @@ async function load_more_msgs() {
     chat.scrollBy(0, -200);  // show some of the new loaded messages
 }
 function check_pos() {
+    // when the chat is scrolled this function is called
+    // when it reaches the top it will call load_more_msgs
     if (chat.scrollTop == 0) {
-        load_more_msgs();
         chat.onscroll = null;  // disable until finished loading all new msgs
+        load_more_msgs();
     }
 }
 // eel.expose
 function update(chat_id, chat_msgs) {
+    // if there is a new msg after the loading of
+    // the chat this function is responsible to
+    // adding that message, also if a msg was edited
+    // this function will change the msg
     if (chat_id !== chat.chat_id) return null;
     chat_msgs = JSON.parse(chat_msgs);
     let from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time, msg_row;
@@ -435,18 +482,35 @@ function update(chat_id, chat_msgs) {
             new_messages[msg_index] = [from_user, msg, msg_type, deleted_for, deleted_for_all, seen_by, time];
             continue;
         }
+        msg_row = document.getElementById(`msg_${msg_index}`);
         // old message that has been changed
         if (deleted_for.includes(email)) {
-            msg_row = document.getElementById(`msg_${msg_index}`);
             if (msg_row !== null) {
                 msg_row.remove();
             }
-        } else if (deleted_for_all) {
-            msg_row = document.getElementById(`msg_${msg_index}`);
+        } else if (deleted_for_all && msg_type === "msg") {
             if (msg_row !== null) {
                 msg_row.getElementsByClassName("msg_text")[0].innerHTML = msg;  // This message was deleted.
                 if (from_user === email) msg_row.getElementsByClassName("my_msg_box")[0].style.backgroundColor = "#232323";
                 else msg_row.getElementsByClassName("msg_box")[0].style.backgroundColor = "#232323";
+            }
+        } else if (msg_row !== null && deleted_for_all && msg_type === "file" && 
+                   msg_row.getElementsByClassName("msg_image").length === 1) {
+            msg_row.getElementsByClassName("msg_image")[0].remove();
+            if (from_user === email) {
+                msg_row.getElementsByClassName("my_msg_box")[0].remove();
+                let my_msg_box = window.my_msg_row.getElementsByClassName("my_msg_box")[0].cloneNode(true);
+                my_msg_box.getElementsByClassName("msg_text")[0].innerHTML = msg;
+                msg_row.appendChild(my_msg_box);
+                msg_row.getElementsByClassName("my_msg_box")[0].style.backgroundColor = "#232323";
+            } else {
+                msg_row.getElementsByClassName("msg_box")[0].remove();
+                let msg_box = window.msg_row.getElementsByClassName("msg_box")[0].cloneNode(true);
+                msg_box.getElementsByClassName("msg_text")[0].innerHTML = msg;
+                msg_box.getElementsByClassName("msg_sender")[0].innerHTML = from_user;
+                msg_row.appendChild(msg_box);
+                msg_row.getElementsByClassName("msg_box")[0].style.backgroundColor = "#232323";
+                msg_row.getElementsByClassName("msg_box")[0].style.backgroundColor = "#232323";
             }
         }
     }
@@ -455,6 +519,7 @@ function update(chat_id, chat_msgs) {
 }
 
 function adjust_msgs_input_width() {
+    // adjust the input bar width according to the size of the window
     let send_btn = document.getElementById("send_msg");
     let msgs_input = document.getElementById("msg_input");
     let upload_file = document.getElementById("upload_file");
@@ -472,16 +537,18 @@ function adjust_msgs_input_width() {
 
 // eel.expose
 function get_open_chat_id() {
+    // rerturns the current chat id
     return chat.chat_id;
 }
 
 
                                     /* Messages */
-// TODO: implement func
+
 function message_options(msg_index, full_sender, seen_by, deleted_for_all) {
+    // messages options - delete for me/all , read receipts
     let popup = document.createElement("dialog");
     let delete_for_me = document.createElement("button");
-    delete_for_me.innerHTML = "Delete for me";  // TODO: change to icon
+    delete_for_me.innerHTML = "Delete for me";
     delete_for_me.addEventListener("click", async function() {
         popup.close();
         document.getElementsByTagName("body")[0].removeChild(popup);
@@ -490,7 +557,7 @@ function message_options(msg_index, full_sender, seen_by, deleted_for_all) {
     popup.appendChild(delete_for_me);
     if (full_sender === email && !deleted_for_all) {
         let delete_for_all = document.createElement("button");
-        delete_for_all.innerHTML = "Delete for all";  // TODO: change to icon
+        delete_for_all.innerHTML = "Delete for all";
         delete_for_all.addEventListener("click", async function() {
             popup.close();
             document.getElementsByTagName("body")[0].removeChild(popup);
@@ -499,12 +566,19 @@ function message_options(msg_index, full_sender, seen_by, deleted_for_all) {
         popup.appendChild(delete_for_all);
     }
     let read_receipts = document.createElement("button");
-    read_receipts.innerHTML = "Read receipts";  // TODO: change to icon
+    read_receipts.innerHTML = "Read receipts";  // TODO: implement read receipts
     popup.appendChild(read_receipts);
+    //
+    let close = document.createElement("button");
+    close.innerHTML = "Close";
+    close.addEventListener("click", function() { popup.close(); });
+    popup.appendChild(close);
+    //
     document.getElementsByTagName("body")[0].prepend(popup);
     popup.showModal();
 }
 function handle_msg_length(msg) {
+    // adds \n if needed to limit msg row length
     let max_chars = 65;
     if (msg.length < max_chars) return msg;
     let row_length = 0;
@@ -527,6 +601,8 @@ function handle_msg_length(msg) {
 
 
 function append_to_chat(position, element) {
+    // append a message to the chat, initial load will use END
+    // load more msgs will use START
     if (position === "END") {
         chat.appendChild(element);
         chat.appendChild(window.clear.cloneNode(true));
@@ -542,6 +618,12 @@ TODO: add time -
 */
 function add_msg(from, sender, msg, time, msg_index, msg_type, deleted_for, 
     deleted_for_all, seen_by, position="END") {
+        // create a new message from all types
+        // types:
+        // This message was deleted.
+        // msg from you, msg from others
+        // file msg from you, file msg from others
+        // add and remove message (add user and remove user from group)
         assert(
             position === "END" || position === "START",
             `msg_from_me: param position must be either 'END' or 'START', got '${position}'`
@@ -590,15 +672,35 @@ function add_msg(from, sender, msg, time, msg_index, msg_type, deleted_for,
                     break;
                 }
             }
+            let voice_recording = msg.toLowerCase().endsWith(".wav") ? true : false;
             if (display_file) {
                 let photo_row = from == "me" ? window.my_photo_msg_row.cloneNode(true) : window.photo_msg_row.cloneNode(true);
                 photo_row.getElementsByClassName("msg_image")[0].src = `${email}/${msg}`;
+                photo_row.id = `msg_${msg_index}`;
                 photo_row.getElementsByClassName("msg_image")[0].onclick = async function () { await eel.start_file(`${email}/${msg}`); };
                 append_to_chat(position, photo_row);
                 photo_row.addEventListener("contextmenu", function() { message_options(msg_index, full_sender, seen_by, deleted_for_all); }) // right click
+            } else if (voice_recording) {
+                let file_row = from == "me" ? window.my_photo_msg_row.cloneNode(true) : window.photo_msg_row.cloneNode(true);
+                file_row.getElementsByClassName("msg_image")[0].remove();
+                file_row.id = `msg_${msg_index}`;
+                let recording_options_box = document.createElement("audio");
+                recording_options_box.controls = true;
+                recording_options_box.id = "audio_player";
+                let audio_file = document.createElement("source");
+                audio_file.src = `${email}/${msg}`;
+                audio_file.id = "audio_file";
+                audio_file.type = "audio/wav";
+                recording_options_box.appendChild(audio_file);
+                if (from == "me") file_row.getElementsByClassName("my_msg_box")[0].appendChild(recording_options_box);
+                else file_row.getElementsByClassName("msg_box")[0].appendChild(recording_options_box);
+
+                append_to_chat(position, file_row);
+                file_row.addEventListener("contextmenu", function() { message_options(msg_index, full_sender, seen_by, deleted_for_all); }) // right click
             } else {
                 let file_row = from == "me" ? window.my_photo_msg_row.cloneNode(true) : window.photo_msg_row.cloneNode(true);
                 file_row.getElementsByClassName("msg_image")[0].className = "msg_file";
+                file_row.id = `msg_${msg_index}`;
                 let file_name = msg.split("/");
                 file_name = file_name[file_name.length - 1];
                 file_row.getElementsByClassName("msg_file")[0].alt = file_name;
@@ -614,11 +716,13 @@ function add_msg(from, sender, msg, time, msg_index, msg_type, deleted_for,
 }
 function msg_from_me(sender, msg, time, msg_index, msg_type, deleted_for, 
     deleted_for_all, seen_by, position="END") {
+        // call add message on a message that you sent
     add_msg("me", sender, msg, time, msg_index, msg_type, deleted_for, 
     deleted_for_all, seen_by, position);
 }
 function msg_from_others(sender, msg, time, msg_index, msg_type, deleted_for, 
     deleted_for_all, seen_by, position="END") {
+        // call add_msg on a message that was sent by someone else
     add_msg("others", sender, msg, time, msg_index, msg_type, deleted_for, 
     deleted_for_all, seen_by, position);
 }
@@ -662,6 +766,7 @@ function window_inactive() {
 
                                     /* Emoji */
 function addEmoji(emoji) {
+    // add the emoji that was pressed
     document.getElementById('input_bar').value += emoji;
 }
 
@@ -685,11 +790,15 @@ async function send_message() {
     let input_bar = document.getElementById("msg_input");
     let msg = input_bar.value;
     input_bar.value = "";  // clear input bar
+    input_bar.focus();
     let ok = await eel.send_message(msg, get_open_chat_id())();
     if (!ok && input_bar.value === "") input_bar.value = msg;
 }
 
 async function familiarize_user_with() {
+    // checks if user exists, if it does it will make
+    // him "known" to you and add him to users list
+    // so you can create a new chat/group with him
     let user_search_input = document.getElementById("non_familiar_user_search_input");
     let other_email = user_search_input.value;
     user_search_input.value = "";
@@ -708,11 +817,13 @@ async function new_chat(other_email) {
     await eel.new_chat(other_email)();
 }
 async function new_group(other_emails, group_name) {
-    console.log(`new group ${other_emails}`)
     await eel.new_group(other_emails, group_name)();
 }
 function new_group_or_chat() {
-    let checked_users = get_all_checked_users_emails();
+    // checks if a new group should be created or a new chat
+    // if group asks for group name
+    // finally toggles between users list to chats list
+    let checked_users = get_all_selected_users_emails();
     if (checked_users.length == 0) ;
     else if (checked_users.length == 1) new_chat(checked_users[0]);
     else {
@@ -728,12 +839,14 @@ function new_group_or_chat() {
 }
 
 
-async function add_user_to_group() {
+async function add_user_to_group() {  // TODO create a button for this and implement function
+    // popup with all known users - group users and select the user to add
     // await eel.add_user_to_group(other_email, get_open_chat_id());
 }
 
 
-async function remove_user_from_group() {
+async function remove_user_from_group() {  // TODO create a button for this and implement function
+    // popup with all group users and select the user to remove
     // await eel.remove_user_from_group(other_email, get_open_chat_id());
 }
 
@@ -749,6 +862,8 @@ async function start_recording() {
     }
 }
 async function stop_recording() {
+    // stop recording and let user decide if he wants to send
+    // the recorded audio or delete it (he can listen to it)
     let ok = await eel.stop_recording()();
     if (ok) {
         let record_btn = document.getElementById("record_msg");
@@ -758,6 +873,7 @@ async function stop_recording() {
     }
 }
 function restore_input() {
+    // resotre input after displaying recording options
     let audio = chat_actions.getElementsByTagName("audio")[0];
     audio.getElementsByTagName("source")[0].remove();
     audio.remove();
@@ -775,6 +891,7 @@ function send_recording(rec_file_path, chat_id) {
 }
 // eel.expose
 function display_recording_options(rec_file_path, chat_id) {
+    // display the recording options - delete, send & listen to audio
     if (chat_actions.contains(input_bar_box)) {
         chat_actions.removeChild(input_bar_box);
     } else {
@@ -800,8 +917,83 @@ function display_recording_options(rec_file_path, chat_id) {
 }
 // end of recordings functions
 
+async function add_hang_up_btn_and_check_call_status() {
+    // add a button on the top that allows to hang up
+    // also checks if the call ended, if so removes the button
+    // and alerts the user
+    let hang_up_call_btn = document.createElement("button");
+    hang_up_call_btn.innerHTML = "Hang Up";
+    hang_up_call_btn.id = "hang_up_call_btn";
+    hang_up_call_btn.addEventListener("click", async function() {
+        await eel.hang_up_call()();
+        hang_up_call_btn.remove();
+    });
+    let body = document.getElementsByTagName("body")[0];
+    body.prepend(hang_up_call_btn);
+    async function check_call_status() {
+        // checks if the call is still running
+        let is_running = await eel.check_ongoing_call()();
+        if (is_running) setTimeout(check_call_status, 2500);
+        else {
+            let hang_up_call_btn = document.getElementById("hang_up_call_btn");
+            if (hang_up_call_btn !== null) {
+                hang_up_call_btn.remove();
+                alert("Call ended");
+            }
+        }
+    }
+    check_call_status();
+}
+
 async function make_call() {
-    await eel.make_call(get_open_chat_id());
+    // start a call with the current chat/group
+    if (document.getElementById("hang_up_call_btn") !== null) {
+        alert("Already in a call, hang up to start a new one.");
+        return;
+    }
+    let chat_id = get_open_chat_id();
+    if (chat_id !== "") {
+        let status = await eel.make_call(chat_id)();
+        if (status) add_hang_up_btn_and_check_call_status();
+        else alert("Call failed.");
+    }
+}
+
+function ongoing_call(group_name, port) {
+    // show a popup and let the user decide
+    // if he wants to answer the call or ignore
+    let popup = document.createElement("dialog");
+    let group_name_label = document.createElement("h1");
+    group_name_label.innerHTML = group_name;
+    let answer = document.createElement("button");
+    answer.innerHTML = "Answer Call";
+    answer.addEventListener("click", async function() {
+        popup.close();
+        popup.remove();
+        if (document.getElementById("hang_up_call_btn") !== null) {  // there is an ongoing call
+            let what_to_do = prompt("Already in a call, do you want to hang up? [y/n] ");
+            while (what_to_do != null && 
+                   (what_to_do == "" || !what_to_do.replace(/\s/g, '').length) &&
+                   what_to_do !== "y" && what_to_do !== "Y" && what_to_do !== "yes" && what_to_do !== "YES" &&
+                   what_to_do !== "n" && what_to_do !== "N" && what_to_do !== "no" && what_to_do !== "NO"
+            ) {
+                what_to_do = prompt("Already in a call, do you want to hang up? [y/n] ");
+            }
+            if (what_to_do !== "y" && what_to_do !== "Y" && what_to_do !== "yes" && what_to_do !== "YES"){
+                return;
+            } else eel.hang_up_call()();
+        }
+        await eel.answer_call(port)();
+        add_hang_up_btn_and_check_call_status();
+    });
+    let ignore = document.createElement("button");
+    ignore.innerHTML = "Ignore Call";
+    ignore.addEventListener("click", function() { popup.close(); popup.remove(); });
+    popup.appendChild(group_name_label);
+    popup.appendChild(answer);
+    popup.appendChild(ignore);
+    document.getElementsByTagName("body")[0].prepend(popup);
+    popup.showModal();
 }
 
 async function upload_profile_picture() {
@@ -812,20 +1004,13 @@ async function upload_group_picture(chat_id) {
     await eel.upload_group_picture(chat_id)();
 }
 
-async function delete_message_for_me() {
-    // await eel.delete_message_for_me(chat_id, message_index);
-}
-
-async function delete_message_for_everyone() {
-    // await eel.delete_message_for_everyone(chat_id, message_index);
-}
-
 
                                     /* Main Setup */
 
 
 // eel.expose
 async function main() {
+    // main setup - start app
     console.log("main");
     // start the python updater
     await eel.start_app()();
@@ -858,6 +1043,7 @@ async function main() {
     window.addEventListener("beforeunload", function () { eel.close_program()(); })
 
     // TODO: uncomment the next lines
+    
     // block special keys
     // document.onkeydown = function (e) {
     //     if (e.key === "F1" || e.key === "F3" || e.key === "F5" || 
@@ -917,16 +1103,13 @@ var call_options_window;
 eel.expose(get_open_chat_id);
 eel.expose(update);
 eel.expose(display_recording_options);
-eel.expose(main);
+eel.expose(ongoing_call);
 
 main();
 
 
 /*                                    TODOS
 1. need to add buttons for adding & removing users when a chat is 'group'
-2. need to add messages options - 
-   delete with an eye - only for me
-   delete with trash can - for everyone
-   seen list?
-3. need to add calls options (hang up & maybe timer)
+   and implement the functions to select the users to remove/add
+2. messages options - seen list?
 */

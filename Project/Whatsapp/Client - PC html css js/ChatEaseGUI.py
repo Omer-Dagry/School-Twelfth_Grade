@@ -3,10 +3,15 @@
 Author: Omer Dagry
 Mail: omerdagry@gmail.com
 Date: 30/05/2023 (dd/mm/yyyy)
+
+
+bindings between the communication.py to the eel website
+and some more function to get chats & users data
 ###############################################
 """
 
 import io
+import multiprocessing
 import os
 import sys
 import wave
@@ -32,6 +37,7 @@ if not os.path.dirname(__file__).endswith("Client - PC html css js"):
 # import eel only after handling stdout and stderr
 import eel
 
+from calls_udp_client import join_call
 from communication import Communication as Com
 from ClientSecureSocket import ClientEncryptedProtocolSocket
 from communication import signup_request, send_confirmation_code, reset_password_request, reset_password_choose_password
@@ -57,6 +63,7 @@ chat_folder: str = ""
 stop_rec: bool = True
 stop: bool = False
 send_file_active: list[bool] = [False]
+call_process: multiprocessing.Process | None = None
 
 
 """                                                 Chat                                                             """
@@ -64,15 +71,17 @@ send_file_active: list[bool] = [False]
 
 @eel.expose
 def get_all_chat_ids() -> str:
-    """
-    returns all chat ids as json dict, {chat_ids: [chat_name, last_msg, last_msg_time, chat_type, users]}
-    """
+    """ returns all chat ids as json dict, {chat_ids: [chat_name, last_msg, last_msg_time, chat_type, users]} """
+    if not os.path.isdir(f"webroot\\{email}"):
+        return json.dumps({})
     chat_ids = [chat_id for chat_id in os.listdir(f"webroot\\{email}") if os.path.isdir(f"webroot\\{email}\\{chat_id}")]
     if "profile_pictures" in chat_ids:
         chat_ids.remove("profile_pictures")
     if "recordings" in chat_ids:
         chat_ids.remove("recordings")
-    #       [chat_id, [chat_name, last_message, time, chat_type (group or the email of the user the chat is with)]
+    # {chat_id,
+    #  [chat_name, last_message, time, chat_type - group or the email of the other user, users, num_of_unread_msgs]
+    #  }
     chat_id_last_msg_and_time: dict[str, list[str, str, str, str]] = {}
     for chat_id in chat_ids:
         try:
@@ -96,7 +105,16 @@ def get_all_chat_ids() -> str:
             else:
                 msg = ""
             msg_time = last_msg[-1]
-            chat_id_last_msg_and_time[chat_id] = [chat_name, msg, msg_time, chat_type, users]
+            number_of_unread_msgs = 0
+            if os.path.isfile(f"webroot\\{email}\\{chat_id}\\unread_msgs"):
+                with open(f"webroot\\{email}\\{chat_id}\\unread_msgs", "rb") as f:
+                    try:
+                        unread_msgs_dict: dict = pickle.loads(f.read())
+                    except EOFError:
+                        unread_msgs_dict = {}
+                if email in unread_msgs_dict:
+                    number_of_unread_msgs = unread_msgs_dict[email]
+            chat_id_last_msg_and_time[chat_id] = [chat_name, msg, msg_time, chat_type, users, number_of_unread_msgs]
         except FileNotFoundError:
             pass
     return json.dumps(chat_id_last_msg_and_time)
@@ -105,11 +123,14 @@ def get_all_chat_ids() -> str:
 @eel.expose
 def get_user_last_seen(user_email: str) -> str:
     """ returns the time 'user_email' was last seen or 'Online' if he is online """
-    with open(f"webroot\\{email}\\users_status", "rb") as f:
-        try:
-            users_status: dict = pickle.loads(f.read())
-        except EOFError:
-            users_status = {}
+    try:
+        with open(f"webroot\\{email}\\users_status", "rb") as f:
+            try:
+                users_status: dict = pickle.loads(f.read())
+            except EOFError:
+                users_status = {}
+    except FileNotFoundError:
+        users_status = {}
     return users_status.get(user_email, "")
 
 
@@ -181,7 +202,7 @@ def update(first_time_sync_mode: bool) -> None:
     while not stop:
         try:
             # sends nothing, waits for sync msg from server
-            new_data, modified_files, deleted_files = communication.sync(sync_sock)
+            new_data, modified_files, deleted_files, ongoing_calls = communication.sync(sync_sock)
         except (ConnectionError, socket.error, UnicodeError):
             sync_sock.close()
             status, sync_sock, reason = \
@@ -199,7 +220,7 @@ def update(first_time_sync_mode: bool) -> None:
                 open_chat_id = ""
             if open_chat_id != "":
                 # let the server know that the user saw all the messages in the chat
-                communication.mark_as_seen(sync_sock, open_chat_id)
+                mark_as_seen(open_chat_id)
                 for file_path in modified_files:
                     if open_chat_id == file_path.split("\\")[2] and file_path in open_chat_files:
                         try:
@@ -212,6 +233,12 @@ def update(first_time_sync_mode: bool) -> None:
             for file_path in deleted_files:
                 if os.path.isfile(file_path):
                     os.remove(file_path)
+            if ongoing_calls.keys():
+                # update GUI about new calls
+                for group_name, port in ongoing_calls.items():
+                    print(group_name, port)
+                    eel.ongoing_call(group_name, port)()
+                    print("called ongoing call")
         if first_time_sync_mode and new_data:
             os.makedirs(f"webroot\\{email}\\first sync done", exist_ok=True)
             first_time_sync_mode = False
@@ -221,8 +248,15 @@ def update(first_time_sync_mode: bool) -> None:
 
 
 @eel.expose
+def mark_as_seen(open_chat_id: str) -> None:
+    """ let the server know that the user saw all the messages in the chat """
+    if sync_sock is not None and open_chat_id is not None and open_chat_id != "":
+        communication.mark_as_seen(sync_sock, open_chat_id)
+
+
+@eel.expose
 def login(email_: str, password_: str) -> tuple[bool, str]:
-    """ login """
+    """ login & start sync """
     global communication, sock, email, password, username, sock, first_time_sync_all, sync_sock
     if email_ is None or email_ == "" or password_ is None or password_ == "":
         return False, ""
@@ -250,7 +284,7 @@ def login(email_: str, password_: str) -> tuple[bool, str]:
 
 @eel.expose
 def signup_stage1(email_: str, password_: str, username_: str) -> tuple[bool, str]:
-    """ make signup request """
+    """ make a request to signup """
     if email_ is None or username_ is None or email_ == "" or username_ == "" or password_ is None or password_ == "":
         return False, ""
     global sock, email, password, username, waiting_for_confirmation_code_signup
@@ -281,7 +315,7 @@ def signup_stage2(confirmation_code: str) -> bool:
 
 @eel.expose
 def reset_password_stage1(email_: str, username_: str) -> bool:
-    """ make reset password request """
+    """ make a request to reset password """
     if email_ is None or username_ is None or email_ == "" or username_ == "":
         return False
     global sock, waiting_for_confirmation_code_reset
@@ -294,7 +328,7 @@ def reset_password_stage1(email_: str, username_: str) -> bool:
 
 @eel.expose
 def reset_password_stage2(confirmation_code: str, password_: str) -> bool:
-    """ confirmation code for reset password request and password reset """
+    """ confirmation code and password reset """
     global waiting_for_confirmation_code_reset, sock
     if sock is None or not waiting_for_confirmation_code_reset or \
             password_ is None or confirmation_code is None or password == "" or confirmation_code == "":
@@ -313,6 +347,7 @@ def reset_password_stage2(confirmation_code: str, password_: str) -> bool:
 
 @eel.expose
 def send_file(chat_id: str, file_path: str) -> None:
+    """ send a file """
     global communication, send_file_active
     if send_file_active[0]:
         return None
@@ -332,8 +367,9 @@ def send_file(chat_id: str, file_path: str) -> None:
 
 @eel.expose
 def send_message(message: str, chat_id: str) -> bool:
+    """ send a message """
     global sock
-    if chat_id == "":
+    if chat_id == "" or message == "" or message is None or chat_id is None:
         return False
     res = communication.send_message(chat_id, message, sock)
     if not res:
@@ -348,51 +384,106 @@ def send_message(message: str, chat_id: str) -> bool:
 
 @eel.expose
 def familiarize_user_with(other_email: str) -> bool:
+    """ check if other_email exists and if it does make him "known" to this user """
     return communication.familiarize_user_with(other_email, sock)
 
 
 @eel.expose
 def new_chat(other_email: str) -> bool:
+    """ create a new chat (one on one) """
     return communication.new_chat(other_email, sock)
 
 
 @eel.expose
 def new_group(other_emails: list[str], group_name: str) -> bool:
+    """ create a new group """
+    print(other_emails, group_name)
     return communication.new_group(other_emails, group_name, sock)[0]
 
 
 @eel.expose
 def add_user_to_group(other_email: str, chat_id: str) -> bool:
+    """ add a user to a group """
     return communication.add_user_to_group(other_email, chat_id, sock)
 
 
 @eel.expose
 def remove_user_from_group(other_email: str, chat_id: str) -> bool:
+    """ remove a user from a group """
     return communication.remove_user_from_group(other_email, chat_id, sock)
 
 
 @eel.expose
 def make_call(chat_id: str) -> bool:
-    return communication.make_call(chat_id) if chat_id != "" else False
+    """ start a call """
+    global call_process
+    call_server_port = communication.make_call(chat_id) if chat_id != "" else None
+    if call_server_port is None:
+        return False
+    if call_process is not None:
+        call_process.kill()
+        call_process = None
+    call_process = multiprocessing.Process(
+        # TODO:             change to SERVER_IP
+        target=join_call, args=((SERVER_IP, call_server_port), email, password,), daemon=True
+    )
+    call_process.start()
+    return True
+
+
+@eel.expose
+def answer_call(port: int) -> None:
+    global call_process
+    if call_process is not None:
+        call_process.kill()
+        call_process = None
+    call_process = multiprocessing.Process(
+        # TODO:             change to SERVER_IP
+        target=join_call, args=((SERVER_IP, port), email, password,), daemon=True
+    )
+    call_process.start()
+
+
+@eel.expose
+def check_ongoing_call():
+    """ returns True if there is an ongoing call otherwise False """
+    global call_process
+    if call_process is not None and call_process.is_alive():
+        return True
+    call_process = None
+    return False
+
+
+@eel.expose
+def hang_up_call() -> None:
+    """ exit call """
+    global call_process
+    if call_process is not None:
+        call_process.kill()
+        call_process = None
 
 
 @eel.expose
 def upload_profile_picture() -> bool:
+    """ upload a new profile picture """
     return communication.upload_profile_picture()
 
 
 @eel.expose
 def upload_group_picture(chat_id: str) -> bool:
+    """ upload a new picture for a group """
     return communication.upload_group_picture(chat_id)
 
 
 @eel.expose
-def delete_message_for_me(chat_id: str, message_index: int):
+def delete_message_for_me(chat_id: str, message_index: int) -> bool:
+    """ delete a message for yourself """
     return communication.delete_message_for_me(chat_id, message_index, sock)
 
 
 @eel.expose
-def delete_message_for_everyone(chat_id: str, message_index: int):
+def delete_message_for_everyone(chat_id: str, message_index: int) -> bool:
+    """ delete a message for everyone """
     return communication.delete_message_for_everyone(chat_id, message_index, sock)
 
 
@@ -401,6 +492,7 @@ def delete_message_for_everyone(chat_id: str, message_index: int):
 
 @eel.expose
 def start_recording(chat_id: str) -> bool:
+    """ start audio recording """
     global stop_rec
     if stop_rec:
         stop_rec = False
@@ -411,6 +503,7 @@ def start_recording(chat_id: str) -> bool:
 
 
 def record_audio(chat_id: str) -> None:
+    """ this function is the actual function the records audio """
     global stop_rec
     skip = False
     os.makedirs(f"webroot\\{email}\\recordings", exist_ok=True)
@@ -446,6 +539,7 @@ def record_audio(chat_id: str) -> None:
 
 @eel.expose
 def stop_recording() -> bool:
+    """ stop recording """
     global stop_rec
     if not stop_rec:
         stop_rec = True
@@ -456,6 +550,7 @@ def stop_recording() -> bool:
 
 @eel.expose
 def delete_recording(recording_file_path: str):
+    """ delete recording """
     if os.path.isfile(f"webroot\\{recording_file_path}"):
         os.remove(f"webroot\\{recording_file_path}")
 
@@ -465,6 +560,7 @@ def delete_recording(recording_file_path: str):
 
 @eel.expose
 def start_file(file_path: str) -> bool:
+    """ open a file """
     file_path = file_path.replace("/", "\\")
     if os.path.isfile(file_path):
         os.startfile(file_path)
@@ -477,16 +573,21 @@ def start_file(file_path: str) -> bool:
 
 @eel.expose
 def close_program():
-    global sync_thread, stop
+    """ called when there is a refresh / a redirect in order to restart the sync """
+    global sync_thread, stop, call_process
     stop = True
     if sync_thread is not None:
         sync_thread.join()
         if sync_sock is not None:
             sync_sock.close()
         sync_thread = None
+        if call_process is not None:
+            call_process.kill()
+        call_process = None
 
 
 def get_server_ip() -> str | None:
+    """ try to get the server IP from the email that is shared between all the clients """
     try:
         connection = imaplib.IMAP4_SSL("imap.gmail.com")
         connection.login("project.twelfth.grade.get.ip@gmail.com", "wkqakclcvgfwyitn")
@@ -518,6 +619,7 @@ def get_server_ip() -> str | None:
 
 @eel.expose
 def start_app() -> None:
+    """ start sync """
     global sync_thread, sync_sock, first_time_sync_all, stop
     os.makedirs(f"webroot\\{email}\\", exist_ok=True)
     close_program()
@@ -537,6 +639,7 @@ def start_app() -> None:
 
 
 def main():
+    """ launch eel """
     # Launch GUI
     try:
         if os.path.isdir(f"webroot\\{email}\\first sync done"):
@@ -574,17 +677,17 @@ def main():
             pass
 
 
-# More Constants
-# Server IP - try to get through clients shared email, if not ask from user
-SERVER_IP = get_server_ip()
-while SERVER_IP != "no" and \
-        (SERVER_IP is None or SERVER_IP.count(".") != 3 or not
-         all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split(".")))):
-    SERVER_IP = easygui.enterbox("Please Enter Server IP: ", "Server IP")
-if SERVER_IP == "no":  # cancel run
-    sys.exit(1)
-assert SERVER_IP.count(".") == 3 and all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split("."))), \
-    "Invalid Server IP"
-SERVER_IP_PORT = (SERVER_IP, SERVER_PORT)
 if __name__ == '__main__':
+    # More Constants
+    # Server IP - try to get through clients shared email, if not ask from user
+    SERVER_IP = None  # get_server_ip()
+    while SERVER_IP != "no" and \
+            (SERVER_IP is None or SERVER_IP.count(".") != 3 or not
+            all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split(".")))):
+        SERVER_IP = easygui.enterbox("Please Enter Server IP: ", "Server IP")
+    if SERVER_IP == "no":  # cancel run
+        sys.exit(1)
+    assert SERVER_IP.count(".") == 3 and all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split("."))), \
+        "Invalid Server IP"
+    SERVER_IP_PORT = (SERVER_IP, SERVER_PORT)
     main()
