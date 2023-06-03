@@ -72,6 +72,8 @@ call_process: multiprocessing.Process | None = None
 @eel.expose
 def get_all_chat_ids() -> str:
     """ returns all chat ids as json dict, {chat_ids: [chat_name, last_msg, last_msg_time, chat_type, users]} """
+    if not os.path.isdir(f"webroot\\{email}"):
+        return json.dumps({})
     chat_ids = [chat_id for chat_id in os.listdir(f"webroot\\{email}") if os.path.isdir(f"webroot\\{email}\\{chat_id}")]
     if "profile_pictures" in chat_ids:
         chat_ids.remove("profile_pictures")
@@ -121,11 +123,14 @@ def get_all_chat_ids() -> str:
 @eel.expose
 def get_user_last_seen(user_email: str) -> str:
     """ returns the time 'user_email' was last seen or 'Online' if he is online """
-    with open(f"webroot\\{email}\\users_status", "rb") as f:
-        try:
-            users_status: dict = pickle.loads(f.read())
-        except EOFError:
-            users_status = {}
+    try:
+        with open(f"webroot\\{email}\\users_status", "rb") as f:
+            try:
+                users_status: dict = pickle.loads(f.read())
+            except EOFError:
+                users_status = {}
+    except FileNotFoundError:
+        users_status = {}
     return users_status.get(user_email, "")
 
 
