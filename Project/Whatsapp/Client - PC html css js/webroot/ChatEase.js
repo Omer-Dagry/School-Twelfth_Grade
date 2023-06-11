@@ -533,6 +533,19 @@ function adjust_msgs_input_width() {
         msgs_input.style.width = `${width}%`;
     }
     msgs_input.style.width = `${width - 1}%`;
+    // adjust emoji box width (causes eel to crash some how ?!?!?!?!??!)
+    // let emoji_box = document.getElementById("emoji_box");
+    // width = 799;
+    // while (elementInViewport(emoji_box) && width < 1119) {
+    //     width++;
+    //     emoji_box.style.width = `${width}px`;
+    // }
+    // while (elementInViewport(emoji_box) && width > 800) {
+    //     width--;
+    //     emoji_box.style.width = `${width}px`;
+    // }
+    // let move_x = (1120 - width) / 2 + 178;
+    // emoji_box.style.transform = `translate(${move_x}, -20%)`;
 }
 
 // eel.expose
@@ -762,12 +775,6 @@ function window_inactive() {
     sep.id = "search_bar_chat_list_sep";
     // append it
     search_bar_box.appendChild(sep);
-}
-
-                                    /* Emoji */
-function addEmoji(emoji) {
-    // add the emoji that was pressed
-    document.getElementById('input_bar').value += emoji;
 }
 
                                 /* Necessary Data */

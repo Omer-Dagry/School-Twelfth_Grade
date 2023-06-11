@@ -446,7 +446,7 @@ button:active {
     text-align: center;
     /* #202C33 */
     /* background-color: rgba(32, 44, 51, 0.5); */
-    max-height: 54px;
+    max-height: 84px;
     margin-left: 10px;
     margin-right: 10px;
     transform: translateY(-20%);
@@ -484,24 +484,24 @@ button:active {
     cursor: pointer;
 } #emoji_drawer_btn:active {opacity: 0.7;}
 
-#drawer { 
-    background-color: #c0c0c0;
-    position: fixed;
-    bottom: 13.8%;
-    width: 75.4%;
-}
-
-#emoji-drawer {
+#emoji_box {
+    width: 1120px;
+    height: 120px;
+    transform: translateY(-20%) translateX(178px);
+    background-color: white;
+    overflow-y: scroll;
+    display:inline-block;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
 }
 
 .emoji {
-    text-align: center;
-    font-size: 24px;
-    padding: 8px;
+    width: 22px;
+    display: inline;
     cursor: pointer;
-}
+    font-size: x-large;
+    padding: 8px;
+} .emoji:active { opacity: 0.5; }
 
 #delete_recording {
     background-color: transparent;
@@ -524,10 +524,10 @@ button:active {
     background-color: #2A3941;
     color: rgb(200, 200, 200);
     border-radius: 8px;
-    font-size: large;
+    font-size: x-large;
     border: 0;
     width: 84%;
-    height: 50px;
+    height: 80px;
     overflow: hidden;
     overflow-y: scroll;
     resize: none;

@@ -52,6 +52,7 @@
           <!-- The Chat itself -->
           <div id="chat" class="enable_text_selection" onscroll="check_pos()"></div>
           <!-- Chats Actions (e.g send msg, file & emoji) -->
+          <div id="emoji_box" class="disable_text_selection"></div>
           <div id="chat_actions">
             <div id="left_side_actions">
               <ion-icon name="document" id="upload_file" onclick="send_file(get_open_chat_id())" title="Upload File"></ion-icon>
@@ -76,6 +77,8 @@
     <script type="text/javascript" src="/eel.js"></script>
     <!-- Contains the 2 types of messages (faster to copy than create each time) -->
     <script type="text/javascript" src="messages.js"></script>
+    <!-- Creates all the emojis -->
+    <script type="text/javascript" src="emojis.js"></script>
     <!-- The client that connectes to the eel python program -->
     <script type="text/javascript" src="ChatEase.js"></script>
     <!-- Disable Double & Triple Click Text Selection -->
