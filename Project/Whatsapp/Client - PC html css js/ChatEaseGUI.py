@@ -44,6 +44,7 @@ from communication import signup_request, send_confirmation_code, reset_password
 
 
 # Constants
+SERVER_IP = None
 SERVER_PORT = 8820
 
 # Globals
@@ -397,7 +398,6 @@ def new_chat(other_email: str) -> bool:
 @eel.expose
 def new_group(other_emails: list[str], group_name: str) -> bool:
     """ create a new group """
-    print(other_emails, group_name)
     return communication.new_group(other_emails, group_name, sock)[0]
 
 
@@ -424,7 +424,6 @@ def make_call(chat_id: str) -> bool:
         call_process.kill()
         call_process = None
     call_process = multiprocessing.Process(
-        # TODO:             change to SERVER_IP
         target=join_call, args=((SERVER_IP, call_server_port), email, password,), daemon=True
     )
     call_process.start()
@@ -438,7 +437,6 @@ def answer_call(port: int) -> None:
         call_process.kill()
         call_process = None
     call_process = multiprocessing.Process(
-        # TODO:             change to SERVER_IP
         target=join_call, args=((SERVER_IP, port), email, password,), daemon=True
     )
     call_process.start()
@@ -680,14 +678,14 @@ def main():
 if __name__ == '__main__':
     # More Constants
     # Server IP - try to get through clients shared email, if not ask from user
-    SERVER_IP = None  # get_server_ip()
-    while SERVER_IP != "no" and \
-            (SERVER_IP is None or SERVER_IP.count(".") != 3 or not
-            all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split(".")))):
-        SERVER_IP = easygui.enterbox("Please Enter Server IP: ", "Server IP")
-    if SERVER_IP == "no":  # cancel run
-        sys.exit(1)
-    assert SERVER_IP.count(".") == 3 and all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split("."))), \
-        "Invalid Server IP"
-    SERVER_IP_PORT = (SERVER_IP, SERVER_PORT)
+    if SERVER_IP is None:
+        while SERVER_IP != "no" and \
+                (SERVER_IP is None or SERVER_IP.count(".") != 3 or not
+                all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split(".")))):
+            SERVER_IP = easygui.enterbox("Please Enter Server IP: ", "Server IP")
+        if SERVER_IP == "no":  # cancel run
+            sys.exit(1)
+        assert SERVER_IP.count(".") == 3 and all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split("."))), \
+            "Invalid Server IP"
+        SERVER_IP_PORT = (SERVER_IP, SERVER_PORT)
     main()

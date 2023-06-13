@@ -82,7 +82,7 @@ button:active {
     margin-top: 5vh;
     margin-left: 3vh;
     margin-right: 3vh;
-    min-width: 1000px;
+    min-width: 1200px;
 }
 
 #grid {
@@ -485,14 +485,18 @@ button:active {
 } #emoji_drawer_btn:active {opacity: 0.7;}
 
 #emoji_box {
-    width: 1120px;
-    height: 120px;
+    width: 600px;
+    height: 300px;
     transform: translateY(-20%) translateX(178px);
     background-color: white;
     overflow-y: scroll;
-    display:inline-block;
+    border-radius: 10px;
+    position: absolute;
+    float: right;
+    bottom: 10%;
+    right: 20.2%;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
 }
 
 .emoji {
