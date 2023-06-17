@@ -22,11 +22,9 @@ import shutil
 import pickle
 import easygui
 import hashlib
-import imaplib
 import pyaudio
 import threading
 import traceback
-import email as email_lib
 # for .exe
 if not os.path.dirname(__file__).endswith("Client - PC html css js"):
     os.chdir(os.path.dirname(__file__))  # change working dir to were the .exe was unpacked in
@@ -237,7 +235,6 @@ def update(first_time_sync_mode: bool) -> None:
             if ongoing_calls.keys():
                 # update GUI about new calls
                 for group_name, port in ongoing_calls.items():
-                    print(group_name, port)
                     eel.ongoing_call(group_name, port)()
                     print("called ongoing call")
         if first_time_sync_mode and new_data:
@@ -584,34 +581,6 @@ def close_program():
         call_process = None
 
 
-def get_server_ip() -> str | None:
-    """ try to get the server IP from the email that is shared between all the clients """
-    try:
-        connection = imaplib.IMAP4_SSL("imap.gmail.com")
-        connection.login("project.twelfth.grade.get.ip@gmail.com", "wkqakclcvgfwyitn")
-        connection.select()
-        result, data = connection.uid('search', None, "ALL")
-        if result == 'OK':
-            for num in reversed(data[0].split()):
-                result, data = connection.uid('fetch', num, '(RFC822)')
-                if result == 'OK':
-                    email_message = email_lib.message_from_bytes(data[0][1])
-                    from_email = str(email_message['From'])
-                    if from_email != "project.twelfth.grade@gmail.com":
-                        continue
-                    subject = str(email_message['Subject'])
-                    if subject == "server up":
-                        content = str(email_message.get_payload()[0])
-                        return content.split('server_ip=')[-1].strip()
-                    elif subject == "server down":
-                        return None
-        connection.close()
-        connection.logout()
-    except Exception as e:
-        traceback.format_exception(e)  # returns the formatted exception
-        return None
-
-
 """                                 Connect To Server & Start GUI & Sync                                             """
 
 
@@ -661,8 +630,6 @@ def main():
     finally:
         if os.path.isdir(f"webroot\\{email}"):
             shutil.rmtree(f"webroot\\{email}")
-            # shutil.rmtree(f"webroot\\{email}\\recordings")
-            # shutil.rmtree(f"webroot\\{email}\\first sync done")
         try:
             if sync_sock is not None:
                 sync_sock.close()
@@ -681,7 +648,7 @@ if __name__ == '__main__':
     if SERVER_IP is None:
         while SERVER_IP != "no" and \
                 (SERVER_IP is None or SERVER_IP.count(".") != 3 or not
-                all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split(".")))):
+                    all((i.isnumeric() and -1 < int(i) < 256 for i in SERVER_IP.split(".")))):
             SERVER_IP = easygui.enterbox("Please Enter Server IP: ", "Server IP")
         if SERVER_IP == "no":  # cancel run
             sys.exit(1)

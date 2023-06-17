@@ -1401,13 +1401,6 @@ def main():
     my_public_key, my_private_key = rsa.newkeys(2048, poolsize=os.cpu_count())
     print("done generating")
     server_socket = start_server(my_public_key, my_private_key)
-    # send the app client's get ip email the server ip
-    try:
-        import urllib.request
-        external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
-        send_mail("project.twelfth.grade.get.ip@gmail.com", "server up", f"server_ip={external_ip}")
-    except Exception as e:
-        traceback.print_exception(e)
     #
     # exception watch thread
     watch_exception_dict_thread = threading.Thread(target=watch_exception_dict, daemon=True)
@@ -1519,8 +1512,6 @@ def start(online_clients_: dict[str] | DictProxy = None,
         pass
     finally:
         print("Server is down")
-        # send the app client's get ip email the server is down
-        send_mail("project.twelfth.grade.get.ip@gmail.com", "server down", "")
         for pr in ongoing_calls.values():
             pr.kill()
 

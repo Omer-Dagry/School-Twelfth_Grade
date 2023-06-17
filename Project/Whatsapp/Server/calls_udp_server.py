@@ -81,7 +81,7 @@ def accept(server_socket: ServerEncryptedProtocolSocket) \
 def disconnect_client(client_sock: ServerEncryptedProtocolSocket, addr: tuple[str, int], clients_ips: DictProxy,
                       clients_socket_addr: dict, client_sock_last_checkin: dict, port: int) -> None:
     """ close connection with client & remove from all databases """
-    if (time.perf_counter() - client_sock_last_checkin[client_sock]) > 12:
+    if (time.perf_counter() - client_sock_last_checkin[client_sock]) > 3:
         if len(clients_ips[addr[0]]) == 1:
             clients_ips.pop(addr[0])
         else:
@@ -102,9 +102,13 @@ def handle_tcp_connections(tcp_server_socket: ServerEncryptedProtocolSocket, cli
         client_sock_last_checkin: dict[ServerEncryptedProtocolSocket, float] = {}
         last_msg = time.perf_counter()
         one_client: None | float = None
-        while (time.perf_counter() - last_msg) < 20 and (one_client is None or (time.perf_counter() - one_client) < 15):
+        more_than_one_client: bool = False
+        while (time.perf_counter() - last_msg) < 20 and \
+                (one_client is None or (time.perf_counter() - one_client) < 15) and \
+                (not more_than_one_client or more_than_one_client and len(clients_socket_addr) > 1):
             try:
                 client, addr = accept(tcp_server_socket)
+                tcp_server_socket.settimeout(0.05)
                 if client is not None and addr is not None:
                     client: ServerEncryptedProtocolSocket
                     addr: tuple[str, int]
@@ -129,6 +133,8 @@ def handle_tcp_connections(tcp_server_socket: ServerEncryptedProtocolSocket, cli
                             clients_ips[addr[0]] = [addr[1]]
                         clients_socket_addr[client] = addr
                         client_sock_last_checkin[client] = time.perf_counter()
+                        if len(clients_socket_addr) > 1:
+                            more_than_one_client = True
                     else:
                         logging.info(f"Calls server on {port = } - %s:%d sent wrong username or password." % addr)
                         client.send_message(b"not ok")
@@ -142,13 +148,9 @@ def handle_tcp_connections(tcp_server_socket: ServerEncryptedProtocolSocket, cli
                 one_client = None
             for client, addr in list(clients_socket_addr.items()):
                 try:
-                    msg = client.recv_message()
-                    if msg == b"hi":
-                        client_sock_last_checkin[client] = time.perf_counter()
-                    else:
-                        disconnect_client(
-                            client, addr, clients_ips, clients_socket_addr, client_sock_last_checkin, port)
-                    last_msg = time.perf_counter()
+                    if client.recv_message() != b"hi":
+                        raise ConnectionError("")
+                    client_sock_last_checkin[client] = last_msg = time.perf_counter()
                 except (socket.timeout, ConnectionError, socket.error):
                     disconnect_client(client, addr, clients_ips, clients_socket_addr, client_sock_last_checkin, port)
     except KeyboardInterrupt:

@@ -82,7 +82,7 @@ def handle_tcp_connection(server_addr: tuple[str, int], email: str, password: st
         print("Connected to call.")
         while True:
             tcp_sock.send_message(b"hi")
-            time.sleep(5)
+            time.sleep(1)
     except (ConnectionError, socket.error):
         pass
     except KeyboardInterrupt:
