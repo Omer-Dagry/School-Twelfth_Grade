@@ -8,11 +8,17 @@ function toggle_password_visibility() {
 
 async function login() {
     // login request
-    let login_btn = document.getElementById("login_btn");
-    login_btn.onclick = null;
-    let email_input = document.getElementById("email_input");
-    let password_input = document.getElementById("password_input");
-    let email = email_input.value, password = password_input.value;
+    var email, password, login_btn;
+    if (window.email === "") {
+        login_btn = document.getElementById("login_btn");
+        login_btn.onclick = null;
+        let email_input = document.getElementById("email_input");
+        let password_input = document.getElementById("password_input");
+        email = email_input.value, password = password_input.value;
+    } else {
+        login_btn = document.getElementById("submit");
+        email = window.email, password = window.password;
+    }
     let [status, reason] = await eel.login(email, password)();
     if (!status && reason != "Already Logged In") {
         let error_msg = document.getElementById("error_msg");
@@ -28,7 +34,9 @@ async function login() {
     } else {
         window.location = "ChatEase.html";
     }
-    login_btn.onclick = async function() { await login(); };
+    if (window.email === "") {
+        login_btn.onclick = async function() { await login(); };
+    }
 }
 
 
@@ -38,3 +46,7 @@ document.onkeydown = function (e) {
         return false;
     }
 };
+
+
+window.email = "";
+window.password = "";

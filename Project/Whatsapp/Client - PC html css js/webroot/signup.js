@@ -23,7 +23,7 @@ function display_msg(msg_, type="error") {
 async function signup_request() {
     // signup request (first stage)
     signup_btn.onclick = null;
-    let email = email_input.value, password = password_input.value, username = username_input.value;
+    email = email_input.value, password = password_input.value, username = username_input.value;
     let [status, reason] = await eel.signup_stage1(email, password, username)();
     if (!status) {
         display_msg(reason);
@@ -58,7 +58,11 @@ async function signup_confirmation_code() {
     let msg = document.getElementById("msg");
     if (msg != null) msg.remove();
     if (!status) display_msg("Signup failed !");
-    else display_msg("Signed up successfully !", type="regular");
+    else {
+        window.email = email;
+        window.password = password;
+        login();
+    }
     submit_btn.onclick = async function() { await signup_confirmation_code(); };
 }
 
@@ -72,6 +76,7 @@ document.onkeydown = function (e) {
 
 
                                 /* Globals */
+var email, username, password;
 var email_box = document.getElementById("email_box");
 var username_box = document.getElementById("username_box");
 var password_box = document.getElementById("password_box");
