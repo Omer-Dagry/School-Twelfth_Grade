@@ -1,0 +1,15 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="import_module" />
+          <option value="tkinter.Entry.last_search" />
+          <option value="tkinter.Label.text" />
+          <option value="tkinter.Label.chat_id" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
